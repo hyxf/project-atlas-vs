@@ -75,12 +75,12 @@ suite('GitHub Repositories', () => {
         assert.deepStrictEqual(await store.configuration(), {
             token: 'secret',
             user: 'octocat',
-            proxy: { enabled: true, url: 'http://127.0.0.1:1087/', socketUrl: 'socks5://127.0.0.1:1086/' },
+            proxy: { enabled: true, url: 'http://127.0.0.1:1087', socketUrl: 'socks5://127.0.0.1:1086' },
         });
         assert.deepStrictEqual(await store.proxyConfiguration(), {
             enabled: true,
-            url: 'http://127.0.0.1:1087/',
-            socketUrl: 'socks5://127.0.0.1:1086/',
+            url: 'http://127.0.0.1:1087',
+            socketUrl: 'socks5://127.0.0.1:1086',
         });
 
         await store.replaceRepositories([]);
@@ -123,7 +123,7 @@ suite('GitHub Repositories', () => {
         assert.strictEqual(Object.hasOwn(migrated, 'proxy'), false);
         assert.deepStrictEqual(await store.proxyConfiguration(), {
             enabled: true,
-            url: 'http://127.0.0.1:1087/',
+            url: 'http://127.0.0.1:1087',
         });
     });
 

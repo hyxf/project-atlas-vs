@@ -1491,32 +1491,38 @@
             "newWindow"
           ],
           "default": "currentWindow",
-          "description": "Default mode used when opening a saved project."
+          "description": "Default mode used when opening a saved project.",
+          "order": 1
         },
         "projectAtlas.github.httpProxy": {
           "type": "string",
           "default": "http://127.0.0.1:1087",
-          "description": "HTTP or HTTPS proxy URL used when GitHub proxy is enabled."
+          "description": "HTTP or HTTPS proxy URL used when GitHub proxy is enabled.",
+          "order": 2
         },
         "projectAtlas.github.socketProxy": {
           "type": "string",
           "default": "socks5://127.0.0.1:1086",
-          "description": "SOCKS proxy URL used for socket-based requests and SSH clone connections."
+          "description": "SOCKS proxy URL used for socket-based requests and SSH clone connections.",
+          "order": 3
         },
         "projectAtlas.github.proxyEnabled": {
           "type": "boolean",
           "default": false,
-          "description": "Use the configured proxy for GitHub repository refreshes and clone operations."
+          "description": "Use the configured proxy for GitHub repository refreshes and clone operations.",
+          "order": 4
         },
         "projectAtlas.github.token": {
           "type": "string",
           "default": "",
-          "description": "GitHub personal access token used for repository refreshes and private clones."
+          "description": "GitHub personal access token used for repository refreshes and private clones.",
+          "order": 5
         },
         "projectAtlas.github.user": {
           "type": "string",
           "default": "",
-          "description": "GitHub username that owns the configured personal access token."
+          "description": "GitHub username that owns the configured personal access token.",
+          "order": 6
         }
       }
     },

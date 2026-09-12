@@ -173,10 +173,10 @@ suite('Repository Management', () => {
     });
 
     test('adds Git proxy configuration to clone arguments and environment', () => {
-        const proxy = { enabled: true, url: 'http://127.0.0.1:1087/', socketUrl: 'socks5://127.0.0.1:1086/' };
+        const proxy = { enabled: true, url: 'http://127.0.0.1:1087', socketUrl: 'socks5://127.0.0.1:1086' };
         assert.deepStrictEqual(cloneArgs('https://github.com/user/repo.git', '/tmp/repo', proxy), [
             '-c',
-            'http.proxy=http://127.0.0.1:1087/',
+            'http.proxy=http://127.0.0.1:1087',
             'clone',
             '--',
             'https://github.com/user/repo.git',
@@ -185,11 +185,11 @@ suite('Repository Management', () => {
         assert.deepStrictEqual(
             cloneArgs('https://github.com/user/repo.git', '/tmp/repo', {
                 enabled: true,
-                socketUrl: 'socks5://127.0.0.1:1086/',
+                socketUrl: 'socks5://127.0.0.1:1086',
             }),
             [
                 '-c',
-                'http.proxy=socks5://127.0.0.1:1086/',
+                'http.proxy=socks5://127.0.0.1:1086',
                 'clone',
                 '--',
                 'https://github.com/user/repo.git',
@@ -197,12 +197,12 @@ suite('Repository Management', () => {
             ],
         );
         assert.deepStrictEqual(cloneProxyEnvironment(proxy), {
-            HTTP_PROXY: 'http://127.0.0.1:1087/',
-            HTTPS_PROXY: 'http://127.0.0.1:1087/',
-            ALL_PROXY: 'http://127.0.0.1:1087/',
-            http_proxy: 'http://127.0.0.1:1087/',
-            https_proxy: 'http://127.0.0.1:1087/',
-            all_proxy: 'http://127.0.0.1:1087/',
+            HTTP_PROXY: 'http://127.0.0.1:1087',
+            HTTPS_PROXY: 'http://127.0.0.1:1087',
+            ALL_PROXY: 'http://127.0.0.1:1087',
+            http_proxy: 'http://127.0.0.1:1087',
+            https_proxy: 'http://127.0.0.1:1087',
+            all_proxy: 'http://127.0.0.1:1087',
         });
         assert.deepStrictEqual(cloneArgs('git@github.com:user/repo.git', '/tmp/repo', { enabled: false }), [
             'clone',

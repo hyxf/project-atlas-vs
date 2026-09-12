@@ -227,7 +227,7 @@ export function normalizeProxyUrl(value: string, source = 'the proxy setting'): 
     if (url.protocol !== 'http:' && url.protocol !== 'https:') {
         throw new Error(`Set ${source} to an HTTP or HTTPS proxy URL.`);
     }
-    return url.toString();
+    return withoutRootPath(url);
 }
 
 export function normalizeSocketProxyUrl(value: string, source = 'the socket proxy setting'): string {
@@ -240,7 +240,12 @@ export function normalizeSocketProxyUrl(value: string, source = 'the socket prox
     if (!['socks:', 'socks4:', 'socks4a:', 'socks5:', 'socks5h:'].includes(url.protocol)) {
         throw new Error(`Set ${source} to a SOCKS proxy URL.`);
     }
-    return url.toString();
+    return withoutRootPath(url);
+}
+
+function withoutRootPath(url: URL): string {
+    const normalized = url.toString();
+    return url.pathname === '/' && !url.search && !url.hash ? normalized.slice(0, -1) : normalized;
 }
 
 function parseStoredRepository(value: unknown): GitHubRepository | undefined {
