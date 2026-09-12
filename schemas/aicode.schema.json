@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "AICode Context Configuration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["activeGroup", "groups"],
+  "properties": {
+    "activeGroup": { "type": "string", "minLength": 1 },
+    "groups": {
+      "type": "object",
+      "minProperties": 1,
+      "propertyNames": { "type": "string", "minLength": 1 },
+      "additionalProperties": { "type": "array", "items": { "type": "string", "minLength": 1 } }
+    }
+  }
+}

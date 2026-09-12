@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AI Code Common Commands",
+  "description": "Reusable terminal commands.",
+  "type": "object",
+  "required": ["commands"],
+  "properties": {
+    "commands": {
+      "description": "Terminal commands shown by Project Atlas.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["command"],
+        "properties": {
+          "command": {
+            "description": "Command text inserted into the active terminal.",
+            "type": "string",
+            "minLength": 1
+          },
+          "description": {
+            "description": "Optional human-readable explanation shown alongside the command.",
+            "type": "string"
+          }
+        },
+        "defaultSnippets": [
+          {
+            "label": "Common command",
+            "body": {
+              "command": "${1:command}",
+              "description": "${2:Describe the command}"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "defaultSnippets": [
+    {
+      "label": "Common commands file",
+      "body": {
+        "commands": [
+          {
+            "command": "${1:command}",
+            "description": "${2:Describe the command}"
+          }
+        ]
+      }
+    }
+  ]
+}

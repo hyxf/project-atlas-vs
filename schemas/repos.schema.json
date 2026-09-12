@@ -1,0 +1,65 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Project Atlas Git Repositories",
+  "description": "Git repository addresses shared by Project Atlas integrations.",
+  "type": "object",
+  "required": ["version", "repos"],
+  "properties": {
+    "version": {
+      "const": 1,
+      "description": "Repository data format version."
+    },
+    "repos": {
+      "type": "array",
+      "description": "Saved Git repositories.",
+      "items": {
+        "type": "object",
+        "required": ["group", "name", "url", "tags"],
+        "properties": {
+          "group": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Repository owner, organization, or nested group."
+          },
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "description": "Repository name."
+          },
+          "url": {
+            "type": "string",
+            "minLength": 1,
+            "description": "SSH or HTTPS Git remote URL."
+          },
+          "tags": {
+            "type": "array",
+            "description": "Tags used to group this repository.",
+            "uniqueItems": true,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "description": {
+            "type": "string",
+            "description": "Optional repository description."
+          }
+        },
+        "additionalProperties": true
+      }
+    },
+    "settings": {
+      "type": "object",
+      "description": "Repository view preferences.",
+      "properties": {
+        "viewMode": {
+          "type": "string",
+          "enum": ["TAGS", "GROUPS", "HOSTS"],
+          "description": "How repositories are grouped in the tree."
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

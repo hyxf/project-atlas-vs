@@ -1,0 +1,60 @@
+name: Release VSIX
+
+on:
+    push:
+        tags:
+            - 'v*'
+
+permissions:
+    contents: write
+
+jobs:
+    release:
+        name: Build and release VSIX
+        runs-on: ubuntu-latest
+
+        steps:
+            - name: Check out repository
+              uses: actions/checkout@v4
+
+            - name: Set up Node.js
+              uses: actions/setup-node@v4
+              with:
+                  node-version: 22
+                  cache: yarn
+
+            - name: Install dependencies
+              run: yarn install --frozen-lockfile
+
+            - name: Read version from tag
+              id: version
+              env:
+                  TAG_NAME: ${{ github.ref_name }}
+              run: |
+                  VERSION="${TAG_NAME#v}"
+                  if ! yarn --silent semver "$VERSION" >/dev/null; then
+                    echo "Tag must be a valid semantic version prefixed with v (for example, v1.2.3)." >&2
+                    exit 1
+                  fi
+                  echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+                  echo "vsix=project-atlas-vs-$VERSION.vsix" >> "$GITHUB_OUTPUT"
+
+            - name: Set package version
+              env:
+                  VERSION: ${{ steps.version.outputs.version }}
+              run: npm pkg set version="$VERSION"
+
+            - name: Test
+              run: xvfb-run -a yarn test
+
+            - name: Package extension
+              env:
+                  VSIX_FILE: ${{ steps.version.outputs.vsix }}
+              run: yarn package:extension --out "$VSIX_FILE"
+
+            - name: Create GitHub Release
+              env:
+                  GH_TOKEN: ${{ github.token }}
+                  TAG_NAME: ${{ github.ref_name }}
+                  VSIX_FILE: ${{ steps.version.outputs.vsix }}
+              run: gh release create "$TAG_NAME" "$VSIX_FILE" --verify-tag --generate-notes --title "$TAG_NAME"

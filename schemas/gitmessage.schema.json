@@ -1,0 +1,58 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "AI Code Git Messages",
+  "description": "Reusable Conventional Commit message templates.",
+  "type": "object",
+  "required": ["messages"],
+  "properties": {
+    "messages": {
+      "description": "Git commit message templates shown by Project Atlas.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["type", "subject"],
+        "properties": {
+          "type": {
+            "description": "Conventional Commit type, for example feat, fix, docs, refactor, or test.",
+            "type": "string",
+            "minLength": 1,
+            "examples": ["feat", "fix", "docs", "style", "refactor", "perf", "test", "build", "ci", "chore"]
+          },
+          "scope": {
+            "description": "Optional area of the codebase affected by the change.",
+            "type": "string"
+          },
+          "subject": {
+            "description": "Short commit description without the type or scope prefix.",
+            "type": "string",
+            "minLength": 1
+          }
+        },
+        "defaultSnippets": [
+          {
+            "label": "Git message template",
+            "body": {
+              "type": "${1:feat}",
+              "scope": "${2:scope}",
+              "subject": "${3:Describe the change}"
+            }
+          }
+        ]
+      }
+    }
+  },
+  "defaultSnippets": [
+    {
+      "label": "Git messages file",
+      "body": {
+        "messages": [
+          {
+            "type": "${1:feat}",
+            "scope": "${2:scope}",
+            "subject": "${3:Describe the change}"
+          }
+        ]
+      }
+    }
+  ]
+}
