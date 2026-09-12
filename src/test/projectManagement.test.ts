@@ -40,6 +40,14 @@ suite('Project Management', () => {
         assert.strictEqual(written.schemaVersion, 4);
     });
 
+    test('persists the default project open mode in project.json', async () => {
+        const settings = await store.settings();
+        settings.defaultOpenMode = 'NEW_WINDOW';
+        await store.replaceSettings(settings);
+        assert.strictEqual(JSON.parse(await fs.readFile(store.file, 'utf8')).settings.defaultOpenMode, 'NEW_WINDOW');
+        assert.strictEqual((await store.settings()).defaultOpenMode, 'NEW_WINDOW');
+    });
+
     test('serializes concurrent project saves without losing projects', async () => {
         await Promise.all([
             service.save('One', path.join(temporary, 'one'), [], false),

@@ -9,6 +9,7 @@ import { ProjectDecorationProvider, ProjectDropController, ProjectNode, Projects
 let service: ProjectService;
 let tree: ProjectsTree;
 let lastProjectClick: { id: string; at: number } | undefined;
+let syncingSettings = false;
 const doubleClickInterval = 500;
 
 export function activateProjectManagement(context: vscode.ExtensionContext): void {
@@ -65,7 +66,23 @@ export function activateProjectManagement(context: vscode.ExtensionContext): voi
     }
     context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders(() => void run(trackCurrentWorkspace)));
     context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(() => void run(syncCurrentProjectContext)));
+    context.subscriptions.push(
+        vscode.workspace.onDidChangeConfiguration((event) => {
+            if (syncingSettings) {
+                return;
+            }
+            if (event.affectsConfiguration('projectAtlas.defaultOpenMode')) {
+                void run(syncDefaultOpenModeToStore);
+            }
+        }),
+    );
     void run(async () => {
+        syncingSettings = true;
+        try {
+            await syncDefaultOpenModeFromStore();
+        } finally {
+            syncingSettings = false;
+        }
         await syncMenuContext();
         await trackCurrentWorkspace();
     });
@@ -432,6 +449,31 @@ async function syncMenuContext(filter?: ListFilter, sort?: SortBy): Promise<void
 async function openDataFile(): Promise<void> {
     await vscode.window.showTextDocument(vscode.Uri.file(await service.store.ensureFile()));
 }
+
+async function syncDefaultOpenModeToStore(): Promise<void> {
+    const configuration = vscode.workspace.getConfiguration('projectAtlas');
+    const configuredMode = configuration.get<string>('defaultOpenMode');
+    if (configuredMode !== 'currentWindow' && configuredMode !== 'newWindow') {
+        return;
+    }
+    const settings = await service.store.settings(true);
+    const defaultOpenMode = configuredMode === 'newWindow' ? 'NEW_WINDOW' : 'CURRENT_WINDOW';
+    if (settings.defaultOpenMode === defaultOpenMode) {
+        return;
+    }
+    settings.defaultOpenMode = defaultOpenMode;
+    await service.store.replaceSettings(settings);
+}
+
+async function syncDefaultOpenModeFromStore(): Promise<void> {
+    const settings = await service.store.settings(true);
+    const defaultOpenMode = settings.defaultOpenMode === 'NEW_WINDOW' ? 'newWindow' : 'currentWindow';
+    const configuration = vscode.workspace.getConfiguration('projectAtlas');
+    if (configuration.get<string>('defaultOpenMode') !== defaultOpenMode) {
+        await configuration.update('defaultOpenMode', defaultOpenMode, vscode.ConfigurationTarget.Global);
+    }
+}
+
 async function trackCurrentWorkspace(): Promise<void> {
     for (const folder of vscode.workspace.workspaceFolders ?? []) {
         const project = await service.findByPath(folder.uri.fsPath);
