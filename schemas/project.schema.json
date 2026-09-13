@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Project Atlas Projects",
+  "description": "Project data and preferences shared by Project Atlas integrations.",
+  "type": "object",
+  "properties": {
+    "settings": {
+      "type": "object",
+      "properties": {
+        "defaultOpenMode": {
+          "type": "string",
+          "enum": ["CURRENT_WINDOW", "NEW_WINDOW"],
+          "enumDescriptions": ["Open projects in the current window.", "Open projects in a new window."],
+          "default": "CURRENT_WINDOW",
+          "description": "Default window used when opening a project."
+        }
+      },
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

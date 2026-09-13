@@ -173,10 +173,14 @@ suite('Extension', () => {
         });
     });
 
-    test('associates AI Code JSON schemas by file name', () => {
+    test('associates configuration JSON schemas by file name', () => {
         const extension = vscode.extensions.getExtension('billchiu.project-atlas-vs');
         assert.ok(extension);
         assert.deepStrictEqual(extension.packageJSON.contributes.jsonValidation, [
+            {
+                fileMatch: '**/.project-atlas/project.json',
+                url: './schemas/project.schema.json',
+            },
             {
                 fileMatch: '**/gitmessage.json',
                 url: './schemas/gitmessage.schema.json',

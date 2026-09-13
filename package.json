@@ -1518,6 +1518,10 @@
     },
     "jsonValidation": [
       {
+        "fileMatch": "**/.project-atlas/project.json",
+        "url": "./schemas/project.schema.json"
+      },
+      {
         "fileMatch": "**/gitmessage.json",
         "url": "./schemas/gitmessage.schema.json"
       },
