@@ -8,11 +8,12 @@ interface TagItem extends vscode.QuickPickItem {
 export function pickRepositoryTags(
     existingTags: readonly string[],
     initiallySelectedTags: readonly string[] = [],
+    title = 'Add Git Repository: Select Tags',
 ): Promise<string[] | undefined> {
     const picker = vscode.window.createQuickPick<TagItem>();
     let tags = cleanRepositoryTags(existingTags);
     let settled = false;
-    picker.title = 'Add Git Repository: Select Tags';
+    picker.title = title;
     picker.placeholder = 'Select existing tags or type a new tag; leave empty for no tags';
     picker.canSelectMany = true;
     picker.ignoreFocusOut = true;

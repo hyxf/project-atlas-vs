@@ -1,6 +1,7 @@
 import { promises as fs } from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import { pickRepositoryTags } from '../repositoryManagement/tagPicker';
 import { ListFilter, ProjectItem, SortBy, untaggedFilter } from './model';
 import { containsPath, duplicateDirectory, normalizePath, ProjectService } from './service';
 import { ProjectStore } from './store';
@@ -281,13 +282,13 @@ async function editTags(project?: ProjectItem): Promise<void> {
     if (!project) {
         return;
     }
-    const allTags = [...new Set((await service.projects()).flatMap((item) => item.tags))].sort();
-    const picked = await vscode.window.showQuickPick(
-        allTags.map((tag) => ({ label: tag, picked: project.tags.includes(tag) })),
-        { title: `Tags for ${project.name}`, canPickMany: true },
+    const tags = await pickRepositoryTags(
+        (await service.projects()).flatMap((item) => item.tags),
+        project.tags,
+        `Tags for ${project.name}`,
     );
-    if (picked) {
-        await service.update({ ...project, tags: picked.map((item) => item.label) });
+    if (tags !== undefined) {
+        await service.update({ ...project, tags });
         tree.refresh();
     }
 }
