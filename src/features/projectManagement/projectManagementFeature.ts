@@ -220,7 +220,7 @@ async function quickOpen(newWindow: boolean): Promise<void> {
 async function searchProjects(): Promise<void> {
     const picked = await pickProject(await service.projects(true), 'Search Projects');
     if (picked) {
-        await openProject(picked, false);
+        await openProject(picked);
     }
 }
 
@@ -265,7 +265,7 @@ async function openProjectOnDoubleClick(project: ProjectItem | undefined): Promi
     const now = Date.now();
     if (lastProjectClick?.id === project.id && now - lastProjectClick.at <= doubleClickInterval) {
         lastProjectClick = undefined;
-        await openProject(project, false);
+        await openProject(project);
         return;
     }
     lastProjectClick = { id: project.id, at: now };
