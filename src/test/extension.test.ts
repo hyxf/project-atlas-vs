@@ -139,13 +139,6 @@ suite('Extension', () => {
         assert.deepStrictEqual(extension.packageJSON.contributes.configuration, {
             title: 'Project Atlas',
             properties: {
-                'projectAtlas.defaultOpenMode': {
-                    type: 'string',
-                    enum: ['currentWindow', 'newWindow'],
-                    default: 'currentWindow',
-                    description: 'Default mode used when opening a saved project.',
-                    order: 1,
-                },
                 'projectAtlas.github.httpProxy': {
                     type: 'string',
                     default: 'http://127.0.0.1:1087',
