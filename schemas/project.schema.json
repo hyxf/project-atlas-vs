@@ -4,8 +4,53 @@
   "description": "Project data and preferences shared by Project Atlas integrations.",
   "type": "object",
   "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "default": 4,
+      "description": "Shared project data format version. The current version is 4."
+    },
+    "projects": {
+      "type": "array",
+      "description": "Saved local projects.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "description": "Stable unique project identifier shared between IDEs. Keep existing identifiers unchanged."
+          },
+          "name": {
+            "type": "string",
+            "description": "Project display name."
+          },
+          "path": {
+            "type": "string",
+            "description": "Local project directory path. Use an absolute path."
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            },
+            "description": "Tags used to group and filter the project."
+          },
+          "favorite": {
+            "type": "boolean",
+            "default": false,
+            "description": "Whether the project appears in Favorites."
+          },
+          "lastOpenedAt": {
+            "type": ["number", "null"],
+            "default": null,
+            "description": "Last opened time as milliseconds since the Unix epoch, or null if never opened."
+          }
+        },
+        "additionalProperties": true
+      }
+    },
     "settings": {
       "type": "object",
+      "description": "Project view and opening preferences shared between IDEs.",
       "properties": {
         "defaultOpenMode": {
           "type": "string",
@@ -13,6 +58,54 @@
           "enumDescriptions": ["Open projects in the current window.", "Open projects in a new window."],
           "default": "CURRENT_WINDOW",
           "description": "Default window used when opening a project."
+        },
+        "sortBy": {
+          "type": "string",
+          "enum": ["NAME", "PATH", "RECENT", "RECENTLY_OPENED"],
+          "enumDescriptions": [
+            "Sort by project name.",
+            "Sort by project path.",
+            "Sort by most recently opened.",
+            "Legacy value for sorting by most recently opened; treated as RECENT."
+          ],
+          "default": "NAME",
+          "description": "Project sort order."
+        },
+        "selectedFilter": {
+          "type": "string",
+          "enum": ["ALL", "RECENT", "FAVORITES", "TAG"],
+          "enumDescriptions": [
+            "Show all projects.",
+            "Show recently opened projects.",
+            "Show favorite projects.",
+            "Legacy value that selects the Tags view."
+          ],
+          "default": "ALL",
+          "description": "Selected project filter."
+        },
+        "selectedView": {
+          "type": "string",
+          "enum": ["LIST", "TAGS"],
+          "enumDescriptions": ["Display projects as a list.", "Group projects by tag."],
+          "default": "LIST",
+          "description": "Project tree view mode."
+        },
+        "selectedListFilter": {
+          "type": "string",
+          "enum": ["ALL", "RECENT", "FAVORITES"],
+          "enumDescriptions": ["Show all projects.", "Show recently opened projects.", "Show favorite projects."],
+          "default": "ALL",
+          "description": "Selected filter in the list view. Falls back to selectedFilter when omitted."
+        },
+        "tagProjectSpacing": {
+          "type": "number",
+          "default": 4,
+          "description": "Project spacing preference for the Tags view. Rounded and clamped to 0–32 when read."
+        },
+        "listProjectSpacing": {
+          "type": "number",
+          "default": 4,
+          "description": "Project spacing preference for the list view. Rounded and clamped to 0–32 when read."
         }
       },
       "additionalProperties": true

@@ -41,6 +41,8 @@ Project Atlas 用于集中保存、分类、搜索和快速打开本地项目。
 
 默认打开方式由 `~/.project-atlas/project.json` 中的 `settings.defaultOpenMode` 控制，请手动配置：`CURRENT_WINDOW` 为当前窗口，`NEW_WINDOW` 为新窗口。未配置时使用当前窗口。
 
+在 VS Code 中编辑 `.project-atlas/project.json` 时，自动提供项目字段、设置项的补全、悬停说明及枚举值提示，无需添加 `$schema`。保留原有的 `defaultOpenMode` 提示，并兼容旧版设置值及未知字段；智能提示不会修改已有数据。
+
 数据采用临时文件原子替换写入，并保留未知的顶层、设置及项目字段。JSON 损坏时不会覆盖原文件；修复后执行 **Refresh Projects**。**Remove from Project Atlas** 只删除记录，不影响磁盘内容；**Delete Project** 才会删除目录，并且拒绝删除文件系统根目录和当前打开的工作区。
 
 ## 本地开发
