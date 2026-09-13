@@ -2,6 +2,8 @@ import * as assert from 'assert';
 import { promises as fs } from 'fs';
 import * as os from 'os';
 import * as path from 'path';
+import net = require('net');
+import { mock } from 'node:test';
 import * as vscode from 'vscode';
 import { GitHubConfigurationStore } from '../features/githubRepositories/config';
 import { revealTopGithubRepositoryNode } from '../features/githubRepositories/githubRepositoriesFeature';
@@ -121,6 +123,8 @@ suite('GitHub Repositories', () => {
         const migrated = JSON.parse(await fs.readFile(file, 'utf8'));
         assert.strictEqual(migrated.httpProxy, 'http://127.0.0.1:1087');
         assert.strictEqual(Object.hasOwn(migrated, 'proxy'), false);
+        assert.strictEqual(Object.hasOwn(migrated, 'socketProxy'), false);
+        await store.ensureFile();
         assert.deepStrictEqual(await store.proxyConfiguration(), {
             enabled: true,
             url: 'http://127.0.0.1:1087',
@@ -150,6 +154,59 @@ suite('GitHub Repositories', () => {
             }),
         );
         await assert.rejects(() => store.configuration(), /HTTP or HTTPS proxy URL/);
+    });
+
+    test('checks proxy default ports without exposing credentials on failure', async () => {
+        const ports: number[] = [];
+        const connection = mock.method(net, 'createConnection', (options: net.NetConnectOpts) => {
+            assert.ok('port' in options);
+            ports.push(Number(options.port));
+            const socket = new net.Socket();
+            process.nextTick(() => socket.emit('error', new Error('Connection refused')));
+            return socket;
+        });
+        try {
+            const client = new GitHubApiClient(async () => {
+                assert.fail('An unavailable proxy must prevent the API request');
+            });
+            for (const [protocol, port] of [
+                ['http', 80],
+                ['https', 443],
+                ['socks', 1080],
+                ['socks4', 1080],
+                ['socks4a', 1080],
+                ['socks5', 1080],
+                ['socks5h', 1080],
+            ] as const) {
+                for (const explicitPort of ['', ':12345']) {
+                    const url = `${protocol}://audit-user:audit-password@127.0.0.1${explicitPort}`;
+                    const expectedPort = explicitPort ? 12345 : port;
+                    await assert.rejects(
+                        () =>
+                            client.repositories({
+                                token: 'secret',
+                                user: 'octocat',
+                                proxy: {
+                                    enabled: true,
+                                    ...(protocol.startsWith('socks') ? { socketUrl: url } : { url }),
+                                },
+                            }),
+                        (error: Error) => {
+                            assert.strictEqual(
+                                error.message,
+                                `GitHub proxy is unavailable at ${protocol}://127.0.0.1:${expectedPort}.`,
+                            );
+                            assert.ok(!error.message.includes('audit-user'));
+                            assert.ok(!error.message.includes('audit-password'));
+                            return true;
+                        },
+                    );
+                    assert.strictEqual(ports.at(-1), expectedPort);
+                }
+            }
+        } finally {
+            connection.mock.restore();
+        }
     });
 
     test('loads every page using the authenticated users default repository listing', async () => {

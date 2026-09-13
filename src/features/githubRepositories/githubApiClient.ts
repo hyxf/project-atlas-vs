@@ -47,12 +47,20 @@ export class GitHubApiClient {
 
 function verifyProxy(proxy: string): Promise<void> {
     const url = new URL(proxy);
-    const port = url.port ? Number(url.port) : url.protocol === 'https:' ? 443 : 80;
+    const port = url.port
+        ? Number(url.port)
+        : url.protocol.startsWith('socks')
+          ? 1080
+          : url.protocol === 'https:'
+            ? 443
+            : 80;
     return new Promise((resolve, reject) => {
         const socket = net.createConnection({ host: url.hostname, port });
         const fail = (error: Error) => {
             socket.destroy();
-            reject(new Error(`GitHub proxy is unavailable at ${proxy}.`, { cause: error }));
+            reject(
+                new Error(`GitHub proxy is unavailable at ${url.protocol}//${url.hostname}:${port}.`, { cause: error }),
+            );
         };
         socket.once('connect', () => {
             socket.end();

@@ -151,10 +151,6 @@ export class GitHubConfigurationStore {
                 delete next.proxy;
                 changed = true;
             }
-            if (next.socketProxy === undefined) {
-                next.socketProxy = defaultSocketProxy;
-                changed = true;
-            }
             if (next.repositories === undefined) {
                 next.repositories = [];
                 changed = true;
