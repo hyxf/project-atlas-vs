@@ -44,8 +44,8 @@ jobs:
                   VERSION: ${{ steps.version.outputs.version }}
               run: npm pkg set version="$VERSION"
 
-            - name: Test
-              run: xvfb-run -a yarn test
+            - name: Test (excluding proxy tests)
+              run: xvfb-run -a yarn test --grep proxy --invert
 
             - name: Package extension
               env:

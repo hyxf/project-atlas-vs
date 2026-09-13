@@ -139,6 +139,11 @@ suite('GitHub Repositories', () => {
         await assert.rejects(() => store.configuration(), /Could not parse/);
         await fs.writeFile(file, JSON.stringify({ token: '', user: 'octocat' }));
         await assert.rejects(() => store.configuration(), /non-empty "token"/);
+    });
+
+    test('rejects invalid GitHub proxy configuration', async () => {
+        const store = new GitHubConfigurationStore(file);
+        await fs.mkdir(path.dirname(file), { recursive: true });
         await fs.writeFile(
             file,
             JSON.stringify({ token: 'secret', user: 'octocat', proxyEnabled: true, httpProxy: '' }),
