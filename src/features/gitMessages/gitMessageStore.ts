@@ -12,11 +12,21 @@ export const gitMessagesFile = path.join(os.homedir(), '.project-atlas', 'gitmes
 
 export async function ensureGitMessagesFile(file = gitMessagesFile): Promise<void> {
     await fs.mkdir(path.dirname(file), { recursive: true });
-    await fs.writeFile(file, '{\n  "messages": []\n}\n', { flag: 'wx' }).catch((error: NodeJS.ErrnoException) => {
-        if (error.code !== 'EEXIST') {
-            throw error;
-        }
-    });
+    const messages: GitMessage[] = [
+        { type: 'feat', subject: 'Add new feature' },
+        { type: 'fix', subject: 'Fix bug' },
+        { type: 'docs', subject: 'Update documentation' },
+        { type: 'refactor', subject: 'Refactor code' },
+        { type: 'test', subject: 'Add tests' },
+        { type: 'chore', subject: 'Update dependencies' },
+    ];
+    await fs
+        .writeFile(file, `${JSON.stringify({ messages }, null, 2)}\n`, { flag: 'wx' })
+        .catch((error: NodeJS.ErrnoException) => {
+            if (error.code !== 'EEXIST') {
+                throw error;
+            }
+        });
 }
 
 export async function readGitMessages(file = gitMessagesFile): Promise<GitMessage[]> {

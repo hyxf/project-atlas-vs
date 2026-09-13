@@ -39,6 +39,8 @@ Project Atlas 用于集中保存、分类、搜索和快速打开本地项目。
 
 ## 设置与数据安全
 
+扩展启动时会在 `~/.project-atlas/` 下自动创建缺失的 `commoncmd.json` 和 `gitmessage.json`，分别包含常用 Git 查询命令和 Git 提交消息模板。已有文件保持原样，包括空文件或损坏的 JSON。可通过命令面板中的 **Project Atlas: Edit Common Commands** 和 **Project Atlas: Edit Git Messages** 编辑默认数据。
+
 双击项目和搜索后打开项目时，打开方式由 `~/.project-atlas/project.json` 中的 `settings.defaultOpenMode` 控制，请手动配置：`CURRENT_WINDOW` 为当前窗口，`NEW_WINDOW` 为新窗口。未配置时使用当前窗口。
 
 在 VS Code 中编辑 `.project-atlas/project.json` 时，自动提供项目字段、设置项的补全、悬停说明及枚举值提示，无需添加 `$schema`。保留原有的 `defaultOpenMode` 提示，并兼容旧版设置值及未知字段；智能提示不会修改已有数据。

@@ -14,11 +14,18 @@ let writeQueue: Promise<void> = Promise.resolve();
 
 export async function ensureCommonCommandsFile(file = commonCommandsFile): Promise<void> {
     await fs.mkdir(path.dirname(file), { recursive: true });
-    await fs.writeFile(file, '{\n  "commands": []\n}\n', { flag: 'wx' }).catch((error: NodeJS.ErrnoException) => {
-        if (error.code !== 'EEXIST') {
-            throw error;
-        }
-    });
+    const commands: CommonCommand[] = [
+        { command: 'git status', description: 'Show working tree status' },
+        { command: 'git diff', description: 'Show unstaged changes' },
+        { command: 'git log --oneline -10', description: 'Show the latest 10 commits' },
+    ];
+    await fs
+        .writeFile(file, `${JSON.stringify({ commands }, null, 2)}\n`, { flag: 'wx' })
+        .catch((error: NodeJS.ErrnoException) => {
+            if (error.code !== 'EEXIST') {
+                throw error;
+            }
+        });
 }
 
 export async function readCommonCommands(file = commonCommandsFile): Promise<CommonCommand[]> {

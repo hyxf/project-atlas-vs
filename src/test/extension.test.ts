@@ -1,5 +1,41 @@
 import * as assert from 'assert';
 import * as vscode from 'vscode';
+import { promises as fs } from 'fs';
+import * as os from 'os';
+import * as path from 'path';
+import { ensureCommonCommandsFile } from '../features/commonCommands/commonCommandStore';
+import { ensureGitMessagesFile } from '../features/gitMessages/gitMessageStore';
+
+suite('Default configuration data safety', () => {
+    let temporary: string;
+    setup(async () => {
+        temporary = await fs.mkdtemp(path.join(os.tmpdir(), 'project-atlas-default-config-test-'));
+    });
+    teardown(async () => fs.rm(temporary, { recursive: true, force: true }));
+
+    for (const [name, initialize, key] of [
+        ['commoncmd.json', ensureCommonCommandsFile, 'commands'],
+        ['gitmessage.json', ensureGitMessagesFile, 'messages'],
+    ] as const) {
+        test(`${name} preserves existing content, including empty or corrupt files`, async () => {
+            const file = path.join(temporary, name);
+            for (const contents of ['', '{invalid json', JSON.stringify({ [key]: [], future: true })]) {
+                await fs.writeFile(file, contents);
+                await initialize(file);
+                assert.strictEqual(await fs.readFile(file, 'utf8'), contents);
+            }
+        });
+
+        test(`${name} supports repeated and concurrent initialization`, async () => {
+            const file = path.join(temporary, name);
+            await Promise.all([initialize(file), initialize(file)]);
+            const contents = await fs.readFile(file, 'utf8');
+            assert.ok(JSON.parse(contents)[key].length > 0);
+            await initialize(file);
+            assert.strictEqual(await fs.readFile(file, 'utf8'), contents);
+        });
+    }
+});
 
 suite('Extension', () => {
     test('registers contributed commands', async () => {

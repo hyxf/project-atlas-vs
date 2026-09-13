@@ -26,7 +26,11 @@ suite('Common Commands', () => {
     test('initializes a missing commands file', async () => {
         const file = path.join(temporary, 'nested', 'commoncmd.json');
         await ensureCommonCommandsFile(file);
-        assert.deepStrictEqual(await readCommonCommands(file), []);
+        assert.deepStrictEqual(await readCommonCommands(file), [
+            { command: 'git status', description: 'Show working tree status' },
+            { command: 'git diff', description: 'Show unstaged changes' },
+            { command: 'git log --oneline -10', description: 'Show the latest 10 commits' },
+        ]);
     });
 
     test('atomically adds a command and preserves unknown fields', async () => {

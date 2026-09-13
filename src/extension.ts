@@ -13,8 +13,11 @@ import { registerPackageVersionCommand } from './features/packageVersion/package
 import { activateAICodeContext } from './features/aicodeContext/aicodeContextFeature';
 import { activateRepositoryManagement } from './features/repositoryManagement/repositoryManagementFeature';
 import { activateGitHubRepositories } from './features/githubRepositories/githubRepositoriesFeature';
+import { ensureCommonCommandsFile } from './features/commonCommands/commonCommandStore';
+import { ensureGitMessagesFile } from './features/gitMessages/gitMessageStore';
 
-export function activate(context: vscode.ExtensionContext): void {
+export async function activate(context: vscode.ExtensionContext): Promise<void> {
+    await Promise.all([run(() => ensureCommonCommandsFile()), run(() => ensureGitMessagesFile())]);
     activateProjectManagement(context);
     registerChangelogCommands(context);
     registerGitRemoteCommands(context);
