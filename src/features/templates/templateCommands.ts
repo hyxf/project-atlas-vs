@@ -25,9 +25,26 @@ export async function editCommonCommandItem(
     const value = creating ? { command: '', description: '' } : item.snapshot.entries[item.index]!;
     await form({
         title: creating ? 'Add Common Command' : 'Edit Common Command',
+        description: 'Keep a command ready to reuse from your workspace.',
         fields: [
-            { name: 'command', label: 'Command', value: value.command, required: true, multiline: true },
-            { name: 'description', label: 'Description', value: value.description ?? '', multiline: true },
+            {
+                name: 'command',
+                label: 'Command',
+                value: value.command,
+                required: true,
+                multiline: true,
+                monospace: true,
+                placeholder: 'git status',
+                hint: 'Enter a command or a multi-line script.',
+            },
+            {
+                name: 'description',
+                label: 'Description',
+                value: value.description ?? '',
+                multiline: true,
+                placeholder: 'Show the working tree status',
+                hint: 'A short note to help you find this command later.',
+            },
         ],
         save: async (values) => {
             assertSaved(item.file);
@@ -53,10 +70,34 @@ export async function editGitMessageItem(
     }
     await form({
         title: creating ? 'Add Git Message' : 'Edit Git Message',
+        description: 'Create a reusable commit message for Source Control.',
         fields: [
-            { name: 'type', label: 'Type', value: value.type, required: true, options: types },
-            { name: 'scope', label: 'Scope', value: value.scope ?? '' },
-            { name: 'subject', label: 'Subject', value: value.subject, required: true, multiline: true },
+            {
+                name: 'type',
+                label: 'Type',
+                value: value.type,
+                required: true,
+                options: types,
+                halfWidth: true,
+                hint: 'Choose the kind of change.',
+            },
+            {
+                name: 'scope',
+                label: 'Scope',
+                value: value.scope ?? '',
+                halfWidth: true,
+                placeholder: 'e.g. ui, api, auth',
+                hint: 'The area affected by this change.',
+            },
+            {
+                name: 'subject',
+                label: 'Subject',
+                value: value.subject,
+                required: true,
+                multiline: true,
+                placeholder: 'Describe the change',
+                hint: 'Write the message without the type or scope prefix.',
+            },
         ],
         save: async (values) => {
             assertSaved(item.file);
