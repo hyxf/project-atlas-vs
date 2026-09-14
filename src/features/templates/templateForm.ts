@@ -7,6 +7,7 @@ export interface TemplateFormField {
     value: string;
     required?: boolean;
     multiline?: boolean;
+    options?: string[];
 }
 
 export interface TemplateFormOptions {
@@ -36,6 +37,9 @@ export function validateFormValues(fields: TemplateFormField[], input: unknown):
         }
         if (field.required && !value.trim()) {
             throw new Error(`${field.label} is required.`);
+        }
+        if (field.options && value && !field.options.includes(value)) {
+            throw new Error(`Invalid ${field.label}.`);
         }
         values[field.name] = value;
     }
@@ -115,9 +119,16 @@ export function renderTemplateForm(options: TemplateFormOptions): string {
     const fields = options.fields
         .map((field) => {
             const attributes = `id="${escapeHtml(field.name)}" name="${escapeHtml(field.name)}" ${field.required ? 'required' : ''}`;
-            const input = field.multiline
-                ? `<textarea ${attributes} rows="3">${escapeHtml(field.value)}</textarea>`
-                : `<input ${attributes} value="${escapeHtml(field.value)}">`;
+            const input = field.options
+                ? `<select ${attributes}><option value="" disabled${field.value === '' ? ' selected' : ''}>Select ${escapeHtml(field.label)}</option>${field.options
+                      .map(
+                          (option) =>
+                              `<option value="${escapeHtml(option)}"${option === field.value ? ' selected' : ''}>${escapeHtml(option)}</option>`,
+                      )
+                      .join('')}</select>`
+                : field.multiline
+                  ? `<textarea ${attributes} rows="3">${escapeHtml(field.value)}</textarea>`
+                  : `<input ${attributes} value="${escapeHtml(field.value)}">`;
             return `<label for="${escapeHtml(field.name)}">${escapeHtml(field.label)}${field.required ? '' : ' (optional)'}</label>${input}`;
         })
         .join('\n');
@@ -130,7 +141,8 @@ export function renderTemplateForm(options: TemplateFormOptions): string {
 body { color: var(--vscode-foreground); background: var(--vscode-editor-background); font-family: var(--vscode-font-family); padding: 24px; }
 main { max-width: 640px; margin: 0 auto; } h1 { font-size: 20px; font-weight: 500; }
 label { display: block; margin: 20px 0 8px; }
-input, textarea { box-sizing: border-box; width: 100%; padding: 8px; color: var(--vscode-input-foreground); background: var(--vscode-input-background); border: 1px solid var(--vscode-input-border, transparent); font: inherit; }
+input, textarea, select { box-sizing: border-box; width: 100%; padding: 8px; color: var(--vscode-input-foreground); background: var(--vscode-input-background); border: 1px solid var(--vscode-input-border, transparent); font: inherit; }
+select { color: var(--vscode-dropdown-foreground); background: var(--vscode-dropdown-background); border-color: var(--vscode-dropdown-border, transparent); }
 textarea { resize: vertical; } :focus-visible { outline: 1px solid var(--vscode-focusBorder); outline-offset: 2px; }
 .actions { display: flex; gap: 10px; margin-top: 24px; } button { cursor: pointer; padding: 7px 18px; border: 1px solid transparent; font: inherit; background: var(--vscode-button-background); color: var(--vscode-button-foreground); }
 button:hover { background: var(--vscode-button-hoverBackground); } button.secondary { background: var(--vscode-button-secondaryBackground); color: var(--vscode-button-secondaryForeground); }
@@ -166,6 +178,6 @@ document.addEventListener('keydown', (event) => {
 window.addEventListener('message', ({ data }) => {
     if (data.type === 'error') { setSaving(false); error.textContent = data.message; error.hidden = false; error.focus(); }
 });
-form.querySelector('input, textarea').focus();
+form.querySelector('input, textarea, select').focus();
 </script></body></html>`;
 }

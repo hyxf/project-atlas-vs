@@ -47,10 +47,14 @@ export async function editGitMessageItem(
     creating = false,
 ): Promise<void> {
     const value = creating ? { type: '', scope: '', subject: '' } : item.snapshot.entries[item.index]!;
+    const types = ['feat', 'fix', 'docs', 'style', 'refactor', 'perf', 'test', 'build', 'ci', 'chore', 'revert'];
+    if (value.type && !types.includes(value.type)) {
+        types.push(value.type);
+    }
     await form({
         title: creating ? 'Add Git Message' : 'Edit Git Message',
         fields: [
-            { name: 'type', label: 'Type', value: value.type, required: true },
+            { name: 'type', label: 'Type', value: value.type, required: true, options: types },
             { name: 'scope', label: 'Scope', value: value.scope ?? '' },
             { name: 'subject', label: 'Subject', value: value.subject, required: true, multiline: true },
         ],
