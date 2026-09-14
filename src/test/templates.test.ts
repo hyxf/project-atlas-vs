@@ -172,7 +172,20 @@ suite('Template views', () => {
             commands.map((item) => item.label),
             ['git status', 'git diff'],
         );
-        assert.strictEqual(commands[0]?.description, 'Working tree');
+        assert.strictEqual(commands[0]?.description, undefined);
+        const provider = new TemplatesTreeProvider(() => loadCommonCommandItems(commandsFile));
+        try {
+            const descriptions = await provider.getChildren(commands[0]);
+            assert.deepStrictEqual(
+                descriptions.map((item) => item.label),
+                ['Working tree'],
+            );
+            assert.strictEqual(descriptions[0]?.contextValue, undefined);
+            assert.deepStrictEqual(await provider.getChildren(descriptions[0]), []);
+            assert.deepStrictEqual(await provider.getChildren(commands[1]), []);
+        } finally {
+            provider.dispose();
+        }
         assert.deepStrictEqual(
             (await loadGitMessageItems(messagesFile)).map((item) => item.label),
             ['fix(ui): Refresh tree', 'docs: Update README'],

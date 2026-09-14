@@ -6,6 +6,8 @@ import { TemplateSnapshot } from './templateStore';
 import { registerTemplateCommands } from './templateCommands';
 
 export class TemplateItem<T> extends vscode.TreeItem {
+    readonly children: vscode.TreeItem[] = [];
+
     constructor(
         label: string,
         readonly snapshot: TemplateSnapshot<T>,
@@ -34,7 +36,7 @@ export class TemplatesTreeProvider implements vscode.TreeDataProvider<vscode.Tre
 
     async getChildren(element?: vscode.TreeItem): Promise<vscode.TreeItem[]> {
         if (element) {
-            return [];
+            return element instanceof TemplateItem ? element.children : [];
         }
         try {
             return await this.loadItems();
@@ -57,7 +59,12 @@ export async function loadCommonCommandItems(file = commonCommandsFile): Promise
     return snapshot.entries.map((command, index) => {
         const item = new TemplateItem<CommonCommand>(command.command, snapshot, index, file, 'commonCommand');
         if (command.description) {
-            item.description = command.description;
+            item.collapsibleState = vscode.TreeItemCollapsibleState.Expanded;
+            for (const line of command.description.split(/\r?\n/)) {
+                const description = new vscode.TreeItem(line || ' ');
+                description.tooltip = command.description;
+                item.children.push(description);
+            }
         }
         item.tooltip = [command.command, command.description].filter(Boolean).join('\n\n');
         item.iconPath = new vscode.ThemeIcon('terminal');
