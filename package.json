@@ -804,12 +804,12 @@
       ],
       "view/title": [
         {
-          "command": "project-atlas.editCommonCommands",
+          "command": "project-atlas.addCommonCommand",
           "when": "view == projectAtlas.commonCommands",
           "group": "navigation@1"
         },
         {
-          "command": "project-atlas.addCommonCommand",
+          "command": "project-atlas.editCommonCommands",
           "when": "view == projectAtlas.commonCommands",
           "group": "navigation@2"
         },
@@ -819,12 +819,12 @@
           "group": "navigation@3"
         },
         {
-          "command": "project-atlas.editGitMessages",
+          "command": "project-atlas.addGitMessage",
           "when": "view == projectAtlas.gitMessages",
           "group": "navigation@1"
         },
         {
-          "command": "project-atlas.addGitMessage",
+          "command": "project-atlas.editGitMessages",
           "when": "view == projectAtlas.gitMessages",
           "group": "navigation@2"
         },
