@@ -483,9 +483,14 @@ suite('Extension', () => {
             titleMenu.filter(({ when }) => when === 'view == projectAtlas.repos'),
             [
                 {
-                    command: 'project-atlas.refreshRepositories',
+                    command: 'project-atlas.collapseRepositories',
                     when: 'view == projectAtlas.repos',
                     group: 'navigation@3',
+                },
+                {
+                    command: 'project-atlas.refreshRepositories',
+                    when: 'view == projectAtlas.repos',
+                    group: 'navigation@4',
                 },
                 {
                     command: 'project-atlas.openRepositoryDataFile',

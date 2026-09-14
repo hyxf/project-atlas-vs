@@ -46,6 +46,12 @@ export function activateRepositoryManagement(context: vscode.ExtensionContext): 
             }),
         ),
         vscode.commands.registerCommand('project-atlas.refreshRepositories', () => tree.refresh()),
+        vscode.commands.registerCommand('project-atlas.collapseRepositories', () =>
+            run(async () => {
+                await vscode.commands.executeCommand('projectAtlas.repos.focus');
+                await vscode.commands.executeCommand('workbench.actions.treeView.projectAtlas.repos.collapseAll');
+            }),
+        ),
         ...(['TAGS', 'GROUPS', 'HOSTS'] as const).map((mode) =>
             vscode.commands.registerCommand(`project-atlas.repositoryView${mode}`, () =>
                 run(async () => {
