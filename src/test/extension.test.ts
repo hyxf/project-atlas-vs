@@ -249,12 +249,17 @@ suite('Extension', () => {
             viewsWelcome: Array<{ view: string; contents: string; when?: string }>;
         };
         assert.deepStrictEqual(contributes.viewsContainers.activitybar, [
+            { id: 'projectAtlasTemplates', title: 'Project Atlas: Templates', icon: 'resources/templates.svg' },
             { id: 'aicode', title: 'Project Atlas: AICode', icon: 'resources/aicode-context.svg' },
             { id: 'projectAtlas', title: 'Project Atlas', icon: 'resources/project-atlas.svg' },
         ]);
         assert.deepStrictEqual(contributes.views.aicode, [
             { id: 'aicode.contextFiles', name: 'Context Files' },
             { id: 'aicode.compareResults', name: 'Compare Results' },
+        ]);
+        assert.deepStrictEqual(contributes.views.projectAtlasTemplates, [
+            { id: 'projectAtlas.commonCommands', name: 'Common Commands' },
+            { id: 'projectAtlas.gitMessages', name: 'Git Messages' },
         ]);
         assert.deepStrictEqual(contributes.views.projectAtlas, [
             { id: 'projectAtlas.projects', name: 'Projects', icon: 'resources/project-atlas.svg' },

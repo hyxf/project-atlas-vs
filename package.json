@@ -201,7 +201,20 @@
       {
         "command": "project-atlas.editGitMessages",
         "title": "Edit Git Messages",
-        "category": "Project Atlas"
+        "category": "Project Atlas",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "project-atlas.refreshGitMessages",
+        "title": "Refresh Git Messages",
+        "category": "Project Atlas",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "project-atlas.refreshCommonCommands",
+        "title": "Refresh Common Commands",
+        "category": "Project Atlas",
+        "icon": "$(refresh)"
       },
       {
         "command": "project-atlas.selectGitMessage",
@@ -217,7 +230,8 @@
       {
         "command": "project-atlas.editCommonCommands",
         "title": "Edit Common Commands",
-        "category": "Project Atlas"
+        "category": "Project Atlas",
+        "icon": "$(edit)"
       },
       {
         "command": "project-atlas.insertCommonCommand",
@@ -586,6 +600,11 @@
     "viewsContainers": {
       "activitybar": [
         {
+          "id": "projectAtlasTemplates",
+          "title": "Project Atlas: Templates",
+          "icon": "resources/templates.svg"
+        },
+        {
           "id": "aicode",
           "title": "Project Atlas: AICode",
           "icon": "resources/aicode-context.svg"
@@ -598,6 +617,16 @@
       ]
     },
     "views": {
+      "projectAtlasTemplates": [
+        {
+          "id": "projectAtlas.commonCommands",
+          "name": "Common Commands"
+        },
+        {
+          "id": "projectAtlas.gitMessages",
+          "name": "Git Messages"
+        }
+      ],
       "aicode": [
         {
           "id": "aicode.contextFiles",
@@ -625,6 +654,14 @@
       ]
     },
     "viewsWelcome": [
+      {
+        "view": "projectAtlas.commonCommands",
+        "contents": "No common commands configured.\n[Edit commoncmd.json](command:project-atlas.editCommonCommands)"
+      },
+      {
+        "view": "projectAtlas.gitMessages",
+        "contents": "No Git messages configured.\n[Edit gitmessage.json](command:project-atlas.editGitMessages)"
+      },
       {
         "view": "aicode.compareResults",
         "contents": "No comparison results.\n[Compare Context Branches](command:aicode.compareBranches)\n[Compare Without Fetch](command:aicode.compareBranchesWithoutFetch)",
@@ -730,6 +767,26 @@
         }
       ],
       "view/title": [
+        {
+          "command": "project-atlas.editCommonCommands",
+          "when": "view == projectAtlas.commonCommands",
+          "group": "navigation@1"
+        },
+        {
+          "command": "project-atlas.refreshCommonCommands",
+          "when": "view == projectAtlas.commonCommands",
+          "group": "navigation@2"
+        },
+        {
+          "command": "project-atlas.editGitMessages",
+          "when": "view == projectAtlas.gitMessages",
+          "group": "navigation@1"
+        },
+        {
+          "command": "project-atlas.refreshGitMessages",
+          "when": "view == projectAtlas.gitMessages",
+          "group": "navigation@2"
+        },
         {
           "command": "aicode.selectGroup",
           "when": "view == aicode.contextFiles",
@@ -968,6 +1025,14 @@
         }
       ],
       "commandPalette": [
+        {
+          "command": "project-atlas.refreshCommonCommands",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.refreshGitMessages",
+          "when": "false"
+        },
         {
           "command": "aicode.createOrUpdateChangelog",
           "when": "false"
