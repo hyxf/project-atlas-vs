@@ -3,6 +3,7 @@ import { promises as fs } from 'fs';
 import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import { editProjectForm } from '../features/projectManagement/projectForm';
 import { containsPath, duplicateDirectory, ProjectService } from '../features/projectManagement/service';
 import { ProjectStore } from '../features/projectManagement/store';
 import { parseUriList, ProjectsTree } from '../features/projectManagement/tree';
@@ -17,6 +18,38 @@ suite('Project Management', () => {
         service = new ProjectService(store);
     });
     teardown(async () => fs.rm(temporary, { recursive: true, force: true }));
+
+    test('edits project details through the shared HTML form and preserves project metadata', async () => {
+        const project = await service.save('Atlas', temporary, ['tools'], true);
+        project.lastOpenedAt = 123;
+        await service.update(project);
+        await editProjectForm(
+            project,
+            async (values) => service.updateDetails(project.id, values),
+            async (options) => {
+                assert.strictEqual(options.title, 'Edit Project');
+                assert.strictEqual(options.fields.find((field) => field.name === 'favorite')?.value, 'true');
+                await options.save({ name: '  Renamed  ', tags: ' work, tools\nwork\n ', favorite: 'false' });
+            },
+        );
+        const updated = (await service.projects(true))[0]!;
+        assert.strictEqual(updated.name, 'Renamed');
+        assert.deepStrictEqual(updated.tags, ['tools', 'work']);
+        assert.strictEqual(updated.favorite, false);
+        assert.strictEqual(updated.path, project.path);
+        assert.strictEqual(updated.id, project.id);
+        assert.strictEqual(updated.lastOpenedAt, 123);
+    });
+
+    test('cancelling the add form does not save a project', async () => {
+        await editProjectForm(
+            { id: '', name: 'Atlas', path: temporary, tags: [], favorite: false },
+            async () => assert.fail('Cancel must not save'),
+            async (options) => {
+                assert.strictEqual(options.title, 'Add Project');
+            },
+        );
+    });
 
     test('saves, normalizes, updates, searches, and sorts projects', async () => {
         const folder = path.join(temporary, 'project');

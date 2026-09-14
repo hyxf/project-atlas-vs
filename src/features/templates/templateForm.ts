@@ -7,6 +7,8 @@ export interface TemplateFormField {
     value: string;
     required?: boolean;
     multiline?: boolean;
+    checkbox?: boolean;
+    readOnly?: boolean;
     options?: string[];
     placeholder?: string;
     hint?: string;
@@ -37,8 +39,11 @@ export function validateFormValues(fields: TemplateFormField[], input: unknown):
     }
     const values: Record<string, string> = {};
     for (const field of fields) {
-        const value = (input as Record<string, unknown>)[field.name];
+        const value = field.readOnly ? field.value : (input as Record<string, unknown>)[field.name];
         if (typeof value !== 'string') {
+            throw new Error(`Invalid ${field.label}.`);
+        }
+        if (field.checkbox && value !== 'true' && value !== 'false') {
             throw new Error(`Invalid ${field.label}.`);
         }
         if (field.required && !value.trim()) {
@@ -64,7 +69,7 @@ export const showTemplateForm: TemplateForm = async (options) => {
         let saving = false;
         let closed = false;
         const messages = panel.webview.onDidReceiveMessage(async (message: unknown) => {
-            if (!message || typeof message !== 'object' || saving || closed) {
+            if (!message || typeof message !== 'object' || closed) {
                 return;
             }
             const request = message as { type?: unknown; values?: unknown };
@@ -72,7 +77,7 @@ export const showTemplateForm: TemplateForm = async (options) => {
                 panel.dispose();
                 return;
             }
-            if (request.type !== 'save') {
+            if (request.type !== 'save' || saving) {
                 return;
             }
             saving = true;
@@ -124,7 +129,10 @@ export function renderTemplateForm(options: TemplateFormOptions): string {
     const nonce = randomBytes(16).toString('hex');
     const fields = options.fields
         .map((field) => {
-            const attributes = `id="${escapeHtml(field.name)}" name="${escapeHtml(field.name)}" placeholder="${escapeHtml(field.placeholder ?? '')}" ${field.required ? 'required' : ''}${field.hint ? ` aria-describedby="${escapeHtml(field.name)}-hint"` : ''}${field.monospace ? ' class="code-input" spellcheck="false"' : ''}`;
+            const attributes = `id="${escapeHtml(field.name)}" name="${escapeHtml(field.name)}" placeholder="${escapeHtml(field.placeholder ?? '')}" ${field.required ? 'required' : ''}${field.readOnly ? ' readonly' : ''}${field.hint ? ` aria-describedby="${escapeHtml(field.name)}-hint"` : ''}${field.monospace ? ' class="code-input" spellcheck="false"' : ''}`;
+            if (field.checkbox) {
+                return `<div class="field"><label class="checkbox-field" for="${escapeHtml(field.name)}"><input type="checkbox" ${attributes} value="true"${field.value === 'true' ? ' checked' : ''}>${escapeHtml(field.label)}</label>${field.hint ? `<p class="field-hint" id="${escapeHtml(field.name)}-hint">${escapeHtml(field.hint)}</p>` : ''}</div>`;
+            }
             const input = field.options
                 ? `<select ${attributes}><option value="" disabled${field.value === '' ? ' selected' : ''}>Select ${escapeHtml(field.label)}</option>${field.options
                       .map(
@@ -135,7 +143,7 @@ export function renderTemplateForm(options: TemplateFormOptions): string {
                 : field.multiline
                   ? `<textarea ${attributes} rows="${field.monospace ? 5 : 3}">${escapeHtml(field.value)}</textarea>`
                   : `<input ${attributes} value="${escapeHtml(field.value)}">`;
-            return `<div class="field${field.halfWidth ? ' half-width' : ''}"><label for="${escapeHtml(field.name)}">${escapeHtml(field.label)}<span class="field-status">${field.required ? 'Required' : 'Optional'}</span></label>${input}${field.hint ? `<p class="field-hint" id="${escapeHtml(field.name)}-hint">${escapeHtml(field.hint)}</p>` : ''}</div>`;
+            return `<div class="field${field.halfWidth ? ' half-width' : ''}"><label for="${escapeHtml(field.name)}">${escapeHtml(field.label)}<span class="field-status">${field.readOnly ? 'Read only' : field.required ? 'Required' : 'Optional'}</span></label>${input}${field.hint ? `<p class="field-hint" id="${escapeHtml(field.name)}-hint">${escapeHtml(field.hint)}</p>` : ''}</div>`;
         })
         .join('\n');
     return `<!DOCTYPE html>
@@ -160,6 +168,8 @@ label { display: flex; align-items: baseline; gap: 10px; margin: 0 0 8px; font-w
 .field-hint { margin: 7px 0 0; font-size: 12px; color: var(--vscode-descriptionForeground); }
 input, textarea, select { width: 100%; min-height: 36px; padding: 8px 10px; border-radius: 4px; color: var(--vscode-input-foreground); background: var(--vscode-input-background); border: 1px solid var(--vscode-input-border, var(--vscode-contrastBorder, var(--vscode-descriptionForeground, #808080))); font: inherit; }
 input::placeholder, textarea::placeholder { color: var(--vscode-input-placeholderForeground); }
+.checkbox-field { align-items: center; margin: 0; cursor: pointer; }
+input[type="checkbox"] { width: 16px; height: 16px; min-height: 0; margin: 0; padding: 0; accent-color: var(--vscode-button-background); cursor: pointer; }
 .code-input { font-family: var(--vscode-editor-font-family, monospace); font-size: var(--vscode-editor-font-size, 13px); line-height: 1.6; }
 select { color: var(--vscode-dropdown-foreground); background: var(--vscode-dropdown-background); border-color: var(--vscode-dropdown-border, var(--vscode-input-border, var(--vscode-contrastBorder, var(--vscode-descriptionForeground, #808080)))); }
 textarea { display: block; resize: vertical; min-height: 90px; } :focus-visible { outline: 1px solid var(--vscode-focusBorder); outline-offset: 2px; }
@@ -181,22 +191,26 @@ const error = document.getElementById('error');
 let saving = false;
 function setSaving(value) {
     saving = value;
-    for (const element of form.elements) { element.disabled = value; }
+    for (const element of form.elements) { element.disabled = value && element.id !== 'cancel'; }
     document.getElementById('save').textContent = value ? 'Saving…' : 'Save';
+    document.getElementById('cancel').textContent = value ? 'Close' : 'Cancel';
 }
 form.addEventListener('submit', (event) => {
     event.preventDefault();
     if (saving) return;
     const values = Object.fromEntries(new FormData(form));
+    for (const checkbox of form.querySelectorAll('input[type="checkbox"]')) {
+        values[checkbox.name] = String(checkbox.checked);
+    }
     error.hidden = true;
     setSaving(true);
     vscode.postMessage({ type: 'save', values });
 });
 document.getElementById('cancel').addEventListener('click', () => vscode.postMessage({ type: 'cancel' }));
 document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') { event.preventDefault(); vscode.postMessage({ type: 'cancel' }); return; }
     if (saving) return;
     if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') { event.preventDefault(); form.requestSubmit(); }
-    if (event.key === 'Escape') { event.preventDefault(); vscode.postMessage({ type: 'cancel' }); }
 });
 window.addEventListener('message', ({ data }) => {
     if (data.type === 'error') { setSaving(false); error.textContent = data.message; error.hidden = false; error.focus(); }

@@ -2,6 +2,7 @@ import * as assert from 'assert';
 import { promises as fs } from 'fs';
 import * as os from 'os';
 import * as path from 'path';
+import { runInNewContext } from 'vm';
 import { TemplateItem } from '../features/templates/templatesFeature';
 import { CommonCommand, readCommonCommandSnapshot } from '../features/commonCommands/commonCommandStore';
 import { GitMessage, readGitMessageSnapshot } from '../features/gitMessages/gitMessageStore';
@@ -19,6 +20,88 @@ import {
 } from '../features/templates/templatesFeature';
 
 suite('Template views', () => {
+    test('keeps Close and Escape available during saving and restores controls after an error', () => {
+        const html = renderTemplateForm({
+            title: 'Add Project',
+            fields: [{ name: 'name', label: 'Name', value: 'Atlas' }],
+            save: async () => {},
+        });
+        const script = html.match(/<script nonce="[^"]+">([\s\S]*?)<\/script>/)![1]!;
+        const listeners = new Map<string, (event: Record<string, unknown>) => void>();
+        const messages: unknown[] = [];
+        const control = (id: string) => ({
+            id,
+            disabled: false,
+            textContent: '',
+            hidden: true,
+            focus: () => {},
+            addEventListener: (type: string, handler: (event: Record<string, unknown>) => void) =>
+                listeners.set(`${id}:${type}`, handler),
+        });
+        const name = control('name');
+        const save = control('save');
+        const cancel = control('cancel');
+        const error = control('error');
+        const form = {
+            ...control('editor'),
+            elements: [name, save, cancel],
+            querySelector: () => name,
+            querySelectorAll: () => [],
+        };
+        const elements = { editor: form, save, cancel, error };
+        runInNewContext(script, {
+            acquireVsCodeApi: () => ({ postMessage: (message: unknown) => messages.push(message) }),
+            document: {
+                getElementById: (id: keyof typeof elements) => elements[id],
+                addEventListener: (type: string, handler: (event: Record<string, unknown>) => void) =>
+                    listeners.set(type, handler),
+            },
+            window: {
+                addEventListener: (type: string, handler: (event: Record<string, unknown>) => void) =>
+                    listeners.set(type, handler),
+            },
+            FormData: class {
+                *[Symbol.iterator]() {
+                    yield ['name', 'Atlas'];
+                }
+            },
+        });
+        const event = { preventDefault: () => {} };
+        listeners.get('editor:submit')!(event);
+        assert.strictEqual(save.disabled, true);
+        assert.strictEqual(name.disabled, true);
+        assert.strictEqual(cancel.disabled, false);
+        assert.strictEqual(cancel.textContent, 'Close');
+        listeners.get('editor:submit')!(event);
+        assert.strictEqual(messages.length, 1);
+        listeners.get('cancel:click')!(event);
+        listeners.get('keydown')!({ ...event, key: 'Escape' });
+        assert.strictEqual(JSON.stringify(messages.slice(1)), '[{"type":"cancel"},{"type":"cancel"}]');
+        listeners.get('message')!({ data: { type: 'error', message: 'Save failed' } });
+        assert.strictEqual(save.disabled, false);
+        assert.strictEqual(name.disabled, false);
+        assert.strictEqual(cancel.textContent, 'Cancel');
+        assert.strictEqual(error.hidden, false);
+        assert.strictEqual(error.textContent, 'Save failed');
+    });
+
+    test('validates checked and unchecked checkbox values', () => {
+        const fields = [{ name: 'favorite', label: 'Favorites', value: 'true', checkbox: true }];
+        for (const favorite of ['true', 'false']) {
+            assert.deepStrictEqual(validateFormValues(fields, { favorite }), { favorite });
+        }
+        assert.throws(() => validateFormValues(fields, { favorite: 'Yes' }), /Invalid Favorites/);
+        assert.throws(() => validateFormValues(fields, {}), /Invalid Favorites/);
+        const html = renderTemplateForm({ title: 'Add Project', fields, save: async () => {} });
+        assert.match(html, /type="checkbox"[^>]* checked/);
+        const unchecked = renderTemplateForm({
+            title: 'Add Project',
+            fields: [{ ...fields[0]!, value: 'false' }],
+            save: async () => {},
+        });
+        assert.doesNotMatch(unchecked, /type="checkbox"[^>]* checked/);
+    });
+
     let temporary: string;
     setup(async () => {
         temporary = await fs.mkdtemp(path.join(os.tmpdir(), 'project-atlas-templates-test-'));
@@ -149,7 +232,7 @@ suite('Template views', () => {
         });
     });
 
-    test('displays commands with descriptions and scoped Git messages in file order', async () => {
+    test('displays commands with descriptions and Git messages grouped by type in file order', async () => {
         const commandsFile = path.join(temporary, 'commoncmd.json');
         const messagesFile = path.join(temporary, 'gitmessage.json');
         await fs.writeFile(
@@ -164,6 +247,8 @@ suite('Template views', () => {
                 messages: [
                     { type: 'fix', scope: 'ui', subject: 'Refresh tree' },
                     { type: 'docs', subject: 'Update README' },
+                    { type: 'fix', subject: 'Fix another bug' },
+                    { type: 'custom', subject: 'Custom message' },
                 ],
             }),
         );
@@ -186,10 +271,44 @@ suite('Template views', () => {
         } finally {
             provider.dispose();
         }
-        assert.deepStrictEqual(
-            (await loadGitMessageItems(messagesFile)).map((item) => item.label),
-            ['fix(ui): Refresh tree', 'docs: Update README'],
-        );
+        const messagesProvider = new TemplatesTreeProvider(() => loadGitMessageItems(messagesFile));
+        try {
+            const groups = await messagesProvider.getChildren();
+            assert.deepStrictEqual(
+                groups.map((item) => item.label),
+                ['fix', 'docs', 'custom'],
+            );
+            assert.deepStrictEqual(
+                groups.map((item) => item.description),
+                [undefined, undefined, undefined],
+            );
+            assert.ok(groups.every((item) => item.contextValue === 'gitMessageType'));
+            assert.strictEqual(new Set(groups.map((item) => item.id)).size, 3);
+            const fixes = await messagesProvider.getChildren(groups[0]);
+            assert.deepStrictEqual(
+                fixes.map((item) => item.label),
+                ['fix(ui): Refresh tree', 'fix: Fix another bug'],
+            );
+            assert.ok(fixes.every((item) => item.contextValue === 'gitMessage'));
+            const second = fixes[1] as TemplateItem<GitMessage>;
+            assert.strictEqual(second.index, 2);
+            assert.deepStrictEqual(await messagesProvider.getChildren(second), []);
+            await editGitMessageItem(second, async ({ save }) => {
+                await save({ type: 'docs', scope: '', subject: 'Moved message' });
+            });
+            const updated = await messagesProvider.getChildren();
+            assert.deepStrictEqual(
+                updated.map((item) => item.id),
+                groups.map((item) => item.id),
+            );
+            assert.deepStrictEqual(
+                (await messagesProvider.getChildren(updated[1])).map((item) => item.label),
+                ['docs: Update README', 'docs: Moved message'],
+            );
+            assert.strictEqual((await readGitMessageSnapshot(messagesFile)).entries[1]?.subject, 'Update README');
+        } finally {
+            messagesProvider.dispose();
+        }
     });
 
     test('reports missing and invalid files without modifying them and recovers on refresh', async () => {

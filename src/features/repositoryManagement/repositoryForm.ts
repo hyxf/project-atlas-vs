@@ -4,6 +4,7 @@ import { RepositoryItem } from './model';
 import { parseRepositoryIdentity } from './repositoryUrl';
 import { RepositoryStore } from './store';
 import { cleanRepositoryTags } from './tagPicker';
+import { formatTagInput, parseTagInput } from './tagInput';
 
 export async function editRepositoryForm(
     store: RepositoryStore,
@@ -42,10 +43,10 @@ export async function editRepositoryForm(
             {
                 name: 'tags',
                 label: 'Tags',
-                value: repository?.tags.join('\n') ?? '',
+                value: formatTagInput(repository?.tags ?? []),
                 multiline: true,
-                placeholder: 'work\nfrontend',
-                hint: `Enter one tag per line, or leave empty for no tags.${existingTags.length ? ` Existing tags: ${existingTags.join(', ')}.` : ''}`,
+                placeholder: 'work, frontend',
+                hint: `Separate tags with commas or new lines. Use \\, for a comma within a tag and \\\\ for a backslash. Leave empty for no tags.${existingTags.length ? ` Existing tags: ${existingTags.join(', ')}.` : ''}`,
             },
         ],
         save: async (values) => {
@@ -59,7 +60,7 @@ export async function editRepositoryForm(
             const nextRepository = {
                 ...identity,
                 url,
-                tags: cleanRepositoryTags(values.tags!.split(/\r?\n/)),
+                tags: cleanRepositoryTags(parseTagInput(values.tags!)),
                 ...(description ? { description } : {}),
             };
             const result = repository

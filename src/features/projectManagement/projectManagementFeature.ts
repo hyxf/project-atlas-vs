@@ -3,6 +3,7 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { pickRepositoryTags } from '../repositoryManagement/tagPicker';
 import { ListFilter, ProjectItem, SortBy, untaggedFilter } from './model';
+import { editProjectForm } from './projectForm';
 import { containsPath, duplicateDirectory, normalizePath, ProjectService } from './service';
 import { ProjectStore } from './store';
 import { ProjectDecorationProvider, ProjectDropController, ProjectNode, ProjectsTree } from './tree';
@@ -96,15 +97,13 @@ async function saveCurrent(): Promise<void> {
         return;
     }
     const existing = await service.findByPath(folder.uri.fsPath);
-    const values = await editInputs(existing ?? projectDefaults(folder.uri.fsPath));
-    if (!values) {
-        return;
-    }
-    const saved = await service.save(values.name, folder.uri.fsPath, values.tags, values.favorite);
-    await service.markOpened(saved);
-    await syncCurrentProjectContext();
-    tree.refresh();
-    await vscode.window.showInformationMessage(`Project Atlas: ${existing ? 'Updated' : 'Saved'} “${saved.name}”.`);
+    await editProjectForm(existing ?? projectDefaults(folder.uri.fsPath), async (values) => {
+        const saved = await service.save(values.name, folder.uri.fsPath, values.tags, values.favorite);
+        await service.markOpened(saved);
+        await syncCurrentProjectContext();
+        tree.refresh();
+        void vscode.window.showInformationMessage(`Project Atlas: ${existing ? 'Updated' : 'Saved'} “${saved.name}”.`);
+    });
 }
 
 async function currentWorkspaceFolder(): Promise<vscode.WorkspaceFolder | undefined> {
@@ -160,51 +159,21 @@ async function addFolder(folderPath: string): Promise<void> {
         await vscode.window.showInformationMessage('Project Atlas: Project already exists.');
         return;
     }
-    const values = await editInputs(projectDefaults(folderPath));
-    if (!values) {
-        return;
-    }
-    await service.save(values.name, folderPath, values.tags, values.favorite);
-    await syncCurrentProjectContext();
-    tree.refresh();
+    await editProjectForm(projectDefaults(folderPath), async (values) => {
+        await service.save(values.name, folderPath, values.tags, values.favorite);
+        await syncCurrentProjectContext();
+        tree.refresh();
+    });
 }
 
 async function editProject(project: ProjectItem | undefined): Promise<void> {
     if (!project) {
         return;
     }
-    const values = await editInputs(project);
-    if (!values) {
-        return;
-    }
-    await service.update({ ...project, ...values });
-    tree.refresh();
-}
-
-async function editInputs(
-    project: ProjectItem,
-): Promise<{ name: string; tags: string[]; favorite: boolean } | undefined> {
-    const name = await vscode.window.showInputBox({
-        title: 'Project name',
-        value: project.name,
-        validateInput: (value) => (value.trim() ? undefined : 'Project name must not be empty'),
+    await editProjectForm(project, async (values) => {
+        await service.updateDetails(project.id, values);
+        tree.refresh();
     });
-    if (name === undefined) {
-        return;
-    }
-    const tagsText = await vscode.window.showInputBox({
-        title: 'Tags',
-        prompt: 'Comma-separated tags',
-        value: project.tags.join(', '),
-    });
-    if (tagsText === undefined) {
-        return;
-    }
-    const favorite = await vscode.window.showQuickPick(['No', 'Yes'], {
-        title: 'Favorite',
-        placeHolder: project.favorite ? 'Yes' : 'No',
-    });
-    return favorite ? { name: name.trim(), tags: tagsText.split(','), favorite: favorite === 'Yes' } : undefined;
 }
 
 async function quickOpen(newWindow: boolean): Promise<void> {

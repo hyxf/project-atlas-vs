@@ -14,6 +14,61 @@ import {
     deleteCommonCommand,
 } from '../features/commonCommands/commonCommandStore';
 import { readGitMessageSnapshot, updateGitMessage, deleteGitMessage } from '../features/gitMessages/gitMessageStore';
+import { ProjectService } from '../features/projectManagement/service';
+import { ProjectStore } from '../features/projectManagement/store';
+import { editProjectForm } from '../features/projectManagement/projectForm';
+
+suite('Project form data safety', () => {
+    let temporary: string;
+    let service: ProjectService;
+    setup(async () => {
+        temporary = await fs.mkdtemp(path.join(os.tmpdir(), 'project-atlas-project-form-'));
+        service = new ProjectService(new ProjectStore(path.join(temporary, 'project.json')));
+    });
+    teardown(async () => fs.rm(temporary, { recursive: true, force: true }));
+
+    test('preserves metadata updated while the project form is open', async () => {
+        const project = await service.save('Atlas', temporary, [], false);
+        let openedAt: number | null | undefined;
+        await editProjectForm(
+            project,
+            (values) => service.updateDetails(project.id, values),
+            async ({ save }) => {
+                const otherService = new ProjectService(new ProjectStore(service.store.file));
+                await otherService.markOpened(project);
+                openedAt = (await otherService.findById(project.id))!.lastOpenedAt;
+                const data = JSON.parse(await fs.readFile(service.store.file, 'utf8'));
+                data.projects[0].future = { keep: true };
+                await fs.writeFile(service.store.file, JSON.stringify(data));
+                await save({ name: 'Renamed', tags: 'work', favorite: 'true' });
+            },
+        );
+        assert.ok(openedAt);
+        const updated = (await service.projects(true))[0]!;
+        assert.strictEqual(updated.lastOpenedAt, openedAt);
+        assert.strictEqual(updated.name, 'Renamed');
+        assert.strictEqual(updated.path, project.path);
+        assert.deepStrictEqual(updated.tags, ['work']);
+        assert.strictEqual(updated.favorite, true);
+        assert.deepStrictEqual(JSON.parse(await fs.readFile(service.store.file, 'utf8')).projects[0].future, {
+            keep: true,
+        });
+    });
+
+    test('applies detail updates after queued mutations and does not recreate removed projects', async () => {
+        const project = await service.save('Atlas', temporary, [], false);
+        const values = { name: 'Renamed', tags: ['work'], favorite: true };
+        await Promise.all([
+            service.update({ ...project, lastOpenedAt: 123 }),
+            service.updateDetails(project.id, values),
+        ]);
+        assert.strictEqual((await service.findById(project.id))!.lastOpenedAt, 123);
+        const removal = service.remove(project.id);
+        await assert.rejects(service.updateDetails(project.id, values), /Unknown project/);
+        await removal;
+        assert.deepStrictEqual(await service.projects(true), []);
+    });
+});
 
 suite('Template record data safety', () => {
     let temporary: string;
@@ -895,7 +950,7 @@ suite('Repository HTML forms', () => {
             await save({
                 url: ' git@github.com:owner/repo.git ',
                 description: ' Description ',
-                tags: 'Work\nwork\n frontend ',
+                tags: 'Work, work\r\n frontend, \n',
             });
         });
         assert.strictEqual(refreshes, 1);
@@ -932,7 +987,7 @@ suite('Repository HTML forms', () => {
         await editRepositoryForm(store, repository, undefined, async ({ fields }) => {
             assert.deepStrictEqual(
                 fields.map((field) => field.value),
-                [repository.url, 'Old', 'a,b\nwork'],
+                [repository.url, 'Old', 'a\\,b\nwork'],
             );
         });
         assert.strictEqual(await fs.readFile(store.file, 'utf8'), original);
@@ -947,5 +1002,31 @@ suite('Repository HTML forms', () => {
         await editRepositoryForm(store, repository, undefined, async ({ save }) => {
             await assert.rejects(save({ url: repository.url, description: '', tags: '' }), /was removed/);
         });
+    });
+
+    test('preserves comma and backslash tags when saving edits and accepts new separated tags', async () => {
+        const repository = {
+            group: 'owner',
+            name: 'repo',
+            url: 'git@github.com:owner/repo.git',
+            tags: ['design,ux', 'team\\name', 'line\nbreak', 'work'],
+        };
+        await fs.writeFile(store.file, JSON.stringify({ repos: [{ ...repository, extra: 42 }] }));
+        await editRepositoryForm(store, repository, undefined, async ({ fields, save }) => {
+            const values = Object.fromEntries(fields.map((field) => [field.name, field.value]));
+            await save({ ...values, description: 'Updated' });
+        });
+        const updated = (await store.repositories())[0]!;
+        assert.deepStrictEqual(new Set(updated.tags), new Set(repository.tags));
+        assert.strictEqual(updated.description, 'Updated');
+        assert.strictEqual(JSON.parse(await fs.readFile(store.file, 'utf8')).repos[0].extra, 42);
+        await editRepositoryForm(store, updated, undefined, async ({ fields, save }) => {
+            const values = Object.fromEntries(fields.map((field) => [field.name, field.value]));
+            await save({ ...values, tags: `${values.tags}, frontend\r\nbackend, design\\,ux` });
+        });
+        assert.deepStrictEqual(
+            new Set((await store.repositories())[0]!.tags),
+            new Set([...repository.tags, 'frontend', 'backend']),
+        );
     });
 });

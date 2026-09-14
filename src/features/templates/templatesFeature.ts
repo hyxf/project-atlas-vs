@@ -20,6 +20,17 @@ export class TemplateItem<T> extends vscode.TreeItem {
     }
 }
 
+export class GitMessageTypeGroup extends vscode.TreeItem {
+    readonly children: TemplateItem<GitMessage>[] = [];
+
+    constructor(type: string, file: string) {
+        super(type, vscode.TreeItemCollapsibleState.Expanded);
+        this.id = JSON.stringify(['gitMessageType', file, type]);
+        this.contextValue = 'gitMessageType';
+        this.iconPath = new vscode.ThemeIcon('symbol-enum');
+    }
+}
+
 export class TemplatesTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem>, vscode.Disposable {
     private readonly changed = new vscode.EventEmitter<void>();
     readonly onDidChangeTreeData = this.changed.event;
@@ -36,7 +47,7 @@ export class TemplatesTreeProvider implements vscode.TreeDataProvider<vscode.Tre
 
     async getChildren(element?: vscode.TreeItem): Promise<vscode.TreeItem[]> {
         if (element) {
-            return element instanceof TemplateItem ? element.children : [];
+            return element instanceof TemplateItem || element instanceof GitMessageTypeGroup ? element.children : [];
         }
         try {
             return await this.loadItems();
@@ -74,12 +85,19 @@ export async function loadCommonCommandItems(file = commonCommandsFile): Promise
 
 export async function loadGitMessageItems(file = gitMessagesFile): Promise<vscode.TreeItem[]> {
     const snapshot = await readGitMessageSnapshot(file);
-    return snapshot.entries.map((message, index) => {
+    const groups = new Map<string, GitMessageTypeGroup>();
+    for (const [index, message] of snapshot.entries.entries()) {
+        let group = groups.get(message.type);
+        if (!group) {
+            group = new GitMessageTypeGroup(message.type, file);
+            groups.set(message.type, group);
+        }
         const item = new TemplateItem<GitMessage>(formatGitMessage(message), snapshot, index, file, 'gitMessage');
         item.tooltip = formatGitMessage(message);
         item.iconPath = new vscode.ThemeIcon('git-commit');
-        return item;
-    });
+        group.children.push(item);
+    }
+    return [...groups.values()];
 }
 
 export function activateTemplates(context: vscode.ExtensionContext): void {

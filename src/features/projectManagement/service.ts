@@ -70,6 +70,16 @@ export class ProjectService {
         await this.mutate(() => this.updateProject(project));
     }
 
+    async updateDetails(id: string, values: Pick<ProjectItem, 'name' | 'tags' | 'favorite'>): Promise<void> {
+        await this.mutate(async () => {
+            const project = (await this.projects(true)).find((item) => item.id === id);
+            if (!project) {
+                throw new Error(`Unknown project: ${id}`);
+            }
+            await this.updateProject({ ...project, name: values.name, tags: values.tags, favorite: values.favorite });
+        });
+    }
+
     private async updateProject(project: ProjectItem): Promise<void> {
         if (!project.name.trim()) {
             throw new Error('Project name must not be empty.');
