@@ -1,3 +1,5 @@
+import { editRepositoryForm } from '../features/repositoryManagement/repositoryForm';
+import { RepositoryStore } from '../features/repositoryManagement/store';
 import * as assert from 'assert';
 import * as vscode from 'vscode';
 import { promises as fs } from 'fs';
@@ -867,5 +869,83 @@ suite('Extension', () => {
             }>
         ).find(({ command }) => command === 'project-atlas.saveCurrent');
         assert.strictEqual(command?.enablement, '!projectAtlas.currentProjectSaved');
+    });
+});
+
+suite('Repository HTML forms', () => {
+    let temporary: string;
+    let store: RepositoryStore;
+    setup(async () => {
+        temporary = await fs.mkdtemp(path.join(os.tmpdir(), 'project-atlas-repository-form-'));
+        store = new RepositoryStore(path.join(temporary, 'repos.json'));
+    });
+    teardown(async () => fs.rm(temporary, { recursive: true, force: true }));
+
+    test('cancels without writing and retries invalid or duplicate URLs before saving all fields', async () => {
+        let refreshes = 0;
+        const refreshed = (): void => {
+            refreshes++;
+        };
+        await editRepositoryForm(store, undefined, refreshed, async ({ fields }) => {
+            assert.ok(fields.every((field) => field.value === ''));
+        });
+        await assert.rejects(fs.access(store.file));
+        await editRepositoryForm(store, undefined, refreshed, async ({ save }) => {
+            await assert.rejects(save({ url: 'invalid', description: '', tags: '' }), /valid SSH/);
+            await save({
+                url: ' git@github.com:owner/repo.git ',
+                description: ' Description ',
+                tags: 'Work\nwork\n frontend ',
+            });
+        });
+        assert.strictEqual(refreshes, 1);
+        assert.deepStrictEqual(await store.repositories(), [
+            {
+                group: 'owner',
+                name: 'repo',
+                url: 'git@github.com:owner/repo.git',
+                description: 'Description',
+                tags: ['frontend', 'Work'],
+            },
+        ]);
+        const original = await fs.readFile(store.file, 'utf8');
+        await editRepositoryForm(store, undefined, refreshed, async ({ save }) => {
+            await assert.rejects(
+                save({ url: 'git@github.com:owner/repo.git', description: '', tags: '' }),
+                /Another saved/,
+            );
+        });
+        assert.strictEqual(await fs.readFile(store.file, 'utf8'), original);
+        assert.strictEqual(refreshes, 1);
+    });
+
+    test('prefills edits, preserves unknown data and clears optional fields', async () => {
+        const repository = {
+            group: 'owner',
+            name: 'repo',
+            url: 'git@github.com:owner/repo.git',
+            description: 'Old',
+            tags: ['a,b', 'work'],
+        };
+        await fs.writeFile(store.file, JSON.stringify({ future: true, repos: [{ ...repository, extra: 42 }] }));
+        const original = await fs.readFile(store.file, 'utf8');
+        await editRepositoryForm(store, repository, undefined, async ({ fields }) => {
+            assert.deepStrictEqual(
+                fields.map((field) => field.value),
+                [repository.url, 'Old', 'a,b\nwork'],
+            );
+        });
+        assert.strictEqual(await fs.readFile(store.file, 'utf8'), original);
+        await editRepositoryForm(store, repository, undefined, async ({ save }) => {
+            await save({ url: 'git@github.com:owner/new.git', description: '', tags: '' });
+        });
+        assert.deepStrictEqual(JSON.parse(await fs.readFile(store.file, 'utf8')), {
+            future: true,
+            version: 1,
+            repos: [{ group: 'owner', name: 'new', url: 'git@github.com:owner/new.git', tags: [], extra: 42 }],
+        });
+        await editRepositoryForm(store, repository, undefined, async ({ save }) => {
+            await assert.rejects(save({ url: repository.url, description: '', tags: '' }), /was removed/);
+        });
     });
 });

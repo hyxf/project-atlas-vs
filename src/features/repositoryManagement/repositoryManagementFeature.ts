@@ -7,7 +7,7 @@ import { ProjectStore } from '../projectManagement/store';
 import { ProjectService } from '../projectManagement/service';
 import { CloneCancellationError, cloneRepository, ensureDefaultCloneParent, resolveCloneTarget } from './cloneService';
 import { syncProjectRepositories } from './repositorySyncService';
-import { parseRepositoryIdentity, repositoryIdentityKey } from './repositoryUrl';
+import { editRepositoryForm } from './repositoryForm';
 import { RepositoryStore } from './store';
 import { pickRepositoryTags } from './tagPicker';
 import { RepositoriesTree, RepositoryNode, RepositoryViewMode } from './tree';
@@ -62,50 +62,7 @@ export function activateRepositoryManagement(context: vscode.ExtensionContext): 
         ),
         vscode.commands.registerCommand('project-atlas.addRepository', () =>
             run(async () => {
-                const url = await vscode.window.showInputBox({
-                    title: 'Add Git Repository',
-                    prompt: 'Enter an SSH Git repository URL',
-                    placeHolder: 'git@github.com:owner/repository.git',
-                    ignoreFocusOut: true,
-                    validateInput: (value) =>
-                        value.trim() && parseRepositoryIdentity(value)
-                            ? undefined
-                            : 'Enter a valid SSH Git repository URL.',
-                });
-                if (url === undefined) {
-                    return;
-                }
-                const trimmedUrl = url.trim();
-                const identity = parseRepositoryIdentity(trimmedUrl);
-                if (!identity) {
-                    return;
-                }
-                const repositories = await store.repositories();
-                const repositoryKey = repositoryIdentityKey(trimmedUrl);
-                if (
-                    repositories.some(
-                        (repository) =>
-                            repository.url === trimmedUrl || repositoryIdentityKey(repository.url) === repositoryKey,
-                    )
-                ) {
-                    await vscode.window.showInformationMessage(
-                        `Project Atlas: ${identity.group}/${identity.name} is already saved.`,
-                    );
-                    return;
-                }
-                const tags = await pickRepositoryTags(repositories.flatMap((repository) => repository.tags));
-                if (tags === undefined) {
-                    return;
-                }
-                const result = await store.addIfMissing({ ...identity, url: trimmedUrl, tags });
-                if (result === 'existing') {
-                    await vscode.window.showInformationMessage(
-                        `Project Atlas: ${identity.group}/${identity.name} is already saved.`,
-                    );
-                    return;
-                }
-                tree.refresh();
-                await vscode.window.showInformationMessage(`Project Atlas: Saved ${identity.group}/${identity.name}.`);
+                await editRepositoryForm(store, undefined, () => tree.refresh());
             }),
         ),
         vscode.commands.registerCommand('project-atlas.openRepositoryDataFile', () =>
@@ -162,36 +119,7 @@ export function activateRepositoryManagement(context: vscode.ExtensionContext): 
         vscode.commands.registerCommand('project-atlas.editRepository', (node: unknown) =>
             run(async () => {
                 if (!(node instanceof RepositoryNode)) return;
-                const repository = node.repository;
-                const url = await vscode.window.showInputBox({
-                    title: 'Edit Git Repository',
-                    prompt: 'Repository URL',
-                    value: repository.url,
-                });
-                if (url === undefined) return;
-                const identity = parseRepositoryIdentity(url.trim());
-                if (!identity) throw new Error('Enter a valid SSH Git repository URL.');
-                const description = await vscode.window.showInputBox({
-                    title: 'Edit Git Repository',
-                    prompt: 'Description',
-                    value: repository.description ?? '',
-                });
-                if (description === undefined) return;
-                const tags = await pickRepositoryTags(
-                    (await store.repositories()).flatMap((item) => item.tags),
-                    repository.tags,
-                    'Edit Git Repository: Select Tags',
-                );
-                if (tags === undefined) return;
-                const nextRepository = {
-                    ...identity,
-                    url: url.trim(),
-                    tags,
-                    ...(description.trim() ? { description: description.trim() } : {}),
-                };
-                const result = await store.updateRepository(repository.url, nextRepository);
-                if (result === 'existing') throw new Error('Another saved repository uses that URL.');
-                if (result === 'updated') tree.refresh();
+                await editRepositoryForm(store, node.repository, () => tree.refresh());
             }),
         ),
         vscode.commands.registerCommand('project-atlas.cloneRepository', (node: unknown) =>

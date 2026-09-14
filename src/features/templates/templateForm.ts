@@ -17,6 +17,7 @@ export interface TemplateFormField {
 export interface TemplateFormOptions {
     title: string;
     description?: string;
+    eyebrow?: string;
     fields: TemplateFormField[];
     save: (values: Record<string, string>) => Promise<void>;
 }
@@ -169,7 +170,7 @@ button.secondary:hover:not(:disabled) { background: var(--vscode-button-secondar
 button:disabled { opacity: .6; cursor: default; } #error { margin: 0 28px 24px; padding: 10px 12px; border: 1px solid var(--vscode-inputValidation-errorBorder, var(--vscode-errorForeground)); border-radius: 4px; background: var(--vscode-inputValidation-errorBackground); color: var(--vscode-errorForeground); white-space: pre-wrap; overflow-wrap: anywhere; }
 .hint { margin: 0; font-size: 11px; color: var(--vscode-descriptionForeground); }
 @media (max-width: 480px) { body { padding: 24px 16px; } .fields { padding: 20px; gap: 20px; } .half-width { grid-column: 1 / -1; } .footer { padding: 16px 20px; } #error { margin: 0 20px 20px; } }
-</style></head><body><main><header><p class="eyebrow">Project Atlas · Templates</p><h1>${escapeHtml(options.title)}</h1>${options.description ? `<p class="subtitle">${escapeHtml(options.description)}</p>` : ''}</header>
+</style></head><body><main><header><p class="eyebrow">${escapeHtml(options.eyebrow ?? 'Project Atlas · Templates')}</p><h1>${escapeHtml(options.title)}</h1>${options.description ? `<p class="subtitle">${escapeHtml(options.description)}</p>` : ''}</header>
 <form id="editor"><div class="fields">${fields}</div><p id="error" role="alert" tabindex="-1" hidden></p>
 <div class="footer"><p class="hint">Ctrl/Cmd+Enter to save · Esc to cancel</p><div class="actions"><button type="button" id="cancel" class="secondary">Cancel</button><button type="submit" id="save">Save</button></div></div>
 </form></main>
