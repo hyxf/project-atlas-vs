@@ -17,7 +17,7 @@ export function readCommonCommandSnapshot(file = commonCommandsFile): Promise<Te
 
 export function updateCommonCommand(
     snapshot: TemplateSnapshot<CommonCommand>,
-    index: number,
+    index: number | null,
     value: CommonCommand,
     file = commonCommandsFile,
 ): Promise<void> {

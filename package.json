@@ -24,6 +24,18 @@
   "contributes": {
     "commands": [
       {
+        "command": "project-atlas.addCommonCommand",
+        "title": "Add Common Command",
+        "category": "Project Atlas",
+        "icon": "$(add)"
+      },
+      {
+        "command": "project-atlas.addGitMessage",
+        "title": "Add Git Message",
+        "category": "Project Atlas",
+        "icon": "$(add)"
+      },
+      {
         "command": "project-atlas.editCommonCommand",
         "title": "Edit Common Command",
         "category": "Project Atlas",
@@ -797,9 +809,14 @@
           "group": "navigation@1"
         },
         {
-          "command": "project-atlas.refreshCommonCommands",
+          "command": "project-atlas.addCommonCommand",
           "when": "view == projectAtlas.commonCommands",
           "group": "navigation@2"
+        },
+        {
+          "command": "project-atlas.refreshCommonCommands",
+          "when": "view == projectAtlas.commonCommands",
+          "group": "navigation@3"
         },
         {
           "command": "project-atlas.editGitMessages",
@@ -807,9 +824,14 @@
           "group": "navigation@1"
         },
         {
-          "command": "project-atlas.refreshGitMessages",
+          "command": "project-atlas.addGitMessage",
           "when": "view == projectAtlas.gitMessages",
           "group": "navigation@2"
+        },
+        {
+          "command": "project-atlas.refreshGitMessages",
+          "when": "view == projectAtlas.gitMessages",
+          "group": "navigation@3"
         },
         {
           "command": "aicode.selectGroup",
@@ -1049,6 +1071,14 @@
         }
       ],
       "commandPalette": [
+        {
+          "command": "project-atlas.addCommonCommand",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.addGitMessage",
+          "when": "false"
+        },
         {
           "command": "project-atlas.editCommonCommand",
           "when": "false"

@@ -5,7 +5,13 @@ import * as path from 'path';
 import { TemplateItem } from '../features/templates/templatesFeature';
 import { CommonCommand, readCommonCommandSnapshot } from '../features/commonCommands/commonCommandStore';
 import { GitMessage, readGitMessageSnapshot } from '../features/gitMessages/gitMessageStore';
-import { editCommonCommandItem, editGitMessageItem } from '../features/templates/templateCommands';
+import {
+    addCommonCommandItem,
+    addGitMessageItem,
+    editCommonCommandItem,
+    editGitMessageItem,
+} from '../features/templates/templateCommands';
+import { renderTemplateForm, validateFormValues } from '../features/templates/templateForm';
 import {
     loadCommonCommandItems,
     loadGitMessageItems,
@@ -19,29 +25,128 @@ suite('Template views', () => {
     });
     teardown(async () => fs.rm(temporary, { recursive: true, force: true }));
 
-    test('cancelling any edit step leaves the file unchanged', async () => {
+    test('adding uses blank edit forms and only persists on Save', async () => {
+        const commandFile = path.join(temporary, 'commoncmd.json');
+        const messageFile = path.join(temporary, 'gitmessage.json');
+        await fs.writeFile(commandFile, JSON.stringify({ commands: [] }));
+        await fs.writeFile(messageFile, JSON.stringify({ messages: [] }));
+        for (const [file, add] of [
+            [commandFile, addCommonCommandItem],
+            [messageFile, addGitMessageItem],
+        ] as const) {
+            const original = await fs.readFile(file, 'utf8');
+            await add(file, async ({ fields }) => {
+                assert.ok(fields.every(({ value }) => value === ''));
+            });
+            assert.strictEqual(await fs.readFile(file, 'utf8'), original);
+        }
+        await addCommonCommandItem(commandFile, async ({ fields, save }) => {
+            assert.deepStrictEqual(
+                fields.map(({ name }) => name),
+                ['command', 'description'],
+            );
+            await save({ command: 'git status', description: '' });
+        });
+        await addGitMessageItem(messageFile, async ({ fields, save }) => {
+            assert.deepStrictEqual(
+                fields.map(({ name }) => name),
+                ['type', 'scope', 'subject'],
+            );
+            await save({ type: 'feat', scope: 'ui', subject: 'Add form' });
+        });
+        assert.deepStrictEqual((await readCommonCommandSnapshot(commandFile)).entries, [{ command: 'git status' }]);
+        assert.deepStrictEqual((await readGitMessageSnapshot(messageFile)).entries, [
+            { type: 'feat', scope: 'ui', subject: 'Add form' },
+        ]);
+    });
+
+    test('closing the form without saving leaves the file unchanged', async () => {
         const commandFile = path.join(temporary, 'commoncmd.json');
         const messageFile = path.join(temporary, 'gitmessage.json');
         await fs.writeFile(commandFile, JSON.stringify({ commands: [{ command: 'git status' }] }));
         await fs.writeFile(messageFile, JSON.stringify({ messages: [{ type: 'fix', subject: 'Original' }] }));
         const commands = await readCommonCommandSnapshot(commandFile);
         const messages = await readGitMessageSnapshot(messageFile);
-        for (let cancel = 0; cancel < 2; cancel++) {
-            let step = 0;
-            await editCommonCommandItem(
-                new TemplateItem<CommonCommand>('git status', commands, 0, commandFile, 'commonCommand'),
-                async () => (step++ === cancel ? undefined : 'Changed'),
-            );
-            assert.strictEqual(await fs.readFile(commandFile, 'utf8'), commands.contents);
-        }
-        for (let cancel = 0; cancel < 3; cancel++) {
-            let step = 0;
-            await editGitMessageItem(
-                new TemplateItem<GitMessage>('fix: Original', messages, 0, messageFile, 'gitMessage'),
-                async () => (step++ === cancel ? undefined : 'Changed'),
-            );
-            assert.strictEqual(await fs.readFile(messageFile, 'utf8'), messages.contents);
-        }
+        await editCommonCommandItem(
+            new TemplateItem<CommonCommand>('git status', commands, 0, commandFile, 'commonCommand'),
+            async ({ fields }) => {
+                assert.deepStrictEqual(
+                    fields.map(({ value }) => value),
+                    ['git status', ''],
+                );
+            },
+        );
+        assert.strictEqual(await fs.readFile(commandFile, 'utf8'), commands.contents);
+        await editGitMessageItem(
+            new TemplateItem<GitMessage>('fix: Original', messages, 0, messageFile, 'gitMessage'),
+            async ({ fields }) => {
+                assert.deepStrictEqual(
+                    fields.map(({ value }) => value),
+                    ['fix', '', 'Original'],
+                );
+            },
+        );
+        assert.strictEqual(await fs.readFile(messageFile, 'utf8'), messages.contents);
+    });
+
+    test('saves all command form fields together and permits retry after validation failure', async () => {
+        const file = path.join(temporary, 'commoncmd.json');
+        await fs.writeFile(
+            file,
+            JSON.stringify({
+                commands: [{ command: 'git status', description: 'Old', extra: true }, { command: 'git diff' }],
+            }),
+        );
+        const snapshot = await readCommonCommandSnapshot(file);
+        await editCommonCommandItem(
+            new TemplateItem('git status', snapshot, 0, file, 'commonCommand'),
+            async ({ save }) => {
+                await assert.rejects(save({ command: 'git diff', description: 'New' }), /already exists/);
+                assert.strictEqual(await fs.readFile(file, 'utf8'), snapshot.contents);
+                await save({ command: 'git log\ngit status', description: '' });
+            },
+        );
+        assert.deepStrictEqual(JSON.parse(await fs.readFile(file, 'utf8')).commands[0], {
+            command: 'git log\ngit status',
+            extra: true,
+        });
+    });
+
+    test('saves Git form fields together and rejects a file changed while the form is open', async () => {
+        const file = path.join(temporary, 'gitmessage.json');
+        await fs.writeFile(file, JSON.stringify({ messages: [{ type: 'fix', scope: 'old', subject: 'Old' }] }));
+        const snapshot = await readGitMessageSnapshot(file);
+        const item = new TemplateItem('fix(old): Old', snapshot, 0, file, 'gitMessage');
+        await editGitMessageItem(item, async ({ save }) => {
+            await save({ type: 'feat', scope: '', subject: 'New' });
+        });
+        const saved = await fs.readFile(file, 'utf8');
+        assert.deepStrictEqual(JSON.parse(saved).messages, [{ type: 'feat', subject: 'New' }]);
+        await editGitMessageItem(item, async ({ save }) => {
+            await assert.rejects(save({ type: 'fix', scope: 'ui', subject: 'Stale' }), /file has changed/);
+        });
+        assert.strictEqual(await fs.readFile(file, 'utf8'), saved);
+    });
+
+    test('escapes stored text in form HTML and validates webview messages', () => {
+        const fields = [
+            {
+                name: 'command',
+                label: 'Command',
+                value: '</textarea><script>alert(1)</script>',
+                required: true,
+                multiline: true,
+            },
+        ];
+        const html = renderTemplateForm({ title: '<Edit>', fields, save: async () => {} });
+        assert.ok(!html.includes(fields[0]!.value));
+        assert.ok(html.includes('&lt;/textarea&gt;&lt;script&gt;'));
+        assert.ok(html.includes("default-src 'none'"));
+        assert.throws(() => validateFormValues(fields, { command: '  ' }), /required/);
+        assert.throws(() => validateFormValues(fields, { command: 42 }), /Invalid Command/);
+        assert.deepStrictEqual(validateFormValues(fields, { command: 'git status', unexpected: 'ignored' }), {
+            command: 'git status',
+        });
     });
 
     test('displays commands with descriptions and scoped Git messages in file order', async () => {

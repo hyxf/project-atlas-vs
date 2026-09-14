@@ -43,7 +43,7 @@ export async function changeTemplate<T>(
     file: string,
     key: string,
     snapshot: TemplateSnapshot<T>,
-    index: number,
+    index: number | null,
     parse: (data: unknown) => T[],
     update?: (entry: Record<string, unknown>, entries: T[]) => void,
 ): Promise<void> {
@@ -54,11 +54,18 @@ export async function changeTemplate<T>(
         }
         const document = JSON.parse(contents) as Record<string, unknown>;
         const entries = parse(document);
-        if (!Number.isInteger(index) || index < 0 || index >= entries.length) {
+        if (index !== null && (!Number.isInteger(index) || index < 0 || index >= entries.length)) {
             throw new Error('The selected record no longer exists. Refresh the view and try again.');
         }
         const records = document[key] as Record<string, unknown>[];
-        if (update) {
+        if (index === null) {
+            if (!update) {
+                throw new Error('New records require values.');
+            }
+            const entry: Record<string, unknown> = {};
+            update(entry, entries);
+            records.push(entry);
+        } else if (update) {
             update(records[index]!, entries);
         } else {
             records.splice(index, 1);

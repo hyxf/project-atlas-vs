@@ -20,6 +20,42 @@ suite('Template record data safety', () => {
     });
     teardown(async () => fs.rm(temporary, { recursive: true, force: true }));
 
+    test('appends commands without replacing records and rejects duplicate or stale additions', async () => {
+        const file = path.join(temporary, 'commoncmd.json');
+        await fs.writeFile(file, JSON.stringify({ future: true, commands: [{ command: 'git status', extra: 1 }] }));
+        const snapshot = await readCommonCommandSnapshot(file);
+        await assert.rejects(updateCommonCommand(snapshot, null, { command: ' git status ' }, file), /already exists/);
+        await assert.rejects(updateCommonCommand(snapshot, null, { command: '' }, file), /non-empty/);
+        await updateCommonCommand(snapshot, null, { command: ' git diff ', description: ' Changes ' }, file);
+        assert.deepStrictEqual(JSON.parse(await fs.readFile(file, 'utf8')), {
+            future: true,
+            commands: [
+                { command: 'git status', extra: 1 },
+                { command: 'git diff', description: 'Changes' },
+            ],
+        });
+        await assert.rejects(updateCommonCommand(snapshot, null, { command: 'git log' }, file), /file has changed/);
+    });
+
+    test('appends Git messages to empty arrays, preserves fields, and refuses corrupt data', async () => {
+        const file = path.join(temporary, 'gitmessage.json');
+        await fs.writeFile(file, JSON.stringify({ future: true, messages: [] }));
+        const snapshot = await readGitMessageSnapshot(file);
+        await assert.rejects(updateGitMessage(snapshot, null, { type: '', subject: 'New' }, file), /non-empty/);
+        await updateGitMessage(snapshot, null, { type: ' feat ', scope: '', subject: ' New ' }, file);
+        assert.deepStrictEqual(JSON.parse(await fs.readFile(file, 'utf8')), {
+            future: true,
+            messages: [{ type: 'feat', subject: 'New' }],
+        });
+        await fs.writeFile(file, '{broken');
+        await assert.rejects(
+            updateGitMessage(snapshot, null, { type: 'fix', subject: 'New' }, file),
+            /file has changed/,
+        );
+        assert.strictEqual(await fs.readFile(file, 'utf8'), '{broken');
+        assert.deepStrictEqual(await fs.readdir(temporary), ['gitmessage.json']);
+    });
+
     test('edits command in place, clears description and preserves unknown fields', async () => {
         const file = path.join(temporary, 'commoncmd.json');
         await fs.writeFile(

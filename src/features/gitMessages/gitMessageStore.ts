@@ -17,7 +17,7 @@ export function readGitMessageSnapshot(file = gitMessagesFile): Promise<Template
 
 export function updateGitMessage(
     snapshot: TemplateSnapshot<GitMessage>,
-    index: number,
+    index: number | null,
     value: GitMessage,
     file = gitMessagesFile,
 ): Promise<void> {

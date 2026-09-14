@@ -1,73 +1,84 @@
 import * as vscode from 'vscode';
-import { CommonCommand, deleteCommonCommand, updateCommonCommand } from '../commonCommands/commonCommandStore';
-import { deleteGitMessage, formatGitMessage, GitMessage, updateGitMessage } from '../gitMessages/gitMessageStore';
+import {
+    CommonCommand,
+    commonCommandsFile,
+    deleteCommonCommand,
+    readCommonCommandSnapshot,
+    updateCommonCommand,
+} from '../commonCommands/commonCommandStore';
+import {
+    deleteGitMessage,
+    formatGitMessage,
+    GitMessage,
+    gitMessagesFile,
+    readGitMessageSnapshot,
+    updateGitMessage,
+} from '../gitMessages/gitMessageStore';
 import { TemplateItem } from './templatesFeature';
-
-type Prompt = (options: vscode.InputBoxOptions) => Thenable<string | undefined>;
+import { disposeTemplateForms, showTemplateForm, TemplateForm } from './templateForm';
 
 export async function editCommonCommandItem(
     item: TemplateItem<CommonCommand>,
-    prompt: Prompt = vscode.window.showInputBox,
+    form: TemplateForm = showTemplateForm,
+    creating = false,
 ): Promise<void> {
-    const value = item.snapshot.entries[item.index]!;
-    const command = await prompt({
-        title: 'Edit Common Command (1/2)',
-        value: value.command,
-        validateInput: (text) =>
-            !text.trim()
-                ? 'Command is required.'
-                : item.snapshot.entries.some((entry, index) => index !== item.index && entry.command === text.trim())
-                  ? 'This command already exists.'
-                  : undefined,
+    const value = creating ? { command: '', description: '' } : item.snapshot.entries[item.index]!;
+    await form({
+        title: creating ? 'Add Common Command' : 'Edit Common Command',
+        fields: [
+            { name: 'command', label: 'Command', value: value.command, required: true, multiline: true },
+            { name: 'description', label: 'Description', value: value.description ?? '', multiline: true },
+        ],
+        save: async (values) => {
+            assertSaved(item.file);
+            await updateCommonCommand(
+                item.snapshot,
+                creating ? null : item.index,
+                { command: values.command!, description: values.description! },
+                item.file,
+            );
+        },
     });
-    if (command === undefined) {
-        return;
-    }
-    const description = await prompt({
-        title: 'Edit Common Command (2/2)',
-        prompt: 'Description (optional; clear to remove)',
-        value: value.description ?? '',
-    });
-    if (description === undefined) {
-        return;
-    }
-    assertSaved(item.file);
-    await updateCommonCommand(item.snapshot, item.index, { command, description }, item.file);
 }
 
 export async function editGitMessageItem(
     item: TemplateItem<GitMessage>,
-    prompt: Prompt = vscode.window.showInputBox,
+    form: TemplateForm = showTemplateForm,
+    creating = false,
 ): Promise<void> {
-    const value = item.snapshot.entries[item.index]!;
-    const type = await prompt({
-        title: 'Edit Git Message (1/3)',
-        prompt: 'Type',
-        value: value.type,
-        validateInput: (text) => (text.trim() ? undefined : 'Type is required.'),
+    const value = creating ? { type: '', scope: '', subject: '' } : item.snapshot.entries[item.index]!;
+    await form({
+        title: creating ? 'Add Git Message' : 'Edit Git Message',
+        fields: [
+            { name: 'type', label: 'Type', value: value.type, required: true },
+            { name: 'scope', label: 'Scope', value: value.scope ?? '' },
+            { name: 'subject', label: 'Subject', value: value.subject, required: true, multiline: true },
+        ],
+        save: async (values) => {
+            assertSaved(item.file);
+            await updateGitMessage(
+                item.snapshot,
+                creating ? null : item.index,
+                { type: values.type!, scope: values.scope!, subject: values.subject! },
+                item.file,
+            );
+        },
     });
-    if (type === undefined) {
-        return;
-    }
-    const scope = await prompt({
-        title: 'Edit Git Message (2/3)',
-        prompt: 'Scope (optional; clear to remove)',
-        value: value.scope ?? '',
-    });
-    if (scope === undefined) {
-        return;
-    }
-    const subject = await prompt({
-        title: 'Edit Git Message (3/3)',
-        prompt: 'Subject',
-        value: value.subject,
-        validateInput: (text) => (text.trim() ? undefined : 'Subject is required.'),
-    });
-    if (subject === undefined) {
-        return;
-    }
-    assertSaved(item.file);
-    await updateGitMessage(item.snapshot, item.index, { type, scope, subject }, item.file);
+}
+
+export async function addCommonCommandItem(
+    file = commonCommandsFile,
+    form: TemplateForm = showTemplateForm,
+): Promise<void> {
+    assertSaved(file);
+    const snapshot = await readCommonCommandSnapshot(file);
+    await editCommonCommandItem(new TemplateItem('', snapshot, 0, file, 'commonCommand'), form, true);
+}
+
+export async function addGitMessageItem(file = gitMessagesFile, form: TemplateForm = showTemplateForm): Promise<void> {
+    assertSaved(file);
+    const snapshot = await readGitMessageSnapshot(file);
+    await editGitMessageItem(new TemplateItem('', snapshot, 0, file, 'gitMessage'), form, true);
 }
 
 function assertSaved(file: string): void {
@@ -77,6 +88,25 @@ function assertSaved(file: string): void {
 }
 
 export function registerTemplateCommands(context: vscode.ExtensionContext): void {
+    context.subscriptions.push({ dispose: disposeTemplateForms });
+    for (const [name, add, refresh] of [
+        ['addCommonCommand', addCommonCommandItem, 'refreshCommonCommands'],
+        ['addGitMessage', addGitMessageItem, 'refreshGitMessages'],
+    ] as const) {
+        context.subscriptions.push(
+            vscode.commands.registerCommand(`project-atlas.${name}`, async () => {
+                try {
+                    await add();
+                } catch (error) {
+                    await vscode.window.showErrorMessage(
+                        `Project Atlas: ${error instanceof Error ? error.message : String(error)}`,
+                    );
+                } finally {
+                    await vscode.commands.executeCommand(`project-atlas.${refresh}`);
+                }
+            }),
+        );
+    }
     for (const kind of ['commonCommand', 'gitMessage'] as const) {
         for (const action of ['edit', 'delete'] as const) {
             const name = `${action}${kind === 'commonCommand' ? 'CommonCommand' : 'GitMessage'}`;
