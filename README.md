@@ -41,6 +41,8 @@ Project Atlas 用于集中保存、分类、搜索和快速打开本地项目。
 
 Activity Bar 中的 **Project Atlas: Templates** 包含两个视图：**Common Commands** 展示 `commoncmd.json` 中的命令及描述，**Git Messages** 展示 `gitmessage.json` 中的提交消息（`type(scope): subject`）。两个视图均提供编辑文件和刷新按钮，文件保存或外部变更后自动刷新；读取失败时在视图中显示错误信息。
 
+每条记录右侧提供 **Edit**、**Delete** 图标。编辑逐项填写，取消任一步不保存；描述和 scope 可清空。删除需确认，只移除对应 JSON 记录。编辑保持原位置并保留未知字段；文件已发生变化或编辑器中存在未保存修改时，操作会停止，请处理文件修改并刷新后重试。各平台均使用 VS Code 原生输入框和确认框，不涉及 Finder/Explorer 文件删除。
+
 扩展启动时会在 `~/.project-atlas/` 下自动创建缺失的 `commoncmd.json` 和 `gitmessage.json`，分别包含常用 Git 查询命令和 Git 提交消息模板。已有文件保持原样，包括空文件或损坏的 JSON。可通过命令面板中的 **Project Atlas: Edit Common Commands** 和 **Project Atlas: Edit Git Messages** 编辑默认数据。
 
 双击项目和搜索后打开项目时，打开方式由 `~/.project-atlas/project.json` 中的 `settings.defaultOpenMode` 控制，请手动配置：`CURRENT_WINDOW` 为当前窗口，`NEW_WINDOW` 为新窗口。未配置时使用当前窗口。

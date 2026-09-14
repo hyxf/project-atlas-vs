@@ -24,6 +24,30 @@
   "contributes": {
     "commands": [
       {
+        "command": "project-atlas.editCommonCommand",
+        "title": "Edit Common Command",
+        "category": "Project Atlas",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "project-atlas.deleteCommonCommand",
+        "title": "Delete Common Command",
+        "category": "Project Atlas",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "project-atlas.editGitMessage",
+        "title": "Edit Git Message",
+        "category": "Project Atlas",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "project-atlas.deleteGitMessage",
+        "title": "Delete Git Message",
+        "category": "Project Atlas",
+        "icon": "$(trash)"
+      },
+      {
         "command": "aicode.selectGroup",
         "title": "Select Context Group",
         "category": "AICode",
@@ -1026,6 +1050,22 @@
       ],
       "commandPalette": [
         {
+          "command": "project-atlas.editCommonCommand",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.deleteCommonCommand",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.editGitMessage",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.deleteGitMessage",
+          "when": "false"
+        },
+        {
           "command": "project-atlas.refreshCommonCommands",
           "when": "false"
         },
@@ -1377,6 +1417,26 @@
         }
       ],
       "view/item/context": [
+        {
+          "command": "project-atlas.editCommonCommand",
+          "when": "view == projectAtlas.commonCommands && viewItem == commonCommand",
+          "group": "inline@1"
+        },
+        {
+          "command": "project-atlas.deleteCommonCommand",
+          "when": "view == projectAtlas.commonCommands && viewItem == commonCommand",
+          "group": "inline@2"
+        },
+        {
+          "command": "project-atlas.editGitMessage",
+          "when": "view == projectAtlas.gitMessages && viewItem == gitMessage",
+          "group": "inline@1"
+        },
+        {
+          "command": "project-atlas.deleteGitMessage",
+          "when": "view == projectAtlas.gitMessages && viewItem == gitMessage",
+          "group": "inline@2"
+        },
         {
           "command": "aicode.createGroup",
           "when": "view == aicode.contextFiles && (viewItem == aicode.group || viewItem == aicode.group.default)",

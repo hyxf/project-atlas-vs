@@ -1,7 +1,22 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { commonCommandsFile, readCommonCommands } from '../commonCommands/commonCommandStore';
-import { formatGitMessage, gitMessagesFile, readGitMessages } from '../gitMessages/gitMessageStore';
+import { commonCommandsFile, CommonCommand, readCommonCommandSnapshot } from '../commonCommands/commonCommandStore';
+import { formatGitMessage, GitMessage, gitMessagesFile, readGitMessageSnapshot } from '../gitMessages/gitMessageStore';
+import { TemplateSnapshot } from './templateStore';
+import { registerTemplateCommands } from './templateCommands';
+
+export class TemplateItem<T> extends vscode.TreeItem {
+    constructor(
+        label: string,
+        readonly snapshot: TemplateSnapshot<T>,
+        readonly index: number,
+        readonly file: string,
+        kind: 'commonCommand' | 'gitMessage',
+    ) {
+        super(label);
+        this.contextValue = kind;
+    }
+}
 
 export class TemplatesTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem>, vscode.Disposable {
     private readonly changed = new vscode.EventEmitter<void>();
@@ -38,8 +53,9 @@ export class TemplatesTreeProvider implements vscode.TreeDataProvider<vscode.Tre
 }
 
 export async function loadCommonCommandItems(file = commonCommandsFile): Promise<vscode.TreeItem[]> {
-    return (await readCommonCommands(file)).map((command) => {
-        const item = new vscode.TreeItem(command.command);
+    const snapshot = await readCommonCommandSnapshot(file);
+    return snapshot.entries.map((command, index) => {
+        const item = new TemplateItem<CommonCommand>(command.command, snapshot, index, file, 'commonCommand');
         if (command.description) {
             item.description = command.description;
         }
@@ -50,8 +66,9 @@ export async function loadCommonCommandItems(file = commonCommandsFile): Promise
 }
 
 export async function loadGitMessageItems(file = gitMessagesFile): Promise<vscode.TreeItem[]> {
-    return (await readGitMessages(file)).map((message) => {
-        const item = new vscode.TreeItem(formatGitMessage(message));
+    const snapshot = await readGitMessageSnapshot(file);
+    return snapshot.entries.map((message, index) => {
+        const item = new TemplateItem<GitMessage>(formatGitMessage(message), snapshot, index, file, 'gitMessage');
         item.tooltip = formatGitMessage(message);
         item.iconPath = new vscode.ThemeIcon('git-commit');
         return item;
@@ -59,6 +76,7 @@ export async function loadGitMessageItems(file = gitMessagesFile): Promise<vscod
 }
 
 export function activateTemplates(context: vscode.ExtensionContext): void {
+    registerTemplateCommands(context);
     registerView(
         context,
         'projectAtlas.commonCommands',

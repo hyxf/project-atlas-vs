@@ -1,6 +1,7 @@
 import { promises as fs } from 'fs';
 import * as os from 'os';
 import * as path from 'path';
+import { changeTemplate, readTemplateSnapshot, TemplateSnapshot } from '../templates/templateStore';
 
 export interface GitMessage {
     type: string;
@@ -9,6 +10,35 @@ export interface GitMessage {
 }
 
 export const gitMessagesFile = path.join(os.homedir(), '.project-atlas', 'gitmessage.json');
+
+export function readGitMessageSnapshot(file = gitMessagesFile): Promise<TemplateSnapshot<GitMessage>> {
+    return readTemplateSnapshot(file, parseGitMessages);
+}
+
+export function updateGitMessage(
+    snapshot: TemplateSnapshot<GitMessage>,
+    index: number,
+    value: GitMessage,
+    file = gitMessagesFile,
+): Promise<void> {
+    return changeTemplate(file, 'messages', snapshot, index, parseGitMessages, (entry) => {
+        entry.type = value.type.trim();
+        entry.subject = value.subject.trim();
+        if (value.scope?.trim()) {
+            entry.scope = value.scope.trim();
+        } else {
+            delete entry.scope;
+        }
+    });
+}
+
+export function deleteGitMessage(
+    snapshot: TemplateSnapshot<GitMessage>,
+    index: number,
+    file = gitMessagesFile,
+): Promise<void> {
+    return changeTemplate(file, 'messages', snapshot, index, parseGitMessages);
+}
 
 export async function ensureGitMessagesFile(file = gitMessagesFile): Promise<void> {
     await fs.mkdir(path.dirname(file), { recursive: true });
@@ -45,6 +75,10 @@ export async function readGitMessages(file = gitMessagesFile): Promise<GitMessag
     } catch {
         throw new Error(`Git messages file contains invalid JSON: ${file}`);
     }
+    return parseGitMessages(data);
+}
+
+function parseGitMessages(data: unknown): GitMessage[] {
     if (!data || typeof data !== 'object' || !Array.isArray((data as { messages?: unknown }).messages)) {
         throw new Error('Git messages file must contain a messages array.');
     }

@@ -5,6 +5,109 @@ import * as os from 'os';
 import * as path from 'path';
 import { ensureCommonCommandsFile } from '../features/commonCommands/commonCommandStore';
 import { ensureGitMessagesFile } from '../features/gitMessages/gitMessageStore';
+import {
+    addCommonCommand,
+    readCommonCommandSnapshot,
+    updateCommonCommand,
+    deleteCommonCommand,
+} from '../features/commonCommands/commonCommandStore';
+import { readGitMessageSnapshot, updateGitMessage, deleteGitMessage } from '../features/gitMessages/gitMessageStore';
+
+suite('Template record data safety', () => {
+    let temporary: string;
+    setup(async () => {
+        temporary = await fs.mkdtemp(path.join(os.tmpdir(), 'project-atlas-record-test-'));
+    });
+    teardown(async () => fs.rm(temporary, { recursive: true, force: true }));
+
+    test('edits command in place, clears description and preserves unknown fields', async () => {
+        const file = path.join(temporary, 'commoncmd.json');
+        await fs.writeFile(
+            file,
+            JSON.stringify({
+                future: { version: 2 },
+                commands: [
+                    { command: 'git status', description: 'old', extra: 123 },
+                    { command: 'git diff', other: true },
+                ],
+            }),
+        );
+        await updateCommonCommand(
+            await readCommonCommandSnapshot(file),
+            0,
+            { command: ' git log ', description: '' },
+            file,
+        );
+        assert.deepStrictEqual(JSON.parse(await fs.readFile(file, 'utf8')), {
+            future: { version: 2 },
+            commands: [
+                { command: 'git log', extra: 123 },
+                { command: 'git diff', other: true },
+            ],
+        });
+        const snapshot = await readCommonCommandSnapshot(file);
+        await assert.rejects(updateCommonCommand(snapshot, 0, { command: 'git diff' }, file), /already exists/);
+        await assert.rejects(updateCommonCommand(snapshot, 0, { command: '  ' }, file), /non-empty/);
+        assert.strictEqual(await fs.readFile(file, 'utf8'), snapshot.contents);
+        await deleteCommonCommand(snapshot, 0, file);
+        assert.deepStrictEqual(JSON.parse(await fs.readFile(file, 'utf8')).commands, [
+            { command: 'git diff', other: true },
+        ]);
+    });
+
+    test('edits Git message in place and deletes only the selected duplicate', async () => {
+        const file = path.join(temporary, 'gitmessage.json');
+        const message = { type: 'fix', scope: 'ui', subject: 'Old', extra: true };
+        await fs.writeFile(file, JSON.stringify({ future: 7, messages: [message, message] }));
+        await deleteGitMessage(await readGitMessageSnapshot(file), 1, file);
+        assert.deepStrictEqual(JSON.parse(await fs.readFile(file, 'utf8')), { future: 7, messages: [message] });
+        await updateGitMessage(
+            await readGitMessageSnapshot(file),
+            0,
+            { type: ' feat ', scope: '', subject: ' New ' },
+            file,
+        );
+        assert.deepStrictEqual(JSON.parse(await fs.readFile(file, 'utf8')), {
+            future: 7,
+            messages: [{ type: 'feat', subject: 'New', extra: true }],
+        });
+        const snapshot = await readGitMessageSnapshot(file);
+        await assert.rejects(updateGitMessage(snapshot, 0, { type: '', subject: 'New' }, file), /non-empty/);
+        await assert.rejects(updateGitMessage(snapshot, 0, { type: 'fix', subject: '' }, file), /non-empty/);
+        await assert.rejects(deleteGitMessage(snapshot, 1, file), /no longer exists/);
+        assert.strictEqual(await fs.readFile(file, 'utf8'), snapshot.contents);
+    });
+
+    test('rejects stale edits and deletions after external changes or corruption', async () => {
+        const file = path.join(temporary, 'gitmessage.json');
+        await fs.writeFile(file, JSON.stringify({ messages: [{ type: 'fix', subject: 'Original' }] }));
+        const snapshot = await readGitMessageSnapshot(file);
+        for (const contents of ['{broken', JSON.stringify({ messages: [] }), snapshot.contents + '\n']) {
+            await fs.writeFile(file, contents);
+            await assert.rejects(
+                updateGitMessage(snapshot, 0, { type: 'fix', subject: 'Changed' }, file),
+                /file has changed/,
+            );
+            await assert.rejects(deleteGitMessage(snapshot, 0, file), /file has changed/);
+            assert.strictEqual(await fs.readFile(file, 'utf8'), contents);
+        }
+    });
+
+    test('serializes additions and edits and recovers after rejected writes', async () => {
+        const file = path.join(temporary, 'commoncmd.json');
+        await fs.writeFile(file, JSON.stringify({ commands: [{ command: 'git status' }] }));
+        const snapshot = await readCommonCommandSnapshot(file);
+        const results = await Promise.allSettled([
+            addCommonCommand('git diff', undefined, file),
+            deleteCommonCommand(snapshot, 0, file),
+        ]);
+        assert.strictEqual(results[0]?.status, 'fulfilled');
+        assert.strictEqual(results[1]?.status, 'rejected');
+        await deleteCommonCommand(await readCommonCommandSnapshot(file), 0, file);
+        assert.deepStrictEqual((await readCommonCommandSnapshot(file)).entries, [{ command: 'git diff' }]);
+        assert.deepStrictEqual(await fs.readdir(temporary), ['commoncmd.json']);
+    });
+});
 
 suite('Default configuration data safety', () => {
     let temporary: string;

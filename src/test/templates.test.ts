@@ -2,6 +2,10 @@ import * as assert from 'assert';
 import { promises as fs } from 'fs';
 import * as os from 'os';
 import * as path from 'path';
+import { TemplateItem } from '../features/templates/templatesFeature';
+import { CommonCommand, readCommonCommandSnapshot } from '../features/commonCommands/commonCommandStore';
+import { GitMessage, readGitMessageSnapshot } from '../features/gitMessages/gitMessageStore';
+import { editCommonCommandItem, editGitMessageItem } from '../features/templates/templateCommands';
 import {
     loadCommonCommandItems,
     loadGitMessageItems,
@@ -14,6 +18,31 @@ suite('Template views', () => {
         temporary = await fs.mkdtemp(path.join(os.tmpdir(), 'project-atlas-templates-test-'));
     });
     teardown(async () => fs.rm(temporary, { recursive: true, force: true }));
+
+    test('cancelling any edit step leaves the file unchanged', async () => {
+        const commandFile = path.join(temporary, 'commoncmd.json');
+        const messageFile = path.join(temporary, 'gitmessage.json');
+        await fs.writeFile(commandFile, JSON.stringify({ commands: [{ command: 'git status' }] }));
+        await fs.writeFile(messageFile, JSON.stringify({ messages: [{ type: 'fix', subject: 'Original' }] }));
+        const commands = await readCommonCommandSnapshot(commandFile);
+        const messages = await readGitMessageSnapshot(messageFile);
+        for (let cancel = 0; cancel < 2; cancel++) {
+            let step = 0;
+            await editCommonCommandItem(
+                new TemplateItem<CommonCommand>('git status', commands, 0, commandFile, 'commonCommand'),
+                async () => (step++ === cancel ? undefined : 'Changed'),
+            );
+            assert.strictEqual(await fs.readFile(commandFile, 'utf8'), commands.contents);
+        }
+        for (let cancel = 0; cancel < 3; cancel++) {
+            let step = 0;
+            await editGitMessageItem(
+                new TemplateItem<GitMessage>('fix: Original', messages, 0, messageFile, 'gitMessage'),
+                async () => (step++ === cancel ? undefined : 'Changed'),
+            );
+            assert.strictEqual(await fs.readFile(messageFile, 'utf8'), messages.contents);
+        }
+    });
 
     test('displays commands with descriptions and scoped Git messages in file order', async () => {
         const commandsFile = path.join(temporary, 'commoncmd.json');

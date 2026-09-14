@@ -2,6 +2,7 @@ import { randomUUID } from 'crypto';
 import { promises as fs } from 'fs';
 import * as os from 'os';
 import * as path from 'path';
+import { changeTemplate, queueTemplateWrite, readTemplateSnapshot, TemplateSnapshot } from '../templates/templateStore';
 
 export interface CommonCommand {
     command: string;
@@ -10,7 +11,37 @@ export interface CommonCommand {
 
 export const commonCommandsFile = path.join(os.homedir(), '.project-atlas', 'commoncmd.json');
 
-let writeQueue: Promise<void> = Promise.resolve();
+export function readCommonCommandSnapshot(file = commonCommandsFile): Promise<TemplateSnapshot<CommonCommand>> {
+    return readTemplateSnapshot(file, parseCommonCommands);
+}
+
+export function updateCommonCommand(
+    snapshot: TemplateSnapshot<CommonCommand>,
+    index: number,
+    value: CommonCommand,
+    file = commonCommandsFile,
+): Promise<void> {
+    return changeTemplate(file, 'commands', snapshot, index, parseCommonCommands, (entry, entries) => {
+        const command = value.command.trim();
+        if (entries.some((item, position) => position !== index && item.command === command)) {
+            throw new Error('The selected command already exists in commoncmd.json.');
+        }
+        entry.command = command;
+        if (value.description?.trim()) {
+            entry.description = value.description.trim();
+        } else {
+            delete entry.description;
+        }
+    });
+}
+
+export function deleteCommonCommand(
+    snapshot: TemplateSnapshot<CommonCommand>,
+    index: number,
+    file = commonCommandsFile,
+): Promise<void> {
+    return changeTemplate(file, 'commands', snapshot, index, parseCommonCommands);
+}
 
 export async function ensureCommonCommandsFile(file = commonCommandsFile): Promise<void> {
     await fs.mkdir(path.dirname(file), { recursive: true });
@@ -59,7 +90,7 @@ export async function addCommonCommand(
         throw new Error('Select terminal text before adding a common command.');
     }
     const normalizedDescription = description?.trim();
-    const write = writeQueue.then(async () => {
+    await queueTemplateWrite(file, async () => {
         const contents = await fs.readFile(file, 'utf8');
         let data: unknown;
         try {
@@ -85,8 +116,6 @@ export async function addCommonCommand(
             await fs.rm(temporary, { force: true }).catch(() => undefined);
         }
     });
-    writeQueue = write.catch(() => undefined);
-    await write;
 }
 
 function parseCommonCommands(data: unknown): CommonCommand[] {
