@@ -114,6 +114,39 @@ export class RepositoryStore {
         return updated;
     }
 
+    async updateRepository(url: string, repository: RepositoryItem): Promise<'updated' | 'missing' | 'existing'> {
+        let result: 'updated' | 'missing' | 'existing' = 'missing';
+        const write = this.writeQueue.then(async () => {
+            const source = await this.read();
+            const repos = Array.isArray(source.repos) ? [...source.repos] : [];
+            const index = repos.findIndex((value) => parseRepository(value)?.url === url);
+            if (index < 0 || !isRecord(repos[index])) return;
+            const key = repositoryIdentityKey(repository.url);
+            const duplicate = repos.some((value, candidate) => {
+                if (candidate === index) return false;
+                const existing = parseRepository(value);
+                return (
+                    existing?.url === repository.url ||
+                    (key !== undefined && repositoryIdentityKey(existing?.url ?? '') === key)
+                );
+            });
+            if (duplicate) {
+                result = 'existing';
+                return;
+            }
+            const next = { ...repos[index], ...repository, tags: [...repository.tags] };
+            if (!('description' in repository)) {
+                delete next.description;
+            }
+            repos[index] = next;
+            await this.save({ ...source, version: 1, repos });
+            result = 'updated';
+        });
+        this.writeQueue = write.catch(() => undefined);
+        await write;
+        return result;
+    }
+
     private async read(): Promise<StoredRepositoryData> {
         try {
             const text = await fs.readFile(this.file, 'utf8');

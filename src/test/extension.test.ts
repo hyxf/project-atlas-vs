@@ -564,7 +564,15 @@ suite('Extension', () => {
             {
                 command: 'project-atlas.deleteRepository',
                 when: 'view == projectAtlas.repos && viewItem == repository',
-                group: 'inline@3',
+                group: 'inline@4',
+            },
+        );
+        assert.deepStrictEqual(
+            itemMenu.find(({ command }) => command === 'project-atlas.editRepository'),
+            {
+                command: 'project-atlas.editRepository',
+                when: 'view == projectAtlas.repos && viewItem == repository',
+                group: 'inline@1',
             },
         );
         assert.deepStrictEqual(
@@ -572,7 +580,7 @@ suite('Extension', () => {
             {
                 command: 'project-atlas.editRepositoryTags',
                 when: 'view == projectAtlas.repos && viewItem == repository',
-                group: 'inline@1',
+                group: 'inline@2',
             },
         );
         assert.deepStrictEqual(
@@ -580,7 +588,7 @@ suite('Extension', () => {
             {
                 command: 'project-atlas.cloneRepository',
                 when: 'view == projectAtlas.repos && viewItem == repository',
-                group: 'inline@2',
+                group: 'inline@3',
             },
         );
     });

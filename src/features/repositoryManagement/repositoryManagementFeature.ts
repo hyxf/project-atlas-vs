@@ -159,6 +159,41 @@ export function activateRepositoryManagement(context: vscode.ExtensionContext): 
                 }
             }),
         ),
+        vscode.commands.registerCommand('project-atlas.editRepository', (node: unknown) =>
+            run(async () => {
+                if (!(node instanceof RepositoryNode)) return;
+                const repository = node.repository;
+                const url = await vscode.window.showInputBox({
+                    title: 'Edit Git Repository',
+                    prompt: 'Repository URL',
+                    value: repository.url,
+                });
+                if (url === undefined) return;
+                const identity = parseRepositoryIdentity(url.trim());
+                if (!identity) throw new Error('Enter a valid SSH Git repository URL.');
+                const description = await vscode.window.showInputBox({
+                    title: 'Edit Git Repository',
+                    prompt: 'Description',
+                    value: repository.description ?? '',
+                });
+                if (description === undefined) return;
+                const tags = await pickRepositoryTags(
+                    (await store.repositories()).flatMap((item) => item.tags),
+                    repository.tags,
+                    'Edit Git Repository: Select Tags',
+                );
+                if (tags === undefined) return;
+                const nextRepository = {
+                    ...identity,
+                    url: url.trim(),
+                    tags,
+                    ...(description.trim() ? { description: description.trim() } : {}),
+                };
+                const result = await store.updateRepository(repository.url, nextRepository);
+                if (result === 'existing') throw new Error('Another saved repository uses that URL.');
+                if (result === 'updated') tree.refresh();
+            }),
+        ),
         vscode.commands.registerCommand('project-atlas.cloneRepository', (node: unknown) =>
             run(async () => {
                 if (!(node instanceof RepositoryNode)) {

@@ -395,6 +395,12 @@
         "enablement": "projectAtlas.repositoryViewMode != HOSTS"
       },
       {
+        "command": "project-atlas.editRepository",
+        "title": "Edit Git Repository",
+        "category": "Project Atlas",
+        "icon": "$(edit)"
+      },
+      {
         "command": "project-atlas.editRepositoryTags",
         "title": "Edit Repository Tags...",
         "category": "Project Atlas",
@@ -1309,6 +1315,10 @@
           "when": "false"
         },
         {
+          "command": "project-atlas.editRepository",
+          "when": "false"
+        },
+        {
           "command": "project-atlas.editRepositoryTags",
           "when": "false"
         },
@@ -1580,17 +1590,22 @@
         {
           "command": "project-atlas.deleteRepository",
           "when": "view == projectAtlas.repos && viewItem == repository",
-          "group": "inline@3"
+          "group": "inline@4"
         },
         {
-          "command": "project-atlas.editRepositoryTags",
+          "command": "project-atlas.editRepository",
           "when": "view == projectAtlas.repos && viewItem == repository",
           "group": "inline@1"
         },
         {
-          "command": "project-atlas.cloneRepository",
+          "command": "project-atlas.editRepositoryTags",
           "when": "view == projectAtlas.repos && viewItem == repository",
           "group": "inline@2"
+        },
+        {
+          "command": "project-atlas.cloneRepository",
+          "when": "view == projectAtlas.repos && viewItem == repository",
+          "group": "inline@3"
         },
         {
           "command": "project-atlas.openGithubRepository",
