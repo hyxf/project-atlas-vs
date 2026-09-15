@@ -1,5 +1,6 @@
 import { randomUUID } from 'crypto';
 import { promises as fs } from 'fs';
+import * as path from 'path';
 
 export interface TemplateSnapshot<T> {
     contents: string;
@@ -9,7 +10,32 @@ export interface TemplateSnapshot<T> {
 const queues = new Map<string, Promise<void>>();
 
 export async function queueTemplateWrite(file: string, action: () => Promise<void>): Promise<void> {
-    const write = (queues.get(file) ?? Promise.resolve()).catch(() => undefined).then(action);
+    file = path.resolve(file);
+    const write = (queues.get(file) ?? Promise.resolve())
+        .catch(() => undefined)
+        .then(async () => {
+            // All extension processes must acquire this lock before reading data for a write.
+            // Never expire a lock by age: a paused writer may still own it.
+            const lockPath = `${file}.lock`;
+            const lock = await fs.open(lockPath, 'wx', 0o600).catch((error: NodeJS.ErrnoException) => {
+                if (error.code === 'EEXIST') {
+                    throw new Error(
+                        `Another writer owns ${lockPath}. Retry after it finishes. If a writer crashed, remove the lock only after confirming it has stopped.`,
+                    );
+                }
+                throw error;
+            });
+            try {
+                await lock.writeFile(JSON.stringify({ pid: process.pid, createdAt: new Date().toISOString() }));
+                await action();
+            } finally {
+                try {
+                    await lock.close();
+                } finally {
+                    await fs.unlink(lockPath);
+                }
+            }
+        });
     queues.set(file, write);
     try {
         await write;
@@ -47,12 +73,7 @@ export async function changeTemplate<T>(
     parse: (data: unknown) => T[],
     update?: (entry: Record<string, unknown>, entries: T[]) => void,
 ): Promise<void> {
-    await queueTemplateWrite(file, async () => {
-        const contents = await fs.readFile(file, 'utf8');
-        if (contents !== snapshot.contents) {
-            throw new Error('The file has changed. Refresh the view and try again.');
-        }
-        const document = JSON.parse(contents) as Record<string, unknown>;
+    await mutateTemplate(file, snapshot, (document) => {
         const entries = parse(document);
         if (index !== null && (!Number.isInteger(index) || index < 0 || index >= entries.length)) {
             throw new Error('The selected record no longer exists. Refresh the view and try again.');
@@ -71,6 +92,43 @@ export async function changeTemplate<T>(
             records.splice(index, 1);
         }
         parse(document);
+    });
+}
+
+/** Reorders raw records so unknown fields and normalized display values remain untouched. */
+export async function reorderTemplates<T>(
+    file: string,
+    key: string,
+    snapshot: TemplateSnapshot<T>,
+    order: readonly number[],
+): Promise<void> {
+    await mutateTemplate(file, snapshot, (document) => {
+        const records = document[key];
+        if (
+            !Array.isArray(records) ||
+            records.length !== snapshot.entries.length ||
+            order.length !== records.length ||
+            new Set(order).size !== records.length ||
+            order.some((index) => !Number.isInteger(index) || index < 0 || index >= records.length)
+        ) {
+            throw new Error('Invalid template order. Refresh the view and try again.');
+        }
+        document[key] = order.map((index) => records[index]);
+    });
+}
+
+async function mutateTemplate<T>(
+    file: string,
+    snapshot: TemplateSnapshot<T>,
+    mutate: (document: Record<string, unknown>) => void,
+): Promise<void> {
+    await queueTemplateWrite(file, async () => {
+        const contents = await fs.readFile(file, 'utf8');
+        if (contents !== snapshot.contents) {
+            throw new Error('The file has changed. Refresh the view and try again.');
+        }
+        const document = JSON.parse(contents) as Record<string, unknown>;
+        mutate(document);
         const temporary = `${file}.${process.pid}.${randomUUID()}.tmp`;
         try {
             await fs.writeFile(temporary, `${JSON.stringify(document, null, 2)}\n`, { flag: 'wx' });

@@ -247,6 +247,18 @@
         "icon": "$(edit)"
       },
       {
+        "command": "project-atlas.gitMessagesListView",
+        "title": "Show Git Messages as List",
+        "category": "Project Atlas",
+        "icon": "$(list-flat)"
+      },
+      {
+        "command": "project-atlas.gitMessagesGroupView",
+        "title": "Group Git Messages by Type",
+        "category": "Project Atlas",
+        "icon": "$(list-tree)"
+      },
+      {
         "command": "project-atlas.refreshGitMessages",
         "title": "Refresh Git Messages",
         "category": "Project Atlas",
@@ -1011,6 +1023,16 @@
           "submenu": "projectAtlas.sortMenu",
           "when": "view == projectAtlas.projects",
           "group": "view@2"
+        },
+        {
+          "command": "project-atlas.gitMessagesListView",
+          "when": "view == projectAtlas.gitMessages && projectAtlas.gitMessageViewMode != LIST",
+          "group": "navigation@1"
+        },
+        {
+          "command": "project-atlas.gitMessagesGroupView",
+          "when": "view == projectAtlas.gitMessages && projectAtlas.gitMessageViewMode == LIST",
+          "group": "navigation@1"
         }
       ],
       "projectAtlas.filterMenu": [
@@ -1479,6 +1501,14 @@
         },
         {
           "command": "project-atlas.sortRecentSelected",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.gitMessagesListView",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.gitMessagesGroupView",
           "when": "false"
         }
       ],

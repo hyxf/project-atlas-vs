@@ -51,6 +51,8 @@ Project Atlas 用于集中保存、分类、搜索和快速打开本地项目。
 
 Activity Bar 中的 **Project Atlas: Templates** 包含两个视图：**Common Commands** 展示 `commoncmd.json` 中的命令及描述，**Git Messages** 展示 `gitmessage.json` 中的提交消息（`type(scope): subject`）。两个视图均提供编辑文件和刷新按钮，文件保存或外部变更后自动刷新；读取失败时在视图中显示错误信息。
 
+Templates 列表支持原生拖动排序：将记录拖到另一条记录上，会插入到目标记录之前；拖到列表空白处会移至末尾。Git Messages 标题栏提供列表／按 type 分组切换，默认分组显示，并记住所选模式。只有列表模式支持拖动排序，可跨 type 调整记录顺序；分组模式完全禁用排序。切换模式不修改数据。描述行和分组标题不能拖动。顺序直接保存到原 JSON 数组，保留未知字段。所有模板增删改和排序在读取至提交期间持有同目录的 `<文件名>.lock` 排他锁，避免遵守该协议的扩展进程互相覆盖；检测到文件冲突时拒绝保存。手动编辑、旧版扩展或其他 IDE 若不遵守此锁协议，仍无法保证并发写入安全，应避免同时保存。锁不会因超时被强制抢占；若进程崩溃遗留锁，请确认写入进程已退出后再删除锁文件。
+
 每条记录右侧提供 **Edit**、**Delete** 图标。编辑在一个表单面板中展示全部字段，点击 **Save**（或 `Ctrl/Cmd+Enter`）统一保存；点击 **Cancel**、按 `Esc` 或保存前关闭面板均不保存。描述和 scope 可清空，保存失败时在表单中显示原因并保留输入。删除需确认，只移除对应 JSON 记录。编辑保持原位置并保留未知字段；文件已发生变化或编辑器中存在未保存修改时，操作会停止，请处理文件修改并刷新后重新打开表单。各平台均不涉及 Finder/Explorer 文件删除。
 
 扩展启动时会在 `~/.project-atlas/` 下自动创建缺失的 `commoncmd.json` 和 `gitmessage.json`，分别包含常用 Git 查询命令和 Git 提交消息模板。已有文件保持原样，包括空文件或损坏的 JSON。可通过命令面板中的 **Project Atlas: Edit Common Commands** 和 **Project Atlas: Edit Git Messages** 编辑默认数据。

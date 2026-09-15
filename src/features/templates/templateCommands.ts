@@ -126,7 +126,7 @@ export async function addGitMessageItem(file = gitMessagesFile, form: TemplateFo
     await editGitMessageItem(new TemplateItem('', snapshot, 0, file, 'gitMessage'), form, true);
 }
 
-function assertSaved(file: string): void {
+export function assertSaved(file: string): void {
     if (vscode.workspace.textDocuments.some((document) => document.uri.fsPath === file && document.isDirty)) {
         throw new Error('Save or discard the JSON file’s unsaved changes, then refresh the view and try again.');
     }

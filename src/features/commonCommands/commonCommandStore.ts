@@ -111,6 +111,9 @@ export async function addCommonCommand(
         const temporary = `${file}.${process.pid}.${randomUUID()}.tmp`;
         try {
             await fs.writeFile(temporary, `${JSON.stringify(document, null, 2)}\n`, 'utf8');
+            if ((await fs.readFile(file, 'utf8')) !== contents) {
+                throw new Error('The file has changed. Refresh the view and try again.');
+            }
             await fs.rename(temporary, file);
         } finally {
             await fs.rm(temporary, { force: true }).catch(() => undefined);

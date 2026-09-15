@@ -1,3 +1,14 @@
+import { execFile } from 'child_process';
+import { promisify } from 'util';
+import { queueTemplateWrite, reorderTemplates } from '../features/templates/templateStore';
+import {
+    TemplateDragAndDropController,
+    TemplateViewRegistration,
+    TemplatesTreeProvider,
+    loadCommonCommandItems,
+    loadGitMessageItems,
+    GitMessageTypeGroup,
+} from '../features/templates/templatesFeature';
 import { editRepositoryForm } from '../features/repositoryManagement/repositoryForm';
 import { RepositoryStore } from '../features/repositoryManagement/store';
 import * as assert from 'assert';
@@ -76,6 +87,241 @@ suite('Template record data safety', () => {
         temporary = await fs.mkdtemp(path.join(os.tmpdir(), 'project-atlas-record-test-'));
     });
     teardown(async () => fs.rm(temporary, { recursive: true, force: true }));
+
+    test('holds a cross-process lock until commit and releases it on failed writes', async () => {
+        const file = path.join(temporary, 'commoncmd.json');
+        await fs.writeFile(file, JSON.stringify({ commands: [{ command: 'a' }, { command: 'b' }] }));
+        const snapshot = await readCommonCommandSnapshot(file);
+        await queueTemplateWrite(file, async () => {
+            const script = `
+                const { reorderTemplates } = require(process.argv[1]);
+                reorderTemplates(process.argv[2], 'commands', JSON.parse(process.argv[3]), [1, 0])
+                    .then(() => { process.exitCode = 1; })
+                    .catch(error => {
+                        if (!error.message.includes('Another writer owns')) { throw error; }
+                        console.log('locked');
+                    });
+            `;
+            const { stdout } = await promisify(execFile)(
+                process.execPath,
+                ['-e', script, require.resolve('../features/templates/templateStore'), file, JSON.stringify(snapshot)],
+                { env: { ...process.env, ELECTRON_RUN_AS_NODE: '1' }, timeout: 10000 },
+            );
+            assert.strictEqual(stdout.trim(), 'locked');
+            assert.strictEqual(await fs.readFile(file, 'utf8'), snapshot.contents);
+            assert.ok((await fs.stat(`${file}.lock`)).isFile());
+        });
+        await assert.rejects(
+            queueTemplateWrite(file, async () => {
+                throw new Error('write failed');
+            }),
+            /write failed/,
+        );
+        await reorderTemplates(file, 'commands', snapshot, [1, 0]);
+        assert.deepStrictEqual(
+            (await readCommonCommandSnapshot(file)).entries.map((item) => item.command),
+            ['b', 'a'],
+        );
+        await assert.rejects(reorderTemplates(file, 'commands', snapshot, [1, 0]), /file has changed/);
+        assert.deepStrictEqual(await fs.readdir(temporary), ['commoncmd.json']);
+    });
+
+    test('does not remove a lock owned by another writer for any template mutation', async () => {
+        const file = path.join(temporary, 'commoncmd.json');
+        await fs.writeFile(file, JSON.stringify({ commands: [{ command: 'a' }] }));
+        const snapshot = await readCommonCommandSnapshot(file);
+        const lock = `${file}.lock`;
+        await fs.writeFile(lock, 'another owner');
+        await assert.rejects(reorderTemplates(file, 'commands', snapshot, [0]), /Another writer owns/);
+        await assert.rejects(updateCommonCommand(snapshot, 0, { command: 'b' }, file), /Another writer owns/);
+        await assert.rejects(deleteCommonCommand(snapshot, 0, file), /Another writer owns/);
+        await assert.rejects(addCommonCommand('b', undefined, file), /Another writer owns/);
+        assert.strictEqual(await fs.readFile(lock, 'utf8'), 'another owner');
+        assert.strictEqual(await fs.readFile(file, 'utf8'), snapshot.contents);
+    });
+
+    test('recreates Git message views without native drag capabilities in group mode', async () => {
+        let listMode = false;
+        const options: vscode.TreeViewOptions<vscode.TreeItem>[] = [];
+        let disposedViews = 0;
+        let disposedListeners = 0;
+        const createView = ((_id: string, value: vscode.TreeViewOptions<vscode.TreeItem>) => {
+            options.push(value);
+            return {
+                dispose: () => {
+                    disposedViews++;
+                },
+                onDidChangeVisibility: () => ({
+                    dispose: () => {
+                        disposedListeners++;
+                    },
+                }),
+            };
+        }) as unknown as typeof vscode.window.createTreeView;
+        const provider = new TemplatesTreeProvider(async () => []);
+        const registration = new TemplateViewRegistration(
+            'test.messages',
+            'gitmessage.json',
+            provider,
+            () => listMode,
+            createView,
+        );
+        try {
+            assert.ok(!('dragAndDropController' in options[0]!));
+            listMode = true;
+            await registration.recreate();
+            assert.ok(options[1]!.dragAndDropController instanceof TemplateDragAndDropController);
+            listMode = false;
+            await registration.recreate();
+            assert.ok(!('dragAndDropController' in options[2]!));
+            assert.strictEqual(disposedViews, 2);
+            assert.strictEqual(disposedListeners, 2);
+            const pending = registration.recreate();
+            registration.dispose();
+            await pending;
+            assert.strictEqual(options.length, 3);
+        } finally {
+            registration.dispose();
+            provider.dispose();
+        }
+    });
+
+    test('reorders raw records and rejects invalid permutations, stale snapshots, and corrupt files', async () => {
+        const file = path.join(temporary, 'commoncmd.json');
+        const first = { command: ' git status ', extra: { keep: true } };
+        const second = { command: 'git diff', future: 2 };
+        await fs.writeFile(file, JSON.stringify({ future: true, commands: [first, second] }));
+        const snapshot = await readCommonCommandSnapshot(file);
+        for (const order of [[0, 0], [0], [0, 2], [0, 0.5]]) {
+            await assert.rejects(reorderTemplates(file, 'commands', snapshot, order), /Invalid template order/);
+            assert.strictEqual(await fs.readFile(file, 'utf8'), snapshot.contents);
+        }
+        await reorderTemplates(file, 'commands', snapshot, [1, 0]);
+        assert.deepStrictEqual(JSON.parse(await fs.readFile(file, 'utf8')), {
+            future: true,
+            commands: [second, first],
+        });
+        await assert.rejects(reorderTemplates(file, 'commands', snapshot, [0, 1]), /file has changed/);
+        await fs.writeFile(file, '{broken');
+        await assert.rejects(reorderTemplates(file, 'commands', snapshot, [1, 0]), /file has changed/);
+        assert.strictEqual(await fs.readFile(file, 'utf8'), '{broken');
+        assert.deepStrictEqual(await fs.readdir(temporary), ['commoncmd.json']);
+    });
+
+    test('native command drops insert before targets, append at root, and ignore invalid or cancelled drops', async () => {
+        const file = path.join(temporary, 'commoncmd.json');
+        await fs.writeFile(
+            file,
+            JSON.stringify({
+                commands: [{ command: 'a', description: 'details' }, { command: 'b' }, { command: 'c' }],
+            }),
+        );
+        let refreshed = 0;
+        const controller = new TemplateDragAndDropController('test.commands', file, () => {
+            refreshed++;
+        });
+        const token = new vscode.CancellationTokenSource();
+        try {
+            let items = await loadCommonCommandItems(file);
+            const transfer = new vscode.DataTransfer();
+            controller.handleDrag([items[2]!], transfer, token.token);
+            await controller.handleDrop(items[0], transfer, token.token);
+            assert.deepStrictEqual(
+                (await readCommonCommandSnapshot(file)).entries.map((item) => item.command),
+                ['c', 'a', 'b'],
+            );
+            items = await loadCommonCommandItems(file);
+            controller.handleDrag([items[0]!], transfer, token.token);
+            await controller.handleDrop(undefined, transfer, token.token);
+            assert.deepStrictEqual(
+                (await readCommonCommandSnapshot(file)).entries.map((item) => item.command),
+                ['a', 'b', 'c'],
+            );
+            items = await loadCommonCommandItems(file);
+            controller.handleDrag([items[0]!], transfer, token.token);
+            await controller.handleDrop(new vscode.TreeItem('description'), transfer, token.token);
+            await controller.handleDrop(items[0], transfer, token.token);
+            token.cancel();
+            await controller.handleDrop(undefined, transfer, token.token);
+            assert.strictEqual(refreshed, 2);
+        } finally {
+            token.dispose();
+        }
+    });
+
+    test('Git messages support flat ordering across types and disable all sorting in grouped mode', async () => {
+        const file = path.join(temporary, 'gitmessage.json');
+        const messages = [
+            { type: 'fix', subject: 'A', future: 1 },
+            { type: 'feat', subject: 'B' },
+            { type: 'fix', subject: 'C', extra: true },
+        ];
+        const contents = JSON.stringify({ future: true, messages });
+        await fs.writeFile(file, contents);
+        let listMode = false;
+        let refreshed = 0;
+        const controller = new TemplateDragAndDropController(
+            'test.messages',
+            file,
+            () => {
+                refreshed++;
+            },
+            () => listMode,
+        );
+        const token = new vscode.CancellationTokenSource();
+        try {
+            const groups = (await loadGitMessageItems(file, 'GROUP')) as GitMessageTypeGroup[];
+            assert.deepStrictEqual(
+                groups.map((item) => item.label),
+                ['fix', 'feat'],
+            );
+            const transfer = new vscode.DataTransfer();
+            controller.handleDrag([groups[0]!.children[0]!], transfer, token.token);
+            assert.strictEqual([...transfer].length, 0);
+            let items = await loadGitMessageItems(file, 'LIST');
+            assert.deepStrictEqual(
+                items.map((item) => item.label),
+                ['fix: A', 'feat: B', 'fix: C'],
+            );
+            assert.ok(items.every((item) => item.contextValue === 'gitMessage'));
+            assert.strictEqual(await fs.readFile(file, 'utf8'), contents);
+            listMode = true;
+            controller.handleDrag([items[2]!], transfer, token.token);
+            // A drop started in list mode must not write after switching to grouped mode.
+            listMode = false;
+            await controller.handleDrop(groups[0]!.children[0], transfer, token.token);
+            await controller.handleDrop(groups[0], transfer, token.token);
+            await controller.handleDrop(undefined, transfer, token.token);
+            assert.strictEqual(await fs.readFile(file, 'utf8'), contents);
+            assert.strictEqual(refreshed, 0);
+            listMode = true;
+            await controller.handleDrop(groups[0], transfer, token.token);
+            assert.strictEqual(await fs.readFile(file, 'utf8'), contents);
+            controller.handleDrag([items[2]!], transfer, token.token);
+            await controller.handleDrop(items[1], transfer, token.token);
+            assert.deepStrictEqual(JSON.parse(await fs.readFile(file, 'utf8')), {
+                future: true,
+                messages: [messages[0], messages[2], messages[1]],
+            });
+            items = await loadGitMessageItems(file, 'LIST');
+            controller.handleDrag([items[0]!], transfer, token.token);
+            await controller.handleDrop(undefined, transfer, token.token);
+            assert.deepStrictEqual(JSON.parse(await fs.readFile(file, 'utf8')), {
+                future: true,
+                messages: [messages[2], messages[1], messages[0]],
+            });
+            assert.strictEqual(refreshed, 2);
+            const saved = await fs.readFile(file, 'utf8');
+            const regrouped = (await loadGitMessageItems(file, 'GROUP')) as GitMessageTypeGroup[];
+            assert.deepStrictEqual(
+                regrouped[0]!.children.map((item) => item.label),
+                ['fix: C', 'fix: A'],
+            );
+            assert.strictEqual(await fs.readFile(file, 'utf8'), saved);
+        } finally {
+            token.dispose();
+        }
+    });
 
     test('appends commands without replacing records and rejects duplicate or stale additions', async () => {
         const file = path.join(temporary, 'commoncmd.json');
@@ -447,7 +693,7 @@ suite('Extension', () => {
         assert.deepStrictEqual(contributes.viewsContainers.activitybar, [
             { id: 'projectAtlasTemplates', title: 'Project Atlas: Templates', icon: 'resources/templates.svg' },
             { id: 'aicode', title: 'Project Atlas: AICode', icon: 'resources/aicode-context.svg' },
-            { id: 'projectAtlas', title: 'Project Atlas', icon: 'resources/project-atlas.svg' },
+            { id: 'projectAtlas', title: 'Project Atlas: Projects', icon: 'resources/project-atlas.svg' },
         ]);
         assert.deepStrictEqual(contributes.views.aicode, [
             { id: 'aicode.contextFiles', name: 'Context Files' },
