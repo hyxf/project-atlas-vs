@@ -1,12 +1,28 @@
 import * as vscode from 'vscode';
+import { TemplateItem } from '../templates/templatesFeature';
 import {
     addCommonCommand,
+    CommonCommand,
     commonCommandsFile,
     ensureCommonCommandsFile,
     readCommonCommands,
 } from './commonCommandStore';
 
-export async function insertCommonCommand(): Promise<void> {
+export async function insertCommonCommand(item?: unknown): Promise<void> {
+    const command =
+        item instanceof TemplateItem && item.contextValue === 'commonCommand'
+            ? (item as TemplateItem<CommonCommand>).snapshot.entries[item.index]?.command
+            : await pickCommonCommand();
+    if (!command) {
+        return;
+    }
+
+    const terminal = vscode.window.activeTerminal ?? vscode.window.createTerminal({ name: 'Project Atlas' });
+    terminal.show();
+    terminal.sendText(command, false);
+}
+
+async function pickCommonCommand(): Promise<string | undefined> {
     const commands = await readCommonCommands();
     if (!commands.length) {
         await vscode.window.showInformationMessage('Project Atlas: No common commands configured.');
@@ -24,13 +40,7 @@ export async function insertCommonCommand(): Promise<void> {
             matchOnDetail: true,
         },
     );
-    if (!picked) {
-        return;
-    }
-
-    const terminal = vscode.window.activeTerminal ?? vscode.window.createTerminal({ name: 'Project Atlas' });
-    terminal.show();
-    terminal.sendText(picked.command, false);
+    return picked?.command;
 }
 
 export async function editCommonCommands(): Promise<void> {

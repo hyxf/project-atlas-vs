@@ -272,7 +272,8 @@
       {
         "command": "project-atlas.insertCommonCommand",
         "title": "Insert Common Command...",
-        "category": "Project Atlas"
+        "category": "Project Atlas",
+        "icon": "$(terminal)"
       },
       {
         "command": "project-atlas.createReleaseTag",
@@ -1472,6 +1473,11 @@
         }
       ],
       "view/item/context": [
+        {
+          "command": "project-atlas.insertCommonCommand",
+          "when": "view == projectAtlas.commonCommands && viewItem == commonCommand",
+          "group": "inline@0"
+        },
         {
           "command": "project-atlas.editCommonCommand",
           "when": "view == projectAtlas.commonCommands && viewItem == commonCommand",
