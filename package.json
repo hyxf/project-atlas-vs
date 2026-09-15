@@ -2,7 +2,7 @@
   "name": "project-atlas-vs",
   "displayName": "Project Atlas VS",
   "description": "Save, organize, search, and quickly open local projects.",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "publisher": "billchiu",
   "icon": "resources/project-atlas.png",
   "homepage": "https://github.com/hyxf/project-atlas-vs/blob/main/README.md",
