@@ -1,7 +1,23 @@
+import {
+    ensureAiPromptsFile,
+    readAiPromptSnapshot,
+    changeAiPrompt,
+    parseAiPrompts,
+} from '../features/aiPrompts/aiPromptStore';
+import {
+    buildPromptItems,
+    PromptTagGroup,
+    matchesPrompt,
+    renderPromptPreview,
+    editAiPrompt,
+    editAiPromptTags,
+} from '../features/aiPrompts/aiPromptsFeature';
+import { validateFormValues } from '../features/templates/templateForm';
 import { execFile } from 'child_process';
 import { promisify } from 'util';
 import { queueTemplateWrite, reorderTemplates } from '../features/templates/templateStore';
 import {
+    TemplateItem,
     TemplateDragAndDropController,
     TemplateViewRegistration,
     TemplatesTreeProvider,
@@ -582,6 +598,12 @@ suite('Extension', () => {
                 'project-atlas.saveCurrent',
                 'project-atlas.add',
                 'project-atlas.saveCurrentRepository',
+                'project-atlas.addAiPrompt',
+                'project-atlas.refreshAiPrompts',
+                'project-atlas.editAiPromptsFile',
+                'project-atlas.searchAiPrompts',
+                'project-atlas.aiPromptsListView',
+                'project-atlas.aiPromptsGroupView',
             ],
         );
         assert.strictEqual(paletteCommands[0]?.category, 'AICode');
@@ -679,6 +701,7 @@ suite('Extension', () => {
                 fileMatch: '**/.project-atlas/github.json',
                 url: './schemas/github.schema.json',
             },
+            { fileMatch: '**/aiprompts.json', url: './schemas/aiprompts.schema.json' },
         ]);
     });
 
@@ -702,6 +725,7 @@ suite('Extension', () => {
         assert.deepStrictEqual(contributes.views.projectAtlasTemplates, [
             { id: 'projectAtlas.commonCommands', name: 'Common Commands' },
             { id: 'projectAtlas.gitMessages', name: 'Git Messages' },
+            { id: 'projectAtlas.aiPrompts', name: 'AI Prompts' },
         ]);
         assert.deepStrictEqual(contributes.views.projectAtlas, [
             { id: 'projectAtlas.projects', name: 'Projects', icon: 'resources/project-atlas.svg' },
@@ -1274,5 +1298,241 @@ suite('Repository HTML forms', () => {
             new Set((await store.repositories())[0]!.tags),
             new Set([...repository.tags, 'frontend', 'backend']),
         );
+    });
+});
+
+suite('AI Prompts data safety', () => {
+    let temporary: string;
+    let file: string;
+    const first = 'b762f475-5e32-460d-bac0-f35657db6d10';
+    const second = '139b28d2-9e81-4a15-b513-f88cde93b243';
+    setup(async () => {
+        temporary = await fs.mkdtemp(path.join(os.tmpdir(), 'atlas-prompts-'));
+        file = path.join(temporary, 'aiprompts.json');
+    });
+    teardown(async () => {
+        await fs.rm(temporary, { recursive: true, force: true });
+    });
+
+    test('initializes six defaults once and preserves existing, empty and damaged files', async () => {
+        await ensureAiPromptsFile(file);
+        const snapshot = await readAiPromptSnapshot(file);
+        assert.deepStrictEqual(
+            snapshot.entries.map((entry) => entry.title),
+            ['代码审查', '排查问题', '编写单元测试', '重构代码', '润色文案', '总结提炼'],
+        );
+        assert.strictEqual(new Set(snapshot.entries.map((entry) => entry.id)).size, 6);
+        assert.ok(snapshot.entries.every((entry) => entry.content.trim() && entry.description && entry.tags?.length));
+        await ensureAiPromptsFile(file);
+        assert.strictEqual(await fs.readFile(file, 'utf8'), snapshot.contents);
+        for (const contents of ['{"schemaVersion":1,"prompts":[],"custom":true}', '', '{broken']) {
+            await fs.writeFile(file, contents);
+            await ensureAiPromptsFile(file);
+            assert.strictEqual(await fs.readFile(file, 'utf8'), contents);
+        }
+        await assert.rejects(readAiPromptSnapshot(file), /invalid JSON/);
+    });
+
+    test('preserves whitespace, IDs and unknown fields across edit, duplicate, reorder and delete', async () => {
+        const content = '\n    code\r\n\tline  \n';
+        await fs.writeFile(
+            file,
+            JSON.stringify({
+                schemaVersion: 1,
+                future: { enabled: true },
+                prompts: [
+                    { id: first, title: 'Original', content, tags: ['开发'], favorite: true, custom: { value: 42 } },
+                    { id: second, title: 'Other', content: 'Second', custom: 'keep' },
+                ],
+            }),
+        );
+        let snapshot = await readAiPromptSnapshot(file);
+        await changeAiPrompt(
+            snapshot,
+            { type: 'save', id: first, value: { title: ' Renamed ', content, tags: [' 开发 ', '审查', '开发'] } },
+            file,
+        );
+        snapshot = await readAiPromptSnapshot(file);
+        assert.strictEqual(snapshot.entries[0]!.content, content);
+        assert.strictEqual(snapshot.entries[0]!.id, first);
+        assert.ok(!('favorite' in snapshot.entries[0]!));
+        await changeAiPrompt(snapshot, { type: 'duplicate', id: first }, file);
+        snapshot = await readAiPromptSnapshot(file);
+        assert.strictEqual(snapshot.entries[1]!.title, 'Renamed 副本');
+        assert.notStrictEqual(snapshot.entries[1]!.id, first);
+        assert.strictEqual(snapshot.entries[1]!.content, content);
+        await changeAiPrompt(snapshot, { type: 'reorder', order: [2, 1, 0] }, file);
+        snapshot = await readAiPromptSnapshot(file);
+        assert.strictEqual(snapshot.entries[0]!.id, second);
+        await changeAiPrompt(snapshot, { type: 'delete', id: first }, file);
+        const data = JSON.parse(await fs.readFile(file, 'utf8'));
+        assert.deepStrictEqual(data.future, { enabled: true });
+        assert.strictEqual(data.prompts.length, 2);
+        assert.strictEqual(data.prompts[0].custom, 'keep');
+        assert.deepStrictEqual(data.prompts[1].custom, { value: 42 });
+        assert.strictEqual(data.prompts[1].favorite, true);
+        assert.deepStrictEqual(data.prompts[1].tags, ['开发', '审查']);
+        assert.strictEqual(data.prompts[1].content, content);
+    });
+
+    test('rejects stale mutations, held locks and invalid orders without changing bytes', async () => {
+        await ensureAiPromptsFile(file);
+        const snapshot = await readAiPromptSnapshot(file);
+        await changeAiPrompt(snapshot, { type: 'save', value: { title: 'New', content: ' text ' } }, file);
+        const contents = await fs.readFile(file, 'utf8');
+        await assert.rejects(
+            changeAiPrompt(snapshot, { type: 'save', value: { title: 'Lost', content: 'no' } }, file),
+            /file has changed/,
+        );
+        const latest = await readAiPromptSnapshot(file);
+        await assert.rejects(changeAiPrompt(latest, { type: 'reorder', order: [1] }, file), /Invalid prompt order/);
+        await fs.writeFile(`${file}.lock`, 'another writer');
+        await assert.rejects(
+            changeAiPrompt(latest, { type: 'delete', id: latest.entries[0]!.id }, file),
+            /Another writer owns/,
+        );
+        assert.strictEqual(await fs.readFile(file, 'utf8'), contents);
+        assert.strictEqual(await fs.readFile(`${file}.lock`, 'utf8'), 'another writer');
+    });
+
+    test('rejects unsupported versions, duplicate IDs and invalid optional fields', () => {
+        const prompt = { id: first, title: 'Title', content: 'Text' };
+        assert.throws(() => parseAiPrompts({ schemaVersion: 2, prompts: [] }), /Unsupported/);
+        assert.throws(
+            () => parseAiPrompts({ schemaVersion: 1, prompts: [prompt, { ...prompt, id: first.toUpperCase() }] }),
+            /duplicate id/,
+        );
+        for (const value of [{ content: '  ' }, { tags: '开发' }, { tags: [42] }, { id: 'bad' }]) {
+            assert.throws(() => parseAiPrompts({ schemaVersion: 1, prompts: [{ ...prompt, ...value }] }));
+        }
+    });
+
+    test('groups tags, ignores legacy favorites and searches full content', () => {
+        const snapshot = {
+            contents: '',
+            entries: [
+                { id: first, title: 'A', content: 'hidden search term' },
+                { id: second, title: 'B', content: 'text', tags: ['开发', '审查'], favorite: true },
+            ],
+        };
+        const grouped = buildPromptItems(snapshot, 'GROUP', file) as PromptTagGroup[];
+        assert.deepStrictEqual(
+            grouped.map((group) => group.tag),
+            ['开发', '审查', ''],
+        );
+        assert.strictEqual(grouped[0]!.description, '1');
+        assert.notStrictEqual(grouped[0]!.children[0]!.id, grouped[1]!.children[0]!.id);
+        assert.strictEqual(grouped[0]!.children[0]!.snapshot.entries[grouped[0]!.children[0]!.index]!.id, second);
+        assert.ok(matchesPrompt(snapshot.entries[1]!, '审查'));
+        const items = buildPromptItems(snapshot, 'LIST', file);
+        assert.deepStrictEqual(
+            items.map((item) => item.id),
+            [first, second],
+        );
+        assert.ok(items.every((item) => (item.iconPath as vscode.ThemeIcon).id === 'note'));
+        assert.strictEqual(matchesPrompt(snapshot.entries[0]!, 'HIDDEN term'), true);
+        assert.strictEqual(matchesPrompt(snapshot.entries[1]!, 'hidden'), false);
+        const html = renderPromptPreview({
+            id: first,
+            title: '<script>bad</script>',
+            content: '</pre><script>bad</script>',
+        });
+        assert.ok(!html.includes('<script>bad</script>'));
+        assert.ok(html.includes('&lt;/pre&gt;'));
+    });
+
+    test('drag sorting persists order only when the active mode allows it', async () => {
+        await fs.writeFile(
+            file,
+            JSON.stringify({
+                schemaVersion: 1,
+                prompts: [
+                    { id: first, title: 'First', content: 'one' },
+                    { id: second, title: 'Second', content: 'two' },
+                ],
+            }),
+        );
+        const snapshot = await readAiPromptSnapshot(file);
+        const items = buildPromptItems(snapshot, 'LIST', file) as TemplateItem<unknown>[];
+        let allowed = true;
+        const controller = new TemplateDragAndDropController(
+            'test.aiPrompts',
+            file,
+            () => {},
+            () => allowed,
+        );
+        const transfer = new vscode.DataTransfer();
+        controller.handleDrag([items[0]!], transfer, new vscode.CancellationTokenSource().token);
+        allowed = false;
+        await controller.handleDrop(undefined, transfer, new vscode.CancellationTokenSource().token);
+        assert.deepStrictEqual(
+            (await readAiPromptSnapshot(file)).entries.map((entry) => entry.id),
+            [first, second],
+        );
+        allowed = true;
+        await controller.handleDrop(undefined, transfer, new vscode.CancellationTokenSource().token);
+        assert.deepStrictEqual(
+            (await readAiPromptSnapshot(file)).entries.map((entry) => entry.id),
+            [second, first],
+        );
+    });
+
+    test('edits only prompt tags, supports cancel and clear, and rejects stale selections', async () => {
+        const original = {
+            schemaVersion: 1,
+            extra: true,
+            prompts: [
+                {
+                    id: first,
+                    title: ' Title ',
+                    content: '  body\r\n',
+                    description: ' note ',
+                    tags: ['开发'],
+                    custom: 42,
+                },
+                { id: second, title: 'Other', content: 'text', tags: ['审查'] },
+            ],
+        };
+        await fs.writeFile(file, JSON.stringify(original));
+        let snapshot = await readAiPromptSnapshot(file);
+        await editAiPromptTags(snapshot, first, file, async (existing, selected) => {
+            assert.deepStrictEqual(existing, ['开发', '审查']);
+            assert.deepStrictEqual(selected, ['开发']);
+            return undefined;
+        });
+        assert.strictEqual(await fs.readFile(file, 'utf8'), snapshot.contents);
+        await editAiPromptTags(snapshot, first, file, async () => ['审查', '新增']);
+        const saved = JSON.parse(await fs.readFile(file, 'utf8'));
+        assert.deepStrictEqual(saved, {
+            ...original,
+            prompts: [{ ...original.prompts[0], tags: ['审查', '新增'] }, original.prompts[1]],
+        });
+        await assert.rejects(
+            editAiPromptTags(snapshot, first, file, async () => ['stale']),
+            /file has changed/,
+        );
+        snapshot = await readAiPromptSnapshot(file);
+        await editAiPromptTags(snapshot, first, file, async () => []);
+        assert.deepStrictEqual((await readAiPromptSnapshot(file)).entries[0]!.tags, []);
+    });
+
+    test('form preserves unchanged CRLF content and accepts multiple tags', async () => {
+        const content = '  first\r\nsecond\r\n';
+        await fs.writeFile(file, JSON.stringify({ schemaVersion: 1, prompts: [] }));
+        await changeAiPrompt(
+            await readAiPromptSnapshot(file),
+            { type: 'save', value: { title: 'Test', content } },
+            file,
+        );
+        const snapshot = await readAiPromptSnapshot(file);
+        await editAiPrompt(snapshot, snapshot.entries[0]!.id, [], file, async (options) => {
+            const input = Object.fromEntries(options.fields.map((field) => [field.name, field.value]));
+            input.content = content.replace(/\r\n/g, '\n');
+            input.tags = '开发,审查\n开发\r\n开发\nC:\\tools';
+            await options.save(validateFormValues(options.fields, input));
+        });
+        const result = (await readAiPromptSnapshot(file)).entries[0]!;
+        assert.strictEqual(result.content, content);
+        assert.deepStrictEqual(result.tags, ['开发,审查', '开发', 'C:\\tools']);
     });
 });

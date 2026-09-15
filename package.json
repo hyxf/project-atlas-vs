@@ -634,6 +634,78 @@
         "title": "Delete Project...",
         "category": "Project Atlas",
         "icon": "$(trash)"
+      },
+      {
+        "command": "project-atlas.addAiPrompt",
+        "title": "Add AI Prompt",
+        "category": "Project Atlas",
+        "icon": "$(add)"
+      },
+      {
+        "command": "project-atlas.refreshAiPrompts",
+        "title": "Refresh AI Prompts",
+        "category": "Project Atlas",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "project-atlas.editAiPromptsFile",
+        "title": "Edit AI Prompts JSON",
+        "category": "Project Atlas",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "project-atlas.searchAiPrompts",
+        "title": "Search AI Prompts",
+        "category": "Project Atlas",
+        "icon": "$(search)"
+      },
+      {
+        "command": "project-atlas.previewAiPrompt",
+        "title": "Preview AI Prompt",
+        "category": "Project Atlas",
+        "icon": "$(preview)"
+      },
+      {
+        "command": "project-atlas.copyAiPrompt",
+        "title": "Copy AI Prompt",
+        "category": "Project Atlas",
+        "icon": "$(copy)"
+      },
+      {
+        "command": "project-atlas.editAiPrompt",
+        "title": "Edit AI Prompt",
+        "category": "Project Atlas",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "project-atlas.deleteAiPrompt",
+        "title": "Delete AI Prompt",
+        "category": "Project Atlas",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "project-atlas.duplicateAiPrompt",
+        "title": "Duplicate AI Prompt",
+        "category": "Project Atlas",
+        "icon": "$(files)"
+      },
+      {
+        "command": "project-atlas.aiPromptsListView",
+        "title": "Show as List",
+        "category": "Project Atlas",
+        "icon": "$(list-flat)"
+      },
+      {
+        "command": "project-atlas.aiPromptsGroupView",
+        "title": "Group by Tags",
+        "category": "Project Atlas",
+        "icon": "$(list-tree)"
+      },
+      {
+        "command": "project-atlas.editAiPromptTags",
+        "title": "Edit Tags",
+        "category": "Project Atlas",
+        "icon": "$(tag)"
       }
     ],
     "submenus": [
@@ -692,6 +764,10 @@
         {
           "id": "projectAtlas.gitMessages",
           "name": "Git Messages"
+        },
+        {
+          "id": "projectAtlas.aiPrompts",
+          "name": "AI Prompts"
         }
       ],
       "aicode": [
@@ -737,6 +813,10 @@
       {
         "view": "projectAtlas.projects",
         "contents": "No saved projects yet.\n[Save Current Project](command:project-atlas.saveCurrent)\n[Add Folder](command:project-atlas.add)"
+      },
+      {
+        "view": "projectAtlas.aiPrompts",
+        "contents": "No AI prompts configured.\n[Edit aiprompts.json](command:project-atlas.editAiPromptsFile)"
       }
     ],
     "menus": {
@@ -1033,6 +1113,36 @@
           "command": "project-atlas.gitMessagesGroupView",
           "when": "view == projectAtlas.gitMessages && projectAtlas.gitMessageViewMode == LIST",
           "group": "navigation@1"
+        },
+        {
+          "command": "project-atlas.addAiPrompt",
+          "when": "view == projectAtlas.aiPrompts",
+          "group": "navigation@0"
+        },
+        {
+          "command": "project-atlas.refreshAiPrompts",
+          "when": "view == projectAtlas.aiPrompts",
+          "group": "navigation@4"
+        },
+        {
+          "command": "project-atlas.searchAiPrompts",
+          "when": "view == projectAtlas.aiPrompts",
+          "group": "navigation@3"
+        },
+        {
+          "command": "project-atlas.aiPromptsListView",
+          "when": "view == projectAtlas.aiPrompts && projectAtlas.aiPromptsMode != LIST",
+          "group": "navigation@1"
+        },
+        {
+          "command": "project-atlas.aiPromptsGroupView",
+          "when": "view == projectAtlas.aiPrompts && projectAtlas.aiPromptsMode == LIST",
+          "group": "navigation@1"
+        },
+        {
+          "command": "project-atlas.editAiPromptsFile",
+          "when": "view == projectAtlas.aiPrompts",
+          "group": "navigation@2"
         }
       ],
       "projectAtlas.filterMenu": [
@@ -1510,6 +1620,48 @@
         {
           "command": "project-atlas.gitMessagesGroupView",
           "when": "false"
+        },
+        {
+          "command": "project-atlas.addAiPrompt"
+        },
+        {
+          "command": "project-atlas.refreshAiPrompts"
+        },
+        {
+          "command": "project-atlas.editAiPromptsFile"
+        },
+        {
+          "command": "project-atlas.searchAiPrompts"
+        },
+        {
+          "command": "project-atlas.previewAiPrompt",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.copyAiPrompt",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.editAiPrompt",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.deleteAiPrompt",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.duplicateAiPrompt",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.aiPromptsListView"
+        },
+        {
+          "command": "project-atlas.aiPromptsGroupView"
+        },
+        {
+          "command": "project-atlas.editAiPromptTags",
+          "when": "false"
         }
       ],
       "view/item/context": [
@@ -1677,6 +1829,41 @@
           "command": "project-atlas.cloneGithubRepository",
           "when": "view == projectAtlas.githubRepos && viewItem =~ /^githubRepository/",
           "group": "inline@3"
+        },
+        {
+          "command": "project-atlas.copyAiPrompt",
+          "when": "view == projectAtlas.aiPrompts && viewItem == aiPrompt",
+          "group": "inline@0"
+        },
+        {
+          "command": "project-atlas.editAiPrompt",
+          "when": "view == projectAtlas.aiPrompts && viewItem == aiPrompt",
+          "group": "aiPrompts@1"
+        },
+        {
+          "command": "project-atlas.duplicateAiPrompt",
+          "when": "view == projectAtlas.aiPrompts && viewItem == aiPrompt",
+          "group": "aiPrompts@3"
+        },
+        {
+          "command": "project-atlas.deleteAiPrompt",
+          "when": "view == projectAtlas.aiPrompts && viewItem == aiPrompt",
+          "group": "aiPrompts@4"
+        },
+        {
+          "command": "project-atlas.addAiPrompt",
+          "when": "view == projectAtlas.aiPrompts && viewItem == aiPromptTagGroup",
+          "group": "aiPrompts@0"
+        },
+        {
+          "command": "project-atlas.editAiPromptTags",
+          "when": "view == projectAtlas.aiPrompts && viewItem == aiPrompt",
+          "group": "inline@1"
+        },
+        {
+          "command": "project-atlas.editAiPromptTags",
+          "when": "view == projectAtlas.aiPrompts && viewItem == aiPrompt",
+          "group": "aiPrompts@2"
         }
       ]
     },
@@ -1776,6 +1963,10 @@
       {
         "fileMatch": "**/.project-atlas/github.json",
         "url": "./schemas/github.schema.json"
+      },
+      {
+        "fileMatch": "**/aiprompts.json",
+        "url": "./schemas/aiprompts.schema.json"
       }
     ]
   },

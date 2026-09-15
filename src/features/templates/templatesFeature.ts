@@ -1,3 +1,4 @@
+import { changeAiPrompt, AiPrompt } from '../aiPrompts/aiPromptStore';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { commonCommandsFile, CommonCommand, readCommonCommandSnapshot } from '../commonCommands/commonCommandStore';
@@ -13,7 +14,7 @@ export class TemplateItem<T> extends vscode.TreeItem {
         readonly snapshot: TemplateSnapshot<T>,
         readonly index: number,
         readonly file: string,
-        kind: 'commonCommand' | 'gitMessage',
+        kind: 'commonCommand' | 'gitMessage' | 'aiPrompt',
     ) {
         super(label);
         this.contextValue = kind;
@@ -153,10 +154,10 @@ export class TemplateDragAndDropController implements vscode.TreeDragAndDropCont
             return;
         }
         const isMessage = source.contextValue === 'gitMessage';
-        if (!isMessage && source.contextValue !== 'commonCommand') {
+        if (!isMessage && source.contextValue !== 'commonCommand' && source.contextValue !== 'aiPrompt') {
             return;
         }
-        const snapshot: TemplateSnapshot<CommonCommand | GitMessage> = source.snapshot;
+        const snapshot: TemplateSnapshot<CommonCommand | GitMessage | AiPrompt> = source.snapshot;
         const entry = snapshot.entries[source.index];
         if (!entry) {
             return;
@@ -184,7 +185,11 @@ export class TemplateDragAndDropController implements vscode.TreeDragAndDropCont
         }
         try {
             assertSaved(this.file);
-            await reorderTemplates(this.file, isMessage ? 'messages' : 'commands', snapshot, order);
+            if (source.contextValue === 'aiPrompt') {
+                await changeAiPrompt(source.snapshot, { type: 'reorder', order }, this.file);
+            } else {
+                await reorderTemplates(this.file, isMessage ? 'messages' : 'commands', snapshot, order);
+            }
             this.refresh();
         } catch (error) {
             this.refresh();

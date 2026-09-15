@@ -1,3 +1,4 @@
+import { activateAiPrompts } from './features/aiPrompts/aiPromptsFeature';
 import * as vscode from 'vscode';
 import {
     addTerminalSelectionToCommonCommand,
@@ -27,6 +28,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     activateRepositoryManagement(context);
     activateGitHubRepositories(context);
     activateTemplates(context);
+    activateAiPrompts(context);
     const handlers: Record<string, (...args: unknown[]) => unknown> = {
         createReleaseTag: createReleaseTagCommand,
         insertCommonCommand,

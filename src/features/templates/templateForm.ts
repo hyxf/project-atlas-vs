@@ -10,6 +10,8 @@ export interface TemplateFormField {
     checkbox?: boolean;
     readOnly?: boolean;
     options?: string[];
+    suggestions?: string[];
+    rows?: number;
     placeholder?: string;
     hint?: string;
     halfWidth?: boolean;
@@ -20,14 +22,18 @@ export interface TemplateFormOptions {
     title: string;
     description?: string;
     eyebrow?: string;
+    confirmDiscard?: boolean;
+    originalValues?: Record<string, string>;
     fields: TemplateFormField[];
     save: (values: Record<string, string>) => Promise<void>;
 }
 
 export type TemplateForm = (options: TemplateFormOptions) => Promise<void>;
 const panels = new Set<vscode.WebviewPanel>();
+let disposingForms = false;
 
 export function disposeTemplateForms(): void {
+    disposingForms = true;
     for (const panel of panels) {
         panel.dispose();
     }
@@ -52,7 +58,7 @@ export function validateFormValues(fields: TemplateFormField[], input: unknown):
         if (field.options && value && !field.options.includes(value)) {
             throw new Error(`Invalid ${field.label}.`);
         }
-        values[field.name] = value;
+        values[field.name] = field.multiline && value === field.value.replace(/\r\n?/g, '\n') ? field.value : value;
     }
     return values;
 }
@@ -68,12 +74,45 @@ export const showTemplateForm: TemplateForm = async (options) => {
     await new Promise<void>((resolve) => {
         let saving = false;
         let closed = false;
+        let accepted = false;
+        const draft = Object.fromEntries(options.fields.map((field) => [field.name, field.value]));
+        const dirty = () =>
+            options.fields.some((field) => draft[field.name] !== (options.originalValues?.[field.name] ?? field.value));
+        const discard = async () =>
+            !options.confirmDiscard ||
+            !dirty() ||
+            (await vscode.window.showWarningMessage('Discard unsaved prompt changes?', { modal: true }, 'Discard')) ===
+                'Discard';
+        const recoverDraft = async () => {
+            if (!accepted && !disposingForms && options.confirmDiscard && dirty() && !(await discard())) {
+                await showTemplateForm({
+                    ...options,
+                    originalValues:
+                        options.originalValues ??
+                        Object.fromEntries(options.fields.map((field) => [field.name, field.value])),
+                    fields: options.fields.map((field) => ({ ...field, value: draft[field.name]! })),
+                });
+            }
+        };
         const messages = panel.webview.onDidReceiveMessage(async (message: unknown) => {
             if (!message || typeof message !== 'object' || closed) {
                 return;
             }
             const request = message as { type?: unknown; values?: unknown };
+            if (request.type === 'change' && request.values && typeof request.values === 'object') {
+                const values = request.values as Record<string, unknown>;
+                for (const field of options.fields) {
+                    if (typeof values[field.name] === 'string') {
+                        draft[field.name] = values[field.name] as string;
+                    }
+                }
+                return;
+            }
             if (request.type === 'cancel') {
+                if ((saving && options.confirmDiscard) || !(await discard())) {
+                    return;
+                }
+                accepted = true;
                 panel.dispose();
                 return;
             }
@@ -83,6 +122,7 @@ export const showTemplateForm: TemplateForm = async (options) => {
             saving = true;
             try {
                 await options.save(validateFormValues(options.fields, request.values));
+                accepted = true;
                 panel.dispose();
             } catch (error) {
                 if (!closed) {
@@ -94,16 +134,18 @@ export const showTemplateForm: TemplateForm = async (options) => {
             } finally {
                 saving = false;
                 if (closed) {
+                    await recoverDraft();
                     resolve();
                 }
             }
         });
-        const disposed = panel.onDidDispose(() => {
+        const disposed = panel.onDidDispose(async () => {
             closed = true;
             panels.delete(panel);
             messages.dispose();
             disposed.dispose();
             if (!saving) {
+                await recoverDraft();
                 resolve();
             }
         });
@@ -141,8 +183,8 @@ export function renderTemplateForm(options: TemplateFormOptions): string {
                       )
                       .join('')}</select>`
                 : field.multiline
-                  ? `<textarea ${attributes} rows="${field.monospace ? 5 : 3}">${escapeHtml(field.value)}</textarea>`
-                  : `<input ${attributes} value="${escapeHtml(field.value)}">`;
+                  ? `<textarea ${attributes} rows="${field.rows ?? (field.monospace ? 5 : 3)}">${'\n'}${escapeHtml(field.value)}</textarea>`
+                  : `<input ${attributes} value="${escapeHtml(field.value)}"${field.suggestions ? ` list="${escapeHtml(field.name)}-options"` : ''}>${field.suggestions ? `<datalist id="${escapeHtml(field.name)}-options">${field.suggestions.map((value) => `<option value="${escapeHtml(value)}"></option>`).join('')}</datalist>` : ''}`;
             return `<div class="field${field.halfWidth ? ' half-width' : ''}"><label for="${escapeHtml(field.name)}">${escapeHtml(field.label)}<span class="field-status">${field.readOnly ? 'Read only' : field.required ? 'Required' : 'Optional'}</span></label>${input}${field.hint ? `<p class="field-hint" id="${escapeHtml(field.name)}-hint">${escapeHtml(field.hint)}</p>` : ''}</div>`;
         })
         .join('\n');
@@ -195,6 +237,19 @@ function setSaving(value) {
     document.getElementById('save').textContent = value ? 'Saving…' : 'Save';
     document.getElementById('cancel').textContent = value ? 'Close' : 'Cancel';
 }
+function readValues() {
+    const values = Object.fromEntries(new FormData(form));
+    for (const checkbox of form.querySelectorAll('input[type="checkbox"]')) values[checkbox.name] = String(checkbox.checked);
+    return values;
+}
+form.addEventListener('input', () => vscode.postMessage({ type: 'change', values: readValues() }));
+form.addEventListener('keydown', event => {
+    if (event.key === 'Tab' && event.target instanceof HTMLTextAreaElement && !event.shiftKey) {
+        event.preventDefault();
+        event.target.setRangeText('    ', event.target.selectionStart, event.target.selectionEnd, 'end');
+        event.target.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+});
 form.addEventListener('submit', (event) => {
     event.preventDefault();
     if (saving) return;

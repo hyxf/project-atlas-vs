@@ -117,7 +117,7 @@ export async function reorderTemplates<T>(
     });
 }
 
-async function mutateTemplate<T>(
+export async function mutateTemplate<T>(
     file: string,
     snapshot: TemplateSnapshot<T>,
     mutate: (document: Record<string, unknown>) => void,
