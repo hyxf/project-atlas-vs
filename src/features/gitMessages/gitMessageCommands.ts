@@ -1,6 +1,13 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { ensureGitMessagesFile, formatGitMessage, gitMessagesFile, readGitMessages } from './gitMessageStore';
+import {
+    ensureGitMessagesFile,
+    formatGitMessage,
+    GitMessage,
+    gitMessagesFile,
+    readGitMessages,
+} from './gitMessageStore';
+import { TemplateItem } from '../templates/templatesFeature';
 
 interface GitRepository {
     rootUri: vscode.Uri;
@@ -10,6 +17,17 @@ interface GitRepository {
 interface GitApi {
     repositories: GitRepository[];
     getRepository(uri: vscode.Uri): GitRepository | null;
+}
+
+export async function copyGitMessage(item?: unknown): Promise<void> {
+    if (!(item instanceof TemplateItem) || item.contextValue !== 'gitMessage') {
+        return;
+    }
+    const message = (item as TemplateItem<GitMessage>).snapshot.entries[item.index];
+    if (message) {
+        await vscode.env.clipboard.writeText(formatGitMessage(message));
+        await vscode.window.showInformationMessage('Project Atlas: Git message copied to clipboard.');
+    }
 }
 
 export async function editGitMessages(): Promise<void> {

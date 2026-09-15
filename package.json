@@ -54,6 +54,12 @@
         "icon": "$(edit)"
       },
       {
+        "command": "project-atlas.copyGitMessage",
+        "title": "Copy Git Message",
+        "category": "Project Atlas",
+        "icon": "$(copy)"
+      },
+      {
         "command": "project-atlas.deleteGitMessage",
         "title": "Delete Git Message",
         "category": "Project Atlas",
@@ -1090,6 +1096,10 @@
       ],
       "commandPalette": [
         {
+          "command": "project-atlas.copyGitMessage",
+          "when": "false"
+        },
+        {
           "command": "project-atlas.addCommonCommand",
           "when": "false"
         },
@@ -1473,6 +1483,11 @@
         }
       ],
       "view/item/context": [
+        {
+          "command": "project-atlas.copyGitMessage",
+          "when": "view == projectAtlas.gitMessages && viewItem == gitMessage",
+          "group": "inline@0"
+        },
         {
           "command": "project-atlas.insertCommonCommand",
           "when": "view == projectAtlas.commonCommands && viewItem == commonCommand",

@@ -5,7 +5,7 @@ import {
     insertCommonCommand,
 } from './features/commonCommands/commonCommandCommands';
 import { createReleaseTagCommand } from './features/gitTagRelease/createReleaseTagCommand';
-import { editGitMessages, selectGitMessage } from './features/gitMessages/gitMessageCommands';
+import { copyGitMessage, editGitMessages, selectGitMessage } from './features/gitMessages/gitMessageCommands';
 import { registerGitRemoteCommands } from './features/gitRemote/gitRemoteCommands';
 import { activateProjectManagement } from './features/projectManagement/projectManagementFeature';
 import { registerChangelogCommands } from './features/changelog/createOrUpdateChangelog';
@@ -33,6 +33,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
         editCommonCommands,
         addTerminalSelectionToCommonCommand,
         selectGitMessage,
+        copyGitMessage,
         editGitMessages,
     };
     for (const [name, handler] of Object.entries(handlers)) {
