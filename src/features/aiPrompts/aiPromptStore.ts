@@ -19,51 +19,51 @@ export async function ensureAiPromptsFile(file = aiPromptsFile): Promise<void> {
     const prompts: AiPrompt[] = [
         {
             id: randomUUID(),
-            title: '代码审查',
-            description: '检查潜在缺陷、边界情况和可维护性',
-            tags: ['开发'],
+            title: 'Code Review',
+            description: 'Check for potential bugs, edge cases, and maintainability issues',
+            tags: ['Development'],
             content:
-                '请审查以下代码，重点检查正确性、边界情况、安全性和可维护性。\n按严重程度列出问题，说明触发条件、影响和修改建议，必要时给出示例代码。\n区分确定的问题与需要进一步验证的疑点；如果没有发现问题，请明确说明。\n\n待审查代码：\n',
+                'Review the following code for correctness, edge cases, security, and maintainability.\nList issues by severity, explaining their triggers, impact, and suggested fixes. Include example code where useful.\nDistinguish confirmed issues from concerns that need further verification. If you find no issues, say so explicitly.\n\nCode to review:\n',
         },
         {
             id: randomUUID(),
-            title: '排查问题',
-            description: '结合报错和日志分析根因，给出验证步骤',
-            tags: ['开发'],
+            title: 'Troubleshoot an Issue',
+            description: 'Analyze errors and logs to identify root causes and verification steps',
+            tags: ['Development'],
             content:
-                '请根据以下现象、报错、日志和相关代码帮助我排查问题。\n先总结已知事实，再按可能性列出原因，并为每个原因给出验证步骤。\n优先提供最小改动的修复方案和回归验证方法，不要把猜测当成结论。信息不足时，请列出最关键的补充信息。\n\n问题现象与相关信息：\n',
+                'Help me troubleshoot the following symptoms, errors, logs, and related code.\nSummarize the known facts, then list possible causes in order of likelihood and provide verification steps for each.\nPrioritize fixes with minimal changes and explain how to check for regressions. Do not present guesses as conclusions. If information is missing, list the most critical details needed.\n\nIssue and related information:\n',
         },
         {
             id: randomUUID(),
-            title: '编写单元测试',
-            description: '覆盖正常流程、边界条件和异常路径',
-            tags: ['开发'],
+            title: 'Write Unit Tests',
+            description: 'Cover expected behavior, edge cases, and error paths',
+            tags: ['Development'],
             content:
-                '请为以下代码编写单元测试，沿用项目现有的测试框架和风格。\n覆盖主要正常流程、边界条件和异常路径，使用明确断言验证可观察的行为，避免仅重复实现细节。\n测试应可独立运行，避免依赖真实网络或个人环境，并清理临时资源。请说明测试覆盖的场景及运行方式。\n\n待测试代码与项目背景：\n',
+                'Write unit tests for the following code using the existing test framework and style in the project.\nCover the main expected flows, edge cases, and error paths. Use clear assertions to verify observable behavior rather than repeating implementation details.\nTests should run independently, avoid dependencies on live networks or personal environments, and clean up temporary resources. Explain the scenarios covered and how to run the tests.\n\nCode to test and project context:\n',
         },
         {
             id: randomUUID(),
-            title: '重构代码',
-            description: '在保持对外行为的前提下改善代码结构',
-            tags: ['开发'],
+            title: 'Refactor Code',
+            description: 'Improve code structure while preserving external behavior',
+            tags: ['Development'],
             content:
-                '请重构以下代码，在保持现有对外行为和接口兼容的前提下，提高可读性与可维护性。\n优先消除重复、简化复杂分支、改善命名和职责划分，避免引入不必要的抽象或依赖。\n给出修改后的代码，解释关键改动及其理由，并说明如何验证行为没有变化。发现潜在缺陷时请单独指出。\n\n待重构代码：\n',
+                'Refactor the following code to improve readability and maintainability while preserving existing external behavior and interface compatibility.\nPrioritize removing duplication, simplifying complex branches, improving names, and clarifying responsibilities. Avoid unnecessary abstractions or dependencies.\nProvide the updated code, explain key changes and their rationale, and describe how to verify that behavior is unchanged. Flag any potential bugs separately.\n\nCode to refactor:\n',
         },
         {
             id: randomUUID(),
-            title: '润色文案',
-            description: '保留原意，改善表达、结构和语气',
-            tags: ['写作'],
+            title: 'Polish Writing',
+            description: 'Improve wording, structure, and tone while preserving the original meaning',
+            tags: ['Writing'],
             content:
-                '请润色以下文案，保留原意、事实和关键细节，使用自然、简洁、易懂的中文。\n调整冗余表达和不清晰的结构，使语气适合原文的受众与用途，不添加未经提供的事实或夸张结论。\n先给出可直接使用的版本，再简要说明主要修改；有歧义的内容请单独标注。\n\n原文：\n',
+                'Polish the following text using natural, concise, easy-to-understand English while preserving its meaning, facts, and key details.\nRemove redundant wording and clarify the structure. Match the tone to the intended audience and purpose without adding unsupported facts or exaggerated claims.\nProvide a ready-to-use version first, then briefly explain the main edits. Flag ambiguous content separately.\n\nOriginal text:\n',
         },
         {
             id: randomUUID(),
-            title: '总结提炼',
-            description: '提取核心结论、关键要点和待办事项',
-            tags: ['通用'],
+            title: 'Summarize Content',
+            description: 'Extract main conclusions, key points, and action items',
+            tags: ['General'],
             content:
-                '请总结以下内容，先用一段话概括核心结论，再分点列出关键事实、决定和待办事项。\n保留重要数字、时间和限制条件；待办事项的负责人和期限仅在原文明确给出时填写。\n区分原文结论、尚未确定的信息与需要进一步确认的问题，不补充原文没有的事实。\n\n待总结内容：\n',
+                'Summarize the following content. Start with a paragraph stating the main conclusions, then list key facts, decisions, and action items.\nPreserve important numbers, dates, and constraints. Include action item owners and deadlines only when explicitly stated in the source.\nDistinguish conclusions in the source from uncertain information and questions that need confirmation. Do not add facts absent from the source.\n\nContent to summarize:\n',
         },
     ];
     await fs
@@ -186,7 +186,7 @@ export async function changeAiPrompt(
                 records.splice(index + 1, 0, {
                     ...records[index],
                     id: randomUUID(),
-                    title: `${entries[index]!.title} 副本`,
+                    title: `${entries[index]!.title} Copy`,
                 });
             }
         }

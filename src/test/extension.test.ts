@@ -1319,7 +1319,14 @@ suite('AI Prompts data safety', () => {
         const snapshot = await readAiPromptSnapshot(file);
         assert.deepStrictEqual(
             snapshot.entries.map((entry) => entry.title),
-            ['代码审查', '排查问题', '编写单元测试', '重构代码', '润色文案', '总结提炼'],
+            [
+                'Code Review',
+                'Troubleshoot an Issue',
+                'Write Unit Tests',
+                'Refactor Code',
+                'Polish Writing',
+                'Summarize Content',
+            ],
         );
         assert.strictEqual(new Set(snapshot.entries.map((entry) => entry.id)).size, 6);
         assert.ok(snapshot.entries.every((entry) => entry.content.trim() && entry.description && entry.tags?.length));
@@ -1358,7 +1365,7 @@ suite('AI Prompts data safety', () => {
         assert.ok(!('favorite' in snapshot.entries[0]!));
         await changeAiPrompt(snapshot, { type: 'duplicate', id: first }, file);
         snapshot = await readAiPromptSnapshot(file);
-        assert.strictEqual(snapshot.entries[1]!.title, 'Renamed 副本');
+        assert.strictEqual(snapshot.entries[1]!.title, 'Renamed Copy');
         assert.notStrictEqual(snapshot.entries[1]!.id, first);
         assert.strictEqual(snapshot.entries[1]!.content, content);
         await changeAiPrompt(snapshot, { type: 'reorder', order: [2, 1, 0] }, file);

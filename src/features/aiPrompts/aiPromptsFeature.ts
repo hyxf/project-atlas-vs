@@ -15,7 +15,7 @@ export class PromptTagGroup extends vscode.TreeItem {
         collapsed = false,
     ) {
         super(
-            tag || '无标签',
+            tag || 'Untagged',
             collapsed ? vscode.TreeItemCollapsibleState.Collapsed : vscode.TreeItemCollapsibleState.Expanded,
         );
         this.id = JSON.stringify(['aiPromptTagGroup', tag]);
@@ -38,7 +38,12 @@ export function buildPromptItems(
             const item = new TemplateItem(prompt.title, snapshot, index, file, 'aiPrompt');
             item.id = tag === undefined ? prompt.id : JSON.stringify(['aiPrompt', tag, prompt.id]);
             item.description = prompt.description ?? '';
-            item.tooltip = [prompt.title, tags.join(', ') || '无标签', prompt.description, prompt.content.slice(0, 600)]
+            item.tooltip = [
+                prompt.title,
+                tags.join(', ') || 'Untagged',
+                prompt.description,
+                prompt.content.slice(0, 600),
+            ]
                 .filter(Boolean)
                 .join('\n\n');
             item.iconPath = new vscode.ThemeIcon('note');
@@ -89,7 +94,7 @@ export async function editAiPrompt(
                 label: 'Tags',
                 value: (value.tags ?? []).join('\n'),
                 multiline: true,
-                placeholder: '开发\n代码审查',
+                placeholder: 'Development\nCode Review',
                 hint: 'One tag per line. Leave empty for no tags.',
             },
             {
@@ -321,7 +326,7 @@ export function activateAiPrompts(context: vscode.ExtensionContext): void {
         );
     const copy = async (prompt: AiPrompt) => {
         await vscode.env.clipboard.writeText(prompt.content);
-        void vscode.window.showInformationMessage(`已复制提示词「${prompt.title}」`);
+        void vscode.window.showInformationMessage(`Copied prompt "${prompt.title}"`);
     };
     const preview = (initial: TemplateItem<AiPrompt>) => {
         let snapshot = initial.snapshot;
@@ -462,7 +467,7 @@ export function activateAiPrompts(context: vscode.ExtensionContext): void {
                     ? [
                           {
                               label: prompt.title,
-                              description: `· ${prompt.tags?.join(' · ') || '无标签'}`,
+                              description: `· ${prompt.tags?.join(' · ') || 'Untagged'}`,
                               detail: prompt.description ?? '',
                               index,
                               alwaysShow: true,
