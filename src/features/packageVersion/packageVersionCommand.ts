@@ -1,5 +1,18 @@
 import { randomUUID } from 'crypto';
 import * as vscode from 'vscode';
+import * as path from 'path';
+import {
+    commitVersionChanges,
+    ensureVersionRepositoryUnchanged,
+    findVersionRepository,
+    inspectVersionRepository,
+    preferredVersionRemote,
+    pushVersionCommit,
+    resolveVersionPushTarget,
+    readVersionRemoteNames,
+    VersionPushTarget,
+    VersionRepositoryState,
+} from './packageVersionGitService';
 import {
     applyVersionIncrement,
     ensureDocumentSaved,
@@ -8,6 +21,7 @@ import {
 } from './packageVersionService';
 
 const updatePackageVersionCommand = 'project-atlas.updatePackageVersion';
+let updating = false;
 
 interface VersionQuickPickItem extends vscode.QuickPickItem {
     increment: VersionIncrement;
@@ -20,9 +34,15 @@ export function registerPackageVersionCommand(context: vscode.ExtensionContext):
 
 /**
  * Updates the root package.json version using a SemVer major, minor, or patch increment.
- * User cancellation exits without changing the file or displaying a message.
+ * Cancelling before execution leaves the version and repository untouched.
  */
 export async function updatePackageVersion(): Promise<void> {
+    if (updating) {
+        void vscode.window.showInformationMessage('A package version update is already in progress.');
+        return;
+    }
+    updating = true;
+    let versionWritten = false;
     try {
         const workspaceFolders = vscode.workspace.workspaceFolders;
         if (workspaceFolders?.length !== 1) {
@@ -54,15 +74,151 @@ export async function updatePackageVersion(): Promise<void> {
         }
 
         const update = versions[selection.increment];
+        const root =
+            packageJsonUri.scheme === 'file' ? await findVersionRepository(workspaceFolders[0]!.uri.fsPath) : undefined;
+        const remotes = root ? await readVersionRemoteNames(root) : [];
+        const action = await vscode.window.showQuickPick(
+            [
+                { label: 'Update version only', commit: false },
+                ...(root
+                    ? [
+                          {
+                              label: remotes.length ? 'Update, commit and push' : 'Update and commit locally',
+                              description: 'Include all saved repository changes',
+                              commit: true,
+                          },
+                      ]
+                    : []),
+            ],
+            {
+                title: `Package version: ${update.oldVersion} → ${update.newVersion}`,
+                placeHolder: 'Choose whether to commit code',
+            },
+        );
+        if (!action) {
+            return;
+        }
+
+        let state: VersionRepositoryState | undefined;
+        let target: VersionPushTarget | undefined;
+        const message = `chore: bump version to ${update.newVersion}`;
+        if (action.commit && root) {
+            ensureRepositoryDocumentsSaved(root);
+            state = await inspectVersionRepository(root);
+            if (state.remotes.length) {
+                const remote =
+                    (await preferredVersionRemote(state)) ??
+                    (await vscode.window.showQuickPick(state.remotes, {
+                        title: 'Select push remote',
+                    }));
+                if (!remote) {
+                    return;
+                }
+                target = await resolveVersionPushTarget(state, remote);
+            }
+            const confirmed = await vscode.window.showWarningMessage(
+                target
+                    ? 'Update version, commit all changes and push?'
+                    : 'Update version and commit all changes locally?',
+                {
+                    modal: true,
+                    detail: [
+                        `Repository: ${root}`,
+                        `Branch: ${state.branch}`,
+                        `Version: ${update.oldVersion} → ${update.newVersion}`,
+                        `Commit: ${message}`,
+                        target ? `Push target: ${target.remote}/${target.branch}` : 'Local commit only',
+                        ...(target ? ['Push includes any earlier unpushed commits on this branch.'] : []),
+                        '',
+                        'All saved changes, including new and deleted files, will be committed:',
+                        state.changes || '(No existing changes)',
+                        `Version update: ${path.relative(root, packageJsonUri.fsPath)}`,
+                    ].join('\n'),
+                },
+                target ? 'Commit and Push' : 'Commit Locally',
+            );
+            if (!confirmed) {
+                return;
+            }
+            ensureRepositoryDocumentsSaved(root);
+            await ensureVersionRepositoryUnchanged(state, target);
+        }
         ensureOpenPackageJsonSaved(packageJsonUri);
         await writePackageJsonAtomically(packageJsonUri, fileContents, new TextEncoder().encode(update.source));
-        await vscode.window.showInformationMessage(
-            `Package version updated: ${update.oldVersion} → ${update.newVersion}`,
+        versionWritten = true;
+        if (!state) {
+            void vscode.window.showInformationMessage(
+                `Package version updated: ${update.oldVersion} → ${update.newVersion}`,
+            );
+            return;
+        }
+        const commit = await vscode.window.withProgress(
+            {
+                location: vscode.ProgressLocation.Notification,
+                title: 'Committing package version and repository changes…',
+            },
+            () => commitVersionChanges(state.root, message),
         );
+        if (!target) {
+            void vscode.window.showInformationMessage(
+                `Package version ${update.newVersion} committed locally (${commit.slice(0, 8)}).`,
+            );
+            return;
+        }
+        await pushWithRetry(state, commit, target, update.newVersion);
     } catch (error) {
-        await vscode.window.showErrorMessage(
-            `Failed to update package version: ${error instanceof Error ? error.message : String(error)}`,
+        void vscode.window.showErrorMessage(
+            `${versionWritten ? 'Package version was updated, but the commit workflow failed. Changes have been kept' : 'Failed to update package version'}: ${error instanceof Error ? error.message : String(error)}`,
         );
+    } finally {
+        updating = false;
+    }
+}
+
+function ensureRepositoryDocumentsSaved(root: string): void {
+    const dirty = vscode.workspace.textDocuments.some((document) => {
+        const relative = path.relative(root, document.uri.fsPath);
+        return (
+            document.isDirty &&
+            document.uri.scheme === 'file' &&
+            relative !== '..' &&
+            !relative.startsWith(`..${path.sep}`) &&
+            !path.isAbsolute(relative)
+        );
+    });
+    if (dirty) {
+        throw new Error('Save all repository files before committing the package version.');
+    }
+}
+
+async function pushWithRetry(
+    state: VersionRepositoryState,
+    commit: string,
+    target: VersionPushTarget,
+    version: string,
+): Promise<void> {
+    for (;;) {
+        try {
+            await vscode.window.withProgress(
+                {
+                    location: vscode.ProgressLocation.Notification,
+                    title: `Pushing to ${target.remote}/${target.branch}…`,
+                },
+                () => pushVersionCommit(state.root, state.branch, commit, target),
+            );
+            void vscode.window.showInformationMessage(
+                `Package version ${version} committed (${commit.slice(0, 8)}) and pushed to ${target.remote}/${target.branch}.`,
+            );
+            return;
+        } catch (error) {
+            const retry = await vscode.window.showErrorMessage(
+                `Committed locally (${commit.slice(0, 8)}), but push did not complete: ${error instanceof Error ? error.message : String(error)}`,
+                'Retry Push',
+            );
+            if (retry !== 'Retry Push') {
+                return;
+            }
+        }
     }
 }
 
