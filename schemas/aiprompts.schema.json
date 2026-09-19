@@ -1,0 +1,48 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Project Atlas AI Prompts",
+  "type": "object",
+  "required": ["schemaVersion", "prompts"],
+  "additionalProperties": true,
+  "properties": {
+    "schemaVersion": {
+      "const": 1
+    },
+    "prompts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "title", "content"],
+        "additionalProperties": true,
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+            "description": "Stable, unique UUID."
+          },
+          "title": {
+            "type": "string",
+            "pattern": "\\S"
+          },
+          "content": {
+            "type": "string",
+            "pattern": "\\S",
+            "description": "Full prompt text. Whitespace and line breaks are preserved."
+          },
+          "description": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "pattern": "\\S"
+            },
+            "uniqueItems": true,
+            "description": "Optional tags. Missing or empty means untagged."
+          }
+        }
+      }
+    }
+  }
+}

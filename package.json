@@ -1,0 +1,2099 @@
+{
+  "name": "project-atlas-vs",
+  "displayName": "Project Atlas VS",
+  "description": "Save, organize, search, and quickly open local projects.",
+  "version": "0.4.0",
+  "publisher": "billchiu",
+  "icon": "resources/project-atlas.png",
+  "homepage": "https://github.com/hyxf/project-atlas-vs/blob/main/README.md",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hyxf/project-atlas-vs.git"
+  },
+  "engines": {
+    "vscode": "^1.134.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "project-atlas.addCommonCommand",
+        "title": "Add Common Command",
+        "category": "Project Atlas",
+        "icon": "$(add)"
+      },
+      {
+        "command": "project-atlas.addGitMessage",
+        "title": "Add Git Message",
+        "category": "Project Atlas",
+        "icon": "$(add)"
+      },
+      {
+        "command": "project-atlas.editCommonCommand",
+        "title": "Edit Common Command",
+        "category": "Project Atlas",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "project-atlas.deleteCommonCommand",
+        "title": "Delete Common Command",
+        "category": "Project Atlas",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "project-atlas.editGitMessage",
+        "title": "Edit Git Message",
+        "category": "Project Atlas",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "project-atlas.copyGitMessage",
+        "title": "Copy Git Message",
+        "category": "Project Atlas",
+        "icon": "$(copy)"
+      },
+      {
+        "command": "project-atlas.deleteGitMessage",
+        "title": "Delete Git Message",
+        "category": "Project Atlas",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "aicode.selectGroup",
+        "title": "Select Context Group",
+        "category": "AICode",
+        "icon": "$(list-selection)"
+      },
+      {
+        "command": "aicode.createGroup",
+        "title": "Create Context Group",
+        "category": "AICode",
+        "icon": "$(add)"
+      },
+      {
+        "command": "aicode.renameGroup",
+        "title": "Rename Current Context Group",
+        "category": "AICode",
+        "icon": "$(edit)",
+        "enablement": "viewItem != aicode.group.default"
+      },
+      {
+        "command": "aicode.duplicateGroup",
+        "title": "Duplicate Current Context Group",
+        "category": "AICode",
+        "icon": "$(files)"
+      },
+      {
+        "command": "aicode.deleteGroup",
+        "title": "Delete Current Context Group",
+        "category": "AICode",
+        "icon": "$(trash)",
+        "enablement": "viewItem != aicode.group.default"
+      },
+      {
+        "command": "aicode.openConfig",
+        "title": "Open Configuration",
+        "category": "AICode",
+        "icon": "$(json)"
+      },
+      {
+        "command": "aicode.openFile",
+        "title": "Open Context File",
+        "category": "AICode"
+      },
+      {
+        "command": "aicode.addToContext",
+        "title": "Add to AICode",
+        "category": "AICode"
+      },
+      {
+        "command": "aicode.removeFromContext",
+        "title": "Remove from AICode",
+        "category": "AICode"
+      },
+      {
+        "command": "aicode.removeAllFiles",
+        "title": "Remove All Files",
+        "category": "AICode"
+      },
+      {
+        "command": "aicode.removeFile",
+        "title": "Remove File from Context",
+        "category": "AICode"
+      },
+      {
+        "command": "aicode.removeDirectory",
+        "title": "Remove Directory from Context",
+        "category": "AICode"
+      },
+      {
+        "command": "aicode.addMissingFiles",
+        "title": "Add Missing Files",
+        "category": "AICode"
+      },
+      {
+        "command": "aicode.copyMarkdown",
+        "title": "Copy as Markdown",
+        "category": "AICode",
+        "icon": "$(markdown)"
+      },
+      {
+        "command": "aicode.copyFileList",
+        "title": "Copy File List",
+        "category": "AICode",
+        "icon": "$(copy)"
+      },
+      {
+        "command": "aicode.copyRelativePath",
+        "title": "Copy Relative Path",
+        "category": "AICode"
+      },
+      {
+        "command": "aicode.addToTerminal",
+        "title": "Add to Terminal",
+        "category": "AICode"
+      },
+      {
+        "command": "aicode.refresh",
+        "title": "Refresh Context",
+        "category": "AICode",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "aicode.expandAll",
+        "title": "Expand All",
+        "category": "AICode",
+        "icon": "$(expand-all)"
+      },
+      {
+        "command": "aicode.collapseAll",
+        "title": "Collapse All",
+        "category": "AICode",
+        "icon": "$(collapse-all)"
+      },
+      {
+        "command": "aicode.showEditorIndicator",
+        "title": "Show",
+        "category": "AICode",
+        "enablement": "!aicode.editorIndicatorVisible"
+      },
+      {
+        "command": "aicode.hideEditorIndicator",
+        "title": "Hidden",
+        "category": "AICode",
+        "enablement": "aicode.editorIndicatorVisible"
+      },
+      {
+        "command": "aicode.compareBranches",
+        "title": "Compare Context Branches",
+        "category": "AICode",
+        "icon": "$(git-compare)"
+      },
+      {
+        "command": "aicode.compareBranchesWithoutFetch",
+        "title": "Compare Context Branches Without Fetch",
+        "category": "AICode"
+      },
+      {
+        "command": "aicode.refreshCompareResults",
+        "title": "Refresh Compare Results",
+        "category": "AICode",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "aicode.clearCompareResults",
+        "title": "Clear Compare Results",
+        "category": "AICode",
+        "icon": "$(clear-all)"
+      },
+      {
+        "command": "aicode.openCompareResult",
+        "title": "Open Context Comparison",
+        "category": "AICode"
+      },
+      {
+        "command": "project-atlas.updatePackageVersion",
+        "title": "Update Package Version",
+        "category": "Project Atlas"
+      },
+      {
+        "command": "aicode.createOrUpdateChangelog",
+        "title": "Create or Update CHANGELOG.md...",
+        "category": "Project Atlas"
+      },
+      {
+        "command": "aicode.confirmChangelogPreview",
+        "title": "Write CHANGELOG.md Preview",
+        "category": "Project Atlas",
+        "icon": "$(check)"
+      },
+      {
+        "command": "aicode.cancelChangelogPreview",
+        "title": "Cancel CHANGELOG.md Preview",
+        "category": "Project Atlas",
+        "icon": "$(close)"
+      },
+      {
+        "command": "project-atlas.editGitMessages",
+        "title": "Edit Git Messages",
+        "category": "Project Atlas",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "project-atlas.gitMessagesListView",
+        "title": "Show Git Messages as List",
+        "category": "Project Atlas",
+        "icon": "$(list-flat)"
+      },
+      {
+        "command": "project-atlas.gitMessagesGroupView",
+        "title": "Group Git Messages by Type",
+        "category": "Project Atlas",
+        "icon": "$(list-tree)"
+      },
+      {
+        "command": "project-atlas.refreshGitMessages",
+        "title": "Refresh Git Messages",
+        "category": "Project Atlas",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "project-atlas.collapseGitMessages",
+        "title": "Collapse All",
+        "category": "Project Atlas",
+        "icon": "$(collapse-all)"
+      },
+      {
+        "command": "project-atlas.expandGitMessages",
+        "title": "Expand All",
+        "category": "Project Atlas",
+        "icon": "$(expand-all)"
+      },
+      {
+        "command": "project-atlas.refreshCommonCommands",
+        "title": "Refresh Common Commands",
+        "category": "Project Atlas",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "project-atlas.collapseCommonCommands",
+        "title": "Collapse All",
+        "category": "Project Atlas",
+        "icon": "$(collapse-all)"
+      },
+      {
+        "command": "project-atlas.expandCommonCommands",
+        "title": "Expand All",
+        "category": "Project Atlas",
+        "icon": "$(expand-all)"
+      },
+      {
+        "command": "project-atlas.selectGitMessage",
+        "title": "Select Git Message",
+        "category": "Project Atlas",
+        "icon": "$(comment-discussion)"
+      },
+      {
+        "command": "project-atlas.addTerminalSelectionToCommonCommand",
+        "title": "Add Terminal Selection to Common Command",
+        "category": "Project Atlas"
+      },
+      {
+        "command": "project-atlas.editCommonCommands",
+        "title": "Edit Common Commands",
+        "category": "Project Atlas",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "project-atlas.insertCommonCommand",
+        "title": "Insert Common Command...",
+        "category": "Project Atlas",
+        "icon": "$(terminal)"
+      },
+      {
+        "command": "project-atlas.createReleaseTag",
+        "title": "Create Release Tag...",
+        "category": "Project Atlas"
+      },
+      {
+        "command": "project-atlas.openRepositoryHome",
+        "title": "Open Repository Home",
+        "category": "Project Atlas"
+      },
+      {
+        "command": "project-atlas.openCurrentBranch",
+        "title": "Open Current Branch",
+        "category": "Project Atlas"
+      },
+      {
+        "command": "project-atlas.openSelectedDirectory",
+        "title": "Open Selected Directory on Remote",
+        "category": "Project Atlas"
+      },
+      {
+        "command": "project-atlas.openSelectedFile",
+        "title": "Open Selected File on Remote",
+        "category": "Project Atlas"
+      },
+      {
+        "command": "project-atlas.copyRemoteUrl",
+        "title": "Copy Remote URL",
+        "category": "Project Atlas"
+      },
+      {
+        "command": "project-atlas.quickOpen",
+        "title": "Open Project...",
+        "category": "Project Atlas",
+        "icon": "$(folder-opened)"
+      },
+      {
+        "command": "project-atlas.quickOpenNewWindow",
+        "title": "Open Project in New Window...",
+        "category": "Project Atlas"
+      },
+      {
+        "command": "project-atlas.search",
+        "title": "Search Projects",
+        "category": "Project Atlas",
+        "icon": "$(search)"
+      },
+      {
+        "command": "project-atlas.saveCurrent",
+        "title": "Save Current Project...",
+        "category": "Project Atlas",
+        "icon": "$(save)",
+        "enablement": "!projectAtlas.currentProjectSaved"
+      },
+      {
+        "command": "project-atlas.add",
+        "title": "Add Folder...",
+        "category": "Project Atlas",
+        "icon": "$(add)"
+      },
+      {
+        "command": "project-atlas.refresh",
+        "title": "Refresh Projects",
+        "category": "Project Atlas",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "project-atlas.saveCurrentRepository",
+        "title": "Refresh Saved Project Repositories",
+        "category": "Project Atlas",
+        "icon": "$(repo-push)"
+      },
+      {
+        "command": "project-atlas.collapseRepositories",
+        "title": "Collapse All",
+        "category": "Project Atlas",
+        "icon": "$(collapse-all)"
+      },
+      {
+        "command": "project-atlas.refreshRepositories",
+        "title": "Refresh Repositories",
+        "category": "Project Atlas",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "project-atlas.openRepositoryDataFile",
+        "title": "Open Repository Data File",
+        "category": "Project Atlas",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "project-atlas.addRepository",
+        "title": "Add Git Repository",
+        "category": "Project Atlas",
+        "icon": "$(add)"
+      },
+      {
+        "command": "project-atlas.deleteRepository",
+        "title": "Delete Repository...",
+        "category": "Project Atlas",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "project-atlas.repositoryViewTAGS",
+        "title": "Tag",
+        "category": "Project Atlas",
+        "enablement": "projectAtlas.repositoryViewMode != TAGS"
+      },
+      {
+        "command": "project-atlas.repositoryViewGROUPS",
+        "title": "Group",
+        "category": "Project Atlas",
+        "enablement": "projectAtlas.repositoryViewMode != GROUPS"
+      },
+      {
+        "command": "project-atlas.repositoryViewHOSTS",
+        "title": "Domain",
+        "category": "Project Atlas",
+        "enablement": "projectAtlas.repositoryViewMode != HOSTS"
+      },
+      {
+        "command": "project-atlas.editRepository",
+        "title": "Edit Git Repository",
+        "category": "Project Atlas",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "project-atlas.editRepositoryTags",
+        "title": "Edit Repository Tags...",
+        "category": "Project Atlas",
+        "icon": "$(tag)"
+      },
+      {
+        "command": "project-atlas.cloneRepository",
+        "title": "Clone Repository...",
+        "category": "Project Atlas",
+        "icon": "$(repo-clone)"
+      },
+      {
+        "command": "project-atlas.refreshGithubRepositories",
+        "title": "Refresh GitHub Repositories",
+        "category": "Project Atlas",
+        "icon": "$(refresh)",
+        "enablement": "!projectAtlas.githubRepositoriesRefreshing"
+      },
+      {
+        "command": "project-atlas.openSettings",
+        "title": "Open Project Atlas Settings",
+        "category": "Project Atlas",
+        "icon": "$(settings-gear)"
+      },
+      {
+        "command": "project-atlas.openGithubConfig",
+        "title": "Open GitHub Configuration",
+        "category": "Project Atlas",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "project-atlas.searchGithubRepositories",
+        "title": "Search GitHub Repositories",
+        "category": "Project Atlas",
+        "icon": "$(search)"
+      },
+      {
+        "command": "project-atlas.expandGithubRepositories",
+        "title": "Expand All",
+        "category": "Project Atlas",
+        "icon": "$(expand-all)"
+      },
+      {
+        "command": "project-atlas.collapseGithubRepositories",
+        "title": "Collapse All",
+        "category": "Project Atlas",
+        "icon": "$(collapse-all)"
+      },
+      {
+        "command": "project-atlas.openGithubRepository",
+        "title": "Open on GitHub",
+        "category": "Project Atlas",
+        "icon": "$(link-external)"
+      },
+      {
+        "command": "project-atlas.copyGithubRepositorySshUrl",
+        "title": "Copy SSH URL",
+        "category": "Project Atlas",
+        "icon": "$(copy)"
+      },
+      {
+        "command": "project-atlas.addGithubRepositoryToRepos",
+        "title": "Add to Git Repositories",
+        "category": "Project Atlas",
+        "icon": "$(add)",
+        "enablement": "viewItem == githubRepositoryAddable"
+      },
+      {
+        "command": "project-atlas.cloneGithubRepository",
+        "title": "Clone Repository...",
+        "category": "Project Atlas",
+        "icon": "$(repo-clone)"
+      },
+      {
+        "command": "project-atlas.toggleView",
+        "title": "Switch List / Tags View",
+        "category": "Project Atlas",
+        "icon": "$(list-tree)"
+      },
+      {
+        "command": "project-atlas.filterAll",
+        "title": "All"
+      },
+      {
+        "command": "project-atlas.filterRecent",
+        "title": "Recent"
+      },
+      {
+        "command": "project-atlas.filterFavorites",
+        "title": "Favorite"
+      },
+      {
+        "command": "project-atlas.filterByTag",
+        "title": "Filter by Tag...",
+        "category": "Project Atlas",
+        "icon": "$(tag)"
+      },
+      {
+        "command": "project-atlas.filterAllSelected",
+        "title": "All",
+        "icon": "$(check)",
+        "enablement": "false"
+      },
+      {
+        "command": "project-atlas.filterRecentSelected",
+        "title": "Recent",
+        "icon": "$(check)",
+        "enablement": "false"
+      },
+      {
+        "command": "project-atlas.filterFavoritesSelected",
+        "title": "Favorite",
+        "icon": "$(check)",
+        "enablement": "false"
+      },
+      {
+        "command": "project-atlas.sortName",
+        "title": "Name"
+      },
+      {
+        "command": "project-atlas.sortPath",
+        "title": "Path"
+      },
+      {
+        "command": "project-atlas.sortRecent",
+        "title": "Recently"
+      },
+      {
+        "command": "project-atlas.sortNameSelected",
+        "title": "Name",
+        "icon": "$(check)",
+        "enablement": "false"
+      },
+      {
+        "command": "project-atlas.sortPathSelected",
+        "title": "Path",
+        "icon": "$(check)",
+        "enablement": "false"
+      },
+      {
+        "command": "project-atlas.sortRecentSelected",
+        "title": "Recently",
+        "icon": "$(check)",
+        "enablement": "false"
+      },
+      {
+        "command": "project-atlas.openDataFile",
+        "title": "Open Data File",
+        "category": "Project Atlas",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "project-atlas.openCurrentWindow",
+        "title": "Open in Current Window",
+        "category": "Project Atlas"
+      },
+      {
+        "command": "project-atlas.openNewWindow",
+        "title": "Open in New Window",
+        "category": "Project Atlas"
+      },
+      {
+        "command": "project-atlas.edit",
+        "title": "Edit Project...",
+        "category": "Project Atlas",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "project-atlas.toggleFavorite",
+        "title": "Toggle Favorite",
+        "category": "Project Atlas",
+        "icon": "$(star-full)"
+      },
+      {
+        "command": "project-atlas.editTags",
+        "title": "Edit Tags...",
+        "category": "Project Atlas",
+        "icon": "$(tag)"
+      },
+      {
+        "command": "project-atlas.duplicate",
+        "title": "Duplicate Project...",
+        "category": "Project Atlas",
+        "icon": "$(files)"
+      },
+      {
+        "command": "project-atlas.copyPath",
+        "title": "Copy Path",
+        "category": "Project Atlas",
+        "icon": "$(copy)"
+      },
+      {
+        "command": "project-atlas.reveal",
+        "title": "Open in Finder / Explorer",
+        "category": "Project Atlas",
+        "icon": "$(folder-opened)"
+      },
+      {
+        "command": "project-atlas.openTerminal",
+        "title": "Open in Terminal",
+        "category": "Project Atlas",
+        "icon": "$(terminal)"
+      },
+      {
+        "command": "project-atlas.remove",
+        "title": "Remove from Project Atlas...",
+        "category": "Project Atlas",
+        "icon": "$(close)"
+      },
+      {
+        "command": "project-atlas.delete",
+        "title": "Delete Project...",
+        "category": "Project Atlas",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "project-atlas.addAiPrompt",
+        "title": "Add AI Prompt",
+        "category": "Project Atlas",
+        "icon": "$(add)"
+      },
+      {
+        "command": "project-atlas.refreshAiPrompts",
+        "title": "Refresh AI Prompts",
+        "category": "Project Atlas",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "project-atlas.collapseAiPrompts",
+        "title": "Collapse All",
+        "category": "Project Atlas",
+        "icon": "$(collapse-all)"
+      },
+      {
+        "command": "project-atlas.expandAiPrompts",
+        "title": "Expand All",
+        "category": "Project Atlas",
+        "icon": "$(expand-all)"
+      },
+      {
+        "command": "project-atlas.editAiPromptsFile",
+        "title": "Edit AI Prompts JSON",
+        "category": "Project Atlas",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "project-atlas.searchAiPrompts",
+        "title": "Search AI Prompts",
+        "category": "Project Atlas",
+        "icon": "$(search)"
+      },
+      {
+        "command": "project-atlas.previewAiPrompt",
+        "title": "Preview AI Prompt",
+        "category": "Project Atlas",
+        "icon": "$(preview)"
+      },
+      {
+        "command": "project-atlas.copyAiPrompt",
+        "title": "Copy AI Prompt",
+        "category": "Project Atlas",
+        "icon": "$(copy)"
+      },
+      {
+        "command": "project-atlas.editAiPrompt",
+        "title": "Edit AI Prompt",
+        "category": "Project Atlas",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "project-atlas.deleteAiPrompt",
+        "title": "Delete AI Prompt",
+        "category": "Project Atlas",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "project-atlas.duplicateAiPrompt",
+        "title": "Duplicate AI Prompt",
+        "category": "Project Atlas",
+        "icon": "$(files)"
+      },
+      {
+        "command": "project-atlas.aiPromptsListView",
+        "title": "Show as List",
+        "category": "Project Atlas",
+        "icon": "$(list-flat)"
+      },
+      {
+        "command": "project-atlas.aiPromptsGroupView",
+        "title": "Group by Tags",
+        "category": "Project Atlas",
+        "icon": "$(list-tree)"
+      },
+      {
+        "command": "project-atlas.editAiPromptTags",
+        "title": "Edit Tags",
+        "category": "Project Atlas",
+        "icon": "$(tag)"
+      }
+    ],
+    "submenus": [
+      {
+        "id": "aicode.explorerActions",
+        "label": "AICode"
+      },
+      {
+        "id": "aicode.editorIndicator",
+        "label": "Editor Indicator"
+      },
+      {
+        "id": "projectAtlas.filterMenu",
+        "label": "Filter",
+        "icon": "$(filter)"
+      },
+      {
+        "id": "projectAtlas.sortMenu",
+        "label": "Sort",
+        "icon": "$(list-ordered)"
+      },
+      {
+        "id": "projectAtlas.gitTools",
+        "label": "Git Tools"
+      },
+      {
+        "id": "projectAtlas.repositoryViewMenu",
+        "label": "Group By"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "projectAtlasTemplates",
+          "title": "Project Atlas: Templates",
+          "icon": "resources/templates.svg"
+        },
+        {
+          "id": "aicode",
+          "title": "Project Atlas: AICode",
+          "icon": "resources/aicode-context.svg"
+        },
+        {
+          "id": "projectAtlas",
+          "title": "Project Atlas: Projects",
+          "icon": "resources/project-atlas.svg"
+        }
+      ]
+    },
+    "views": {
+      "projectAtlasTemplates": [
+        {
+          "id": "projectAtlas.commonCommands",
+          "name": "Common Commands"
+        },
+        {
+          "id": "projectAtlas.gitMessages",
+          "name": "Git Messages"
+        },
+        {
+          "id": "projectAtlas.aiPrompts",
+          "name": "AI Prompts"
+        }
+      ],
+      "aicode": [
+        {
+          "id": "aicode.contextFiles",
+          "name": "Context Files"
+        },
+        {
+          "id": "aicode.compareResults",
+          "name": "Compare Results"
+        }
+      ],
+      "projectAtlas": [
+        {
+          "id": "projectAtlas.projects",
+          "name": "Projects",
+          "icon": "resources/project-atlas.svg"
+        },
+        {
+          "id": "projectAtlas.repos",
+          "name": "Git Repositories"
+        },
+        {
+          "id": "projectAtlas.githubRepos",
+          "name": "GitHub Repositories"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "projectAtlas.commonCommands",
+        "contents": "No common commands configured.\n[Edit commoncmd.json](command:project-atlas.editCommonCommands)"
+      },
+      {
+        "view": "projectAtlas.gitMessages",
+        "contents": "No Git messages configured.\n[Edit gitmessage.json](command:project-atlas.editGitMessages)"
+      },
+      {
+        "view": "aicode.compareResults",
+        "contents": "No comparison results.\n[Compare Context Branches](command:aicode.compareBranches)\n[Compare Without Fetch](command:aicode.compareBranchesWithoutFetch)",
+        "when": "!aicode.compareResultsAvailable"
+      },
+      {
+        "view": "projectAtlas.projects",
+        "contents": "No saved projects yet.\n[Save Current Project](command:project-atlas.saveCurrent)\n[Add Folder](command:project-atlas.add)"
+      },
+      {
+        "view": "projectAtlas.aiPrompts",
+        "contents": "No AI prompts configured.\n[Edit aiprompts.json](command:project-atlas.editAiPromptsFile)"
+      }
+    ],
+    "menus": {
+      "editor/title": [
+        {
+          "command": "aicode.confirmChangelogPreview",
+          "when": "aicode.changelogPreviewActive && resourceFilename == CHANGELOG.md",
+          "group": "navigation@100"
+        },
+        {
+          "command": "aicode.cancelChangelogPreview",
+          "when": "aicode.changelogPreviewActive && resourceFilename == CHANGELOG.md",
+          "group": "navigation@101"
+        }
+      ],
+      "explorer/context": [
+        {
+          "command": "aicode.copyMarkdown",
+          "when": "resourceFilename == .aicode.json",
+          "group": "aicode@5"
+        },
+        {
+          "submenu": "projectAtlas.gitTools",
+          "group": "navigation@50"
+        },
+        {
+          "submenu": "aicode.explorerActions",
+          "group": "navigation@51"
+        }
+      ],
+      "aicode.explorerActions": [
+        {
+          "command": "aicode.addToContext",
+          "when": "resource not in aicode.contextResources",
+          "group": "aicode@1"
+        },
+        {
+          "command": "aicode.removeFromContext",
+          "when": "resource in aicode.contextResources",
+          "group": "aicode@1"
+        },
+        {
+          "command": "aicode.copyRelativePath",
+          "group": "aicode@2"
+        },
+        {
+          "command": "aicode.addToTerminal",
+          "group": "aicode@3"
+        }
+      ],
+      "aicode.editorIndicator": [
+        {
+          "command": "aicode.showEditorIndicator",
+          "toggled": "aicode.editorIndicatorVisible"
+        },
+        {
+          "command": "aicode.hideEditorIndicator",
+          "toggled": "!aicode.editorIndicatorVisible"
+        }
+      ],
+      "projectAtlas.gitTools": [
+        {
+          "command": "project-atlas.openRepositoryHome",
+          "group": "1_remote@1"
+        },
+        {
+          "command": "project-atlas.openCurrentBranch",
+          "group": "1_remote@2"
+        },
+        {
+          "command": "project-atlas.openSelectedDirectory",
+          "group": "2_path@1"
+        },
+        {
+          "command": "project-atlas.openSelectedFile",
+          "group": "2_path@2"
+        },
+        {
+          "command": "project-atlas.copyRemoteUrl",
+          "group": "3_clipboard"
+        }
+      ],
+      "scm/title": [
+        {
+          "command": "project-atlas.selectGitMessage",
+          "when": "scmProvider == git",
+          "group": "navigation@100"
+        }
+      ],
+      "terminal/context": [
+        {
+          "command": "project-atlas.addTerminalSelectionToCommonCommand",
+          "when": "terminalTextSelected",
+          "group": "9_cutcopypaste"
+        }
+      ],
+      "view/title": [
+        {
+          "command": "project-atlas.addCommonCommand",
+          "when": "view == projectAtlas.commonCommands",
+          "group": "navigation@1"
+        },
+        {
+          "command": "project-atlas.editCommonCommands",
+          "when": "view == projectAtlas.commonCommands",
+          "group": "navigation@2"
+        },
+        {
+          "command": "project-atlas.collapseCommonCommands",
+          "when": "view == projectAtlas.commonCommands && !projectAtlas.commonCommandsCollapsed",
+          "group": "navigation@3"
+        },
+        {
+          "command": "project-atlas.expandCommonCommands",
+          "when": "view == projectAtlas.commonCommands && projectAtlas.commonCommandsCollapsed",
+          "group": "navigation@3"
+        },
+        {
+          "command": "project-atlas.refreshCommonCommands",
+          "when": "view == projectAtlas.commonCommands",
+          "group": "navigation@4"
+        },
+        {
+          "command": "project-atlas.addGitMessage",
+          "when": "view == projectAtlas.gitMessages",
+          "group": "navigation@1"
+        },
+        {
+          "command": "project-atlas.editGitMessages",
+          "when": "view == projectAtlas.gitMessages",
+          "group": "navigation@2"
+        },
+        {
+          "command": "project-atlas.collapseGitMessages",
+          "when": "view == projectAtlas.gitMessages && !projectAtlas.gitMessagesCollapsed",
+          "group": "navigation@3"
+        },
+        {
+          "command": "project-atlas.expandGitMessages",
+          "when": "view == projectAtlas.gitMessages && projectAtlas.gitMessagesCollapsed",
+          "group": "navigation@3"
+        },
+        {
+          "command": "project-atlas.refreshGitMessages",
+          "when": "view == projectAtlas.gitMessages",
+          "group": "navigation@4"
+        },
+        {
+          "command": "aicode.selectGroup",
+          "when": "view == aicode.contextFiles",
+          "group": "navigation@1"
+        },
+        {
+          "command": "aicode.openConfig",
+          "when": "view == aicode.contextFiles",
+          "group": "navigation@2"
+        },
+        {
+          "command": "aicode.copyMarkdown",
+          "when": "view == aicode.contextFiles",
+          "group": "navigation@3"
+        },
+        {
+          "command": "aicode.copyFileList",
+          "when": "view == aicode.contextFiles",
+          "group": "navigation@4"
+        },
+        {
+          "command": "aicode.expandAll",
+          "when": "view == aicode.contextFiles",
+          "group": "navigation@5"
+        },
+        {
+          "command": "aicode.collapseAll",
+          "when": "view == aicode.contextFiles",
+          "group": "navigation@6"
+        },
+        {
+          "command": "aicode.refresh",
+          "when": "view == aicode.contextFiles",
+          "group": "navigation@7"
+        },
+        {
+          "submenu": "aicode.editorIndicator",
+          "when": "view == aicode.contextFiles",
+          "group": "aicode@8"
+        },
+        {
+          "command": "aicode.compareBranches",
+          "when": "view == aicode.compareResults",
+          "group": "navigation@2"
+        },
+        {
+          "command": "aicode.refreshCompareResults",
+          "when": "view == aicode.compareResults && aicode.compareResultsAvailable",
+          "group": "navigation@1"
+        },
+        {
+          "command": "aicode.clearCompareResults",
+          "when": "view == aicode.compareResults",
+          "group": "navigation@3"
+        },
+        {
+          "command": "project-atlas.saveCurrent",
+          "when": "view == projectAtlas.projects",
+          "group": "navigation@1"
+        },
+        {
+          "command": "project-atlas.search",
+          "when": "view == projectAtlas.projects",
+          "group": "navigation@3"
+        },
+        {
+          "command": "project-atlas.toggleView",
+          "when": "view == projectAtlas.projects",
+          "group": "navigation@4"
+        },
+        {
+          "command": "project-atlas.openDataFile",
+          "when": "view == projectAtlas.projects",
+          "group": "navigation@5"
+        },
+        {
+          "command": "project-atlas.filterByTag",
+          "when": "view == projectAtlas.projects",
+          "group": "navigation@6"
+        },
+        {
+          "command": "project-atlas.refresh",
+          "when": "view == projectAtlas.projects",
+          "group": "navigation@7"
+        },
+        {
+          "command": "project-atlas.saveCurrentRepository",
+          "when": "view == projectAtlas.projects",
+          "group": "navigation@8"
+        },
+        {
+          "command": "project-atlas.add",
+          "when": "view == projectAtlas.projects",
+          "group": "project@1"
+        },
+        {
+          "command": "project-atlas.collapseRepositories",
+          "when": "view == projectAtlas.repos",
+          "group": "navigation@3"
+        },
+        {
+          "command": "project-atlas.refreshRepositories",
+          "when": "view == projectAtlas.repos",
+          "group": "navigation@4"
+        },
+        {
+          "command": "project-atlas.openRepositoryDataFile",
+          "when": "view == projectAtlas.repos",
+          "group": "navigation@2"
+        },
+        {
+          "command": "project-atlas.addRepository",
+          "when": "view == projectAtlas.repos",
+          "group": "navigation@1"
+        },
+        {
+          "submenu": "projectAtlas.repositoryViewMenu",
+          "when": "view == projectAtlas.repos",
+          "group": "view@1"
+        },
+        {
+          "command": "project-atlas.searchGithubRepositories",
+          "when": "view == projectAtlas.githubRepos",
+          "group": "navigation@1"
+        },
+        {
+          "command": "project-atlas.openGithubConfig",
+          "when": "view == projectAtlas.githubRepos",
+          "group": "navigation@2"
+        },
+        {
+          "command": "project-atlas.expandGithubRepositories",
+          "when": "view == projectAtlas.githubRepos",
+          "group": "navigation@3"
+        },
+        {
+          "command": "project-atlas.collapseGithubRepositories",
+          "when": "view == projectAtlas.githubRepos",
+          "group": "navigation@4"
+        },
+        {
+          "command": "project-atlas.refreshGithubRepositories",
+          "when": "view == projectAtlas.githubRepos",
+          "group": "navigation@5"
+        },
+        {
+          "command": "project-atlas.openSettings",
+          "when": "view == projectAtlas.githubRepos",
+          "group": "navigation@6"
+        },
+        {
+          "submenu": "projectAtlas.filterMenu",
+          "when": "view == projectAtlas.projects",
+          "group": "view@1"
+        },
+        {
+          "submenu": "projectAtlas.sortMenu",
+          "when": "view == projectAtlas.projects",
+          "group": "view@2"
+        },
+        {
+          "command": "project-atlas.gitMessagesListView",
+          "when": "view == projectAtlas.gitMessages && projectAtlas.gitMessageViewMode != LIST",
+          "group": "navigation@1"
+        },
+        {
+          "command": "project-atlas.gitMessagesGroupView",
+          "when": "view == projectAtlas.gitMessages && projectAtlas.gitMessageViewMode == LIST",
+          "group": "navigation@1"
+        },
+        {
+          "command": "project-atlas.addAiPrompt",
+          "when": "view == projectAtlas.aiPrompts",
+          "group": "navigation@0"
+        },
+        {
+          "command": "project-atlas.refreshAiPrompts",
+          "when": "view == projectAtlas.aiPrompts",
+          "group": "navigation@4"
+        },
+        {
+          "command": "project-atlas.searchAiPrompts",
+          "when": "view == projectAtlas.aiPrompts",
+          "group": "navigation@3"
+        },
+        {
+          "command": "project-atlas.collapseAiPrompts",
+          "when": "view == projectAtlas.aiPrompts && !projectAtlas.aiPromptsCollapsed",
+          "group": "navigation@4"
+        },
+        {
+          "command": "project-atlas.expandAiPrompts",
+          "when": "view == projectAtlas.aiPrompts && projectAtlas.aiPromptsCollapsed",
+          "group": "navigation@4"
+        },
+        {
+          "command": "project-atlas.aiPromptsListView",
+          "when": "view == projectAtlas.aiPrompts && projectAtlas.aiPromptsMode != LIST",
+          "group": "navigation@1"
+        },
+        {
+          "command": "project-atlas.aiPromptsGroupView",
+          "when": "view == projectAtlas.aiPrompts && projectAtlas.aiPromptsMode == LIST",
+          "group": "navigation@1"
+        },
+        {
+          "command": "project-atlas.editAiPromptsFile",
+          "when": "view == projectAtlas.aiPrompts",
+          "group": "navigation@2"
+        }
+      ],
+      "projectAtlas.filterMenu": [
+        {
+          "command": "project-atlas.filterAllSelected",
+          "when": "projectAtlas.filter == ALL",
+          "group": "filter@1"
+        },
+        {
+          "command": "project-atlas.filterAll",
+          "when": "projectAtlas.filter != ALL",
+          "group": "filter@1"
+        },
+        {
+          "command": "project-atlas.filterRecentSelected",
+          "when": "projectAtlas.filter == RECENT",
+          "group": "filter@2"
+        },
+        {
+          "command": "project-atlas.filterRecent",
+          "when": "projectAtlas.filter != RECENT",
+          "group": "filter@2"
+        },
+        {
+          "command": "project-atlas.filterFavoritesSelected",
+          "when": "projectAtlas.filter == FAVORITES",
+          "group": "filter@3"
+        },
+        {
+          "command": "project-atlas.filterFavorites",
+          "when": "projectAtlas.filter != FAVORITES",
+          "group": "filter@3"
+        }
+      ],
+      "projectAtlas.repositoryViewMenu": [
+        {
+          "command": "project-atlas.repositoryViewTAGS",
+          "toggled": "projectAtlas.repositoryViewMode == TAGS",
+          "group": "mode@1"
+        },
+        {
+          "command": "project-atlas.repositoryViewGROUPS",
+          "toggled": "projectAtlas.repositoryViewMode == GROUPS",
+          "group": "mode@2"
+        },
+        {
+          "command": "project-atlas.repositoryViewHOSTS",
+          "toggled": "projectAtlas.repositoryViewMode == HOSTS",
+          "group": "mode@3"
+        }
+      ],
+      "projectAtlas.sortMenu": [
+        {
+          "command": "project-atlas.sortNameSelected",
+          "when": "projectAtlas.sort == NAME",
+          "group": "sort@1"
+        },
+        {
+          "command": "project-atlas.sortName",
+          "when": "projectAtlas.sort != NAME",
+          "group": "sort@1"
+        },
+        {
+          "command": "project-atlas.sortPathSelected",
+          "when": "projectAtlas.sort == PATH",
+          "group": "sort@2"
+        },
+        {
+          "command": "project-atlas.sortPath",
+          "when": "projectAtlas.sort != PATH",
+          "group": "sort@2"
+        },
+        {
+          "command": "project-atlas.sortRecentSelected",
+          "when": "projectAtlas.sort == RECENT",
+          "group": "sort@3"
+        },
+        {
+          "command": "project-atlas.sortRecent",
+          "when": "projectAtlas.sort != RECENT",
+          "group": "sort@3"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "project-atlas.collapseCommonCommands",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.expandCommonCommands",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.collapseGitMessages",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.expandGitMessages",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.collapseAiPrompts",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.expandAiPrompts",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.copyGitMessage",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.addCommonCommand",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.addGitMessage",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.editCommonCommand",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.deleteCommonCommand",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.editGitMessage",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.deleteGitMessage",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.refreshCommonCommands",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.refreshGitMessages",
+          "when": "false"
+        },
+        {
+          "command": "aicode.createOrUpdateChangelog",
+          "when": "false"
+        },
+        {
+          "command": "aicode.addToContext",
+          "when": "false"
+        },
+        {
+          "command": "aicode.removeFromContext",
+          "when": "false"
+        },
+        {
+          "command": "aicode.openFile",
+          "when": "false"
+        },
+        {
+          "command": "aicode.copyRelativePath",
+          "when": "false"
+        },
+        {
+          "command": "aicode.addToTerminal",
+          "when": "false"
+        },
+        {
+          "command": "aicode.showEditorIndicator",
+          "when": "false"
+        },
+        {
+          "command": "aicode.hideEditorIndicator",
+          "when": "false"
+        },
+        {
+          "command": "aicode.clearCompareResults",
+          "when": "false"
+        },
+        {
+          "command": "aicode.compareBranchesWithoutFetch",
+          "when": "false"
+        },
+        {
+          "command": "aicode.refreshCompareResults",
+          "when": "false"
+        },
+        {
+          "command": "aicode.openCompareResult",
+          "when": "false"
+        },
+        {
+          "command": "aicode.removeFile",
+          "when": "false"
+        },
+        {
+          "command": "aicode.removeDirectory",
+          "when": "false"
+        },
+        {
+          "command": "aicode.renameGroup",
+          "when": "false"
+        },
+        {
+          "command": "aicode.duplicateGroup",
+          "when": "false"
+        },
+        {
+          "command": "aicode.deleteGroup",
+          "when": "false"
+        },
+        {
+          "command": "aicode.addMissingFiles",
+          "when": "false"
+        },
+        {
+          "command": "aicode.refresh",
+          "when": "false"
+        },
+        {
+          "command": "aicode.expandAll",
+          "when": "false"
+        },
+        {
+          "command": "aicode.collapseAll",
+          "when": "false"
+        },
+        {
+          "command": "aicode.removeAllFiles",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.updatePackageVersion",
+          "when": "workspaceFolderCount == 1"
+        },
+        {
+          "command": "aicode.createOrUpdateChangelog"
+        },
+        {
+          "command": "aicode.confirmChangelogPreview",
+          "when": "false"
+        },
+        {
+          "command": "aicode.cancelChangelogPreview",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.editGitMessages"
+        },
+        {
+          "command": "project-atlas.selectGitMessage",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.addTerminalSelectionToCommonCommand",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.editCommonCommands"
+        },
+        {
+          "command": "project-atlas.insertCommonCommand"
+        },
+        {
+          "command": "project-atlas.createReleaseTag",
+          "when": "workspaceFolderCount > 0"
+        },
+        {
+          "command": "project-atlas.openRepositoryHome"
+        },
+        {
+          "command": "project-atlas.openCurrentBranch"
+        },
+        {
+          "command": "project-atlas.openSelectedDirectory",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.openSelectedFile",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.copyRemoteUrl"
+        },
+        {
+          "command": "project-atlas.search"
+        },
+        {
+          "command": "project-atlas.quickOpen",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.quickOpenNewWindow",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.saveCurrent"
+        },
+        {
+          "command": "project-atlas.add"
+        },
+        {
+          "command": "project-atlas.refresh",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.collapseRepositories",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.refreshRepositories",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.openRepositoryDataFile",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.addRepository",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.deleteRepository",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.repositoryViewTAGS",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.repositoryViewGROUPS",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.repositoryViewHOSTS",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.editRepository",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.editRepositoryTags",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.cloneRepository",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.refreshGithubRepositories",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.openSettings",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.openGithubConfig",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.searchGithubRepositories",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.expandGithubRepositories",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.collapseGithubRepositories",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.openGithubRepository",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.copyGithubRepositorySshUrl",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.addGithubRepositoryToRepos",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.cloneGithubRepository",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.toggleView",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.filterByTag",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.openDataFile",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.openCurrentWindow",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.openNewWindow",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.edit",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.toggleFavorite",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.editTags",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.duplicate",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.copyPath",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.reveal",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.openTerminal",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.remove",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.delete",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.filterAll",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.filterRecent",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.filterFavorites",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.filterAllSelected",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.filterRecentSelected",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.filterFavoritesSelected",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.sortName",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.sortPath",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.sortRecent",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.sortNameSelected",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.sortPathSelected",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.sortRecentSelected",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.gitMessagesListView",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.gitMessagesGroupView",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.addAiPrompt"
+        },
+        {
+          "command": "project-atlas.refreshAiPrompts"
+        },
+        {
+          "command": "project-atlas.editAiPromptsFile"
+        },
+        {
+          "command": "project-atlas.searchAiPrompts"
+        },
+        {
+          "command": "project-atlas.previewAiPrompt",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.copyAiPrompt",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.editAiPrompt",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.deleteAiPrompt",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.duplicateAiPrompt",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.aiPromptsListView"
+        },
+        {
+          "command": "project-atlas.aiPromptsGroupView"
+        },
+        {
+          "command": "project-atlas.editAiPromptTags",
+          "when": "false"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "project-atlas.copyGitMessage",
+          "when": "view == projectAtlas.gitMessages && viewItem == gitMessage",
+          "group": "inline@0"
+        },
+        {
+          "command": "project-atlas.insertCommonCommand",
+          "when": "view == projectAtlas.commonCommands && viewItem == commonCommand",
+          "group": "inline@0"
+        },
+        {
+          "command": "project-atlas.editCommonCommand",
+          "when": "view == projectAtlas.commonCommands && viewItem == commonCommand",
+          "group": "edit@1"
+        },
+        {
+          "command": "project-atlas.deleteCommonCommand",
+          "when": "view == projectAtlas.commonCommands && viewItem == commonCommand",
+          "group": "danger@1"
+        },
+        {
+          "command": "project-atlas.editGitMessage",
+          "when": "view == projectAtlas.gitMessages && viewItem == gitMessage",
+          "group": "edit@1"
+        },
+        {
+          "command": "project-atlas.deleteGitMessage",
+          "when": "view == projectAtlas.gitMessages && viewItem == gitMessage",
+          "group": "danger@1"
+        },
+        {
+          "command": "aicode.createGroup",
+          "when": "view == aicode.contextFiles && (viewItem == aicode.group || viewItem == aicode.group.default)",
+          "group": "inline@1"
+        },
+        {
+          "command": "aicode.renameGroup",
+          "when": "view == aicode.contextFiles && (viewItem == aicode.group || viewItem == aicode.group.default)",
+          "group": "navigation@2"
+        },
+        {
+          "command": "aicode.duplicateGroup",
+          "when": "view == aicode.contextFiles && (viewItem == aicode.group || viewItem == aicode.group.default)",
+          "group": "navigation@3"
+        },
+        {
+          "command": "aicode.deleteGroup",
+          "when": "view == aicode.contextFiles && (viewItem == aicode.group || viewItem == aicode.group.default)",
+          "group": "navigation@4"
+        },
+        {
+          "command": "aicode.addMissingFiles",
+          "when": "view == aicode.contextFiles && viewItem == aicode.directory.hasMissing",
+          "group": "aicode@1"
+        },
+        {
+          "command": "aicode.removeFile",
+          "when": "view == aicode.contextFiles && viewItem == aicode.file",
+          "group": "aicode@2"
+        },
+        {
+          "command": "aicode.copyRelativePath",
+          "when": "view == aicode.contextFiles && viewItem == aicode.file",
+          "group": "aicode@3"
+        },
+        {
+          "command": "aicode.removeDirectory",
+          "when": "view == aicode.contextFiles && (viewItem == aicode.directory || viewItem == aicode.directory.hasMissing)",
+          "group": "aicode@2"
+        },
+        {
+          "command": "project-atlas.openCurrentWindow",
+          "when": "viewItem == project",
+          "group": "navigation@1"
+        },
+        {
+          "command": "project-atlas.openNewWindow",
+          "when": "viewItem == project",
+          "group": "navigation@2"
+        },
+        {
+          "command": "project-atlas.edit",
+          "when": "viewItem == project",
+          "group": "edit@1"
+        },
+        {
+          "command": "project-atlas.toggleFavorite",
+          "when": "viewItem == project",
+          "group": "edit@2"
+        },
+        {
+          "command": "project-atlas.editTags",
+          "when": "viewItem == project",
+          "group": "edit@3"
+        },
+        {
+          "command": "project-atlas.duplicate",
+          "when": "viewItem == project",
+          "group": "files@1"
+        },
+        {
+          "command": "project-atlas.copyPath",
+          "when": "viewItem == project",
+          "group": "files@2"
+        },
+        {
+          "command": "project-atlas.reveal",
+          "when": "viewItem == project",
+          "group": "files@3"
+        },
+        {
+          "command": "project-atlas.openTerminal",
+          "when": "viewItem == project",
+          "group": "files@4"
+        },
+        {
+          "command": "project-atlas.remove",
+          "when": "viewItem == project",
+          "group": "danger@1"
+        },
+        {
+          "command": "project-atlas.delete",
+          "when": "viewItem == project",
+          "group": "danger@2"
+        },
+        {
+          "command": "project-atlas.deleteRepository",
+          "when": "view == projectAtlas.repos && viewItem == repository",
+          "group": "danger@1"
+        },
+        {
+          "command": "project-atlas.editRepository",
+          "when": "view == projectAtlas.repos && viewItem == repository",
+          "group": "edit@1"
+        },
+        {
+          "command": "project-atlas.editRepositoryTags",
+          "when": "view == projectAtlas.repos && viewItem == repository",
+          "group": "edit@2"
+        },
+        {
+          "command": "project-atlas.cloneRepository",
+          "when": "view == projectAtlas.repos && viewItem == repository",
+          "group": "inline@3"
+        },
+        {
+          "command": "project-atlas.openGithubRepository",
+          "when": "view == projectAtlas.githubRepos && viewItem =~ /^githubRepository/",
+          "group": "navigation@2"
+        },
+        {
+          "command": "project-atlas.addGithubRepositoryToRepos",
+          "when": "view == projectAtlas.githubRepos && viewItem =~ /^githubRepository/",
+          "group": "inline@1"
+        },
+        {
+          "command": "project-atlas.copyGithubRepositorySshUrl",
+          "when": "view == projectAtlas.githubRepos && viewItem =~ /^githubRepository/",
+          "group": "navigation@1"
+        },
+        {
+          "command": "project-atlas.cloneGithubRepository",
+          "when": "view == projectAtlas.githubRepos && viewItem =~ /^githubRepository/",
+          "group": "inline@3"
+        },
+        {
+          "command": "project-atlas.copyAiPrompt",
+          "when": "view == projectAtlas.aiPrompts && viewItem == aiPrompt",
+          "group": "inline@0"
+        },
+        {
+          "command": "project-atlas.editAiPrompt",
+          "when": "view == projectAtlas.aiPrompts && viewItem == aiPrompt",
+          "group": "aiPrompts@1"
+        },
+        {
+          "command": "project-atlas.duplicateAiPrompt",
+          "when": "view == projectAtlas.aiPrompts && viewItem == aiPrompt",
+          "group": "aiPrompts@3"
+        },
+        {
+          "command": "project-atlas.deleteAiPrompt",
+          "when": "view == projectAtlas.aiPrompts && viewItem == aiPrompt",
+          "group": "aiPrompts@4"
+        },
+        {
+          "command": "project-atlas.addAiPrompt",
+          "when": "view == projectAtlas.aiPrompts && viewItem == aiPromptTagGroup",
+          "group": "aiPrompts@0"
+        },
+        {
+          "command": "project-atlas.editAiPromptTags",
+          "when": "view == projectAtlas.aiPrompts && viewItem == aiPrompt",
+          "group": "inline@1"
+        },
+        {
+          "command": "project-atlas.editAiPromptTags",
+          "when": "view == projectAtlas.aiPrompts && viewItem == aiPrompt",
+          "group": "aiPrompts@2"
+        }
+      ]
+    },
+    "keybindings": [
+      {
+        "command": "aicode.addToContext",
+        "key": "ctrl+shift+z",
+        "mac": "cmd+shift+z"
+      },
+      {
+        "command": "aicode.removeFromContext",
+        "key": "ctrl+shift+x",
+        "mac": "cmd+shift+x"
+      },
+      {
+        "command": "project-atlas.openRepositoryHome",
+        "key": "shift+ctrl+h",
+        "mac": "shift+cmd+h"
+      },
+      {
+        "command": "project-atlas.openCurrentBranch",
+        "key": "shift+ctrl+b",
+        "mac": "shift+cmd+b"
+      },
+      {
+        "command": "project-atlas.search",
+        "key": "ctrl+shift+l",
+        "mac": "cmd+shift+l"
+      },
+      {
+        "command": "project-atlas.toggleView",
+        "key": "ctrl+shift+t",
+        "mac": "cmd+shift+t"
+      },
+      {
+        "command": "workbench.view.extension.projectAtlas",
+        "key": "ctrl+shift+,",
+        "mac": "cmd+shift+,"
+      }
+    ],
+    "configuration": {
+      "title": "Project Atlas",
+      "properties": {
+        "projectAtlas.github.httpProxy": {
+          "type": "string",
+          "default": "http://127.0.0.1:1087",
+          "description": "HTTP or HTTPS proxy URL used when GitHub proxy is enabled.",
+          "order": 2
+        },
+        "projectAtlas.github.socketProxy": {
+          "type": "string",
+          "default": "socks5://127.0.0.1:1086",
+          "description": "SOCKS proxy URL used for socket-based requests and SSH clone connections.",
+          "order": 3
+        },
+        "projectAtlas.github.proxyEnabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Use the configured proxy for GitHub repository refreshes and clone operations.",
+          "order": 4
+        },
+        "projectAtlas.github.token": {
+          "type": "string",
+          "default": "",
+          "description": "GitHub personal access token used for repository refreshes and private clones.",
+          "order": 5
+        },
+        "projectAtlas.github.user": {
+          "type": "string",
+          "default": "",
+          "description": "GitHub username that owns the configured personal access token.",
+          "order": 6
+        }
+      }
+    },
+    "jsonValidation": [
+      {
+        "fileMatch": "**/.project-atlas/project.json",
+        "url": "./schemas/project.schema.json"
+      },
+      {
+        "fileMatch": "**/gitmessage.json",
+        "url": "./schemas/gitmessage.schema.json"
+      },
+      {
+        "fileMatch": "**/commoncmd.json",
+        "url": "./schemas/commoncmd.schema.json"
+      },
+      {
+        "fileMatch": "**/.aicode.json",
+        "url": "./schemas/aicode.schema.json"
+      },
+      {
+        "fileMatch": "**/.project-atlas/repos.json",
+        "url": "./schemas/repos.schema.json"
+      },
+      {
+        "fileMatch": "**/.project-atlas/github.json",
+        "url": "./schemas/github.schema.json"
+      },
+      {
+        "fileMatch": "**/aiprompts.json",
+        "url": "./schemas/aiprompts.schema.json"
+      }
+    ]
+  },
+  "scripts": {
+    "vscode:prepublish": "yarn clean && yarn compile",
+    "clean": "node -e \"require('fs').rmSync('out', { recursive: true, force: true })\"",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "pretest": "yarn run format:check && yarn run compile && yarn run lint",
+    "lint": "eslint src",
+    "test": "vscode-test",
+    "package:extension": "vsce package --yarn",
+    "install:extension": "yarn package:extension --out project-atlas-vs.vsix && code --install-extension project-atlas-vs.vsix --force",
+    "deploy": "vsce publish --yarn"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.10",
+    "@types/node": "24.x",
+    "@types/semver": "^7.8.0",
+    "@types/vscode": "^1.134.0",
+    "@vscode/test-cli": "^0.0.15",
+    "@vscode/test-electron": "^3.0.0",
+    "@vscode/vsce": "^3.9.2",
+    "eslint": "^10.5.0",
+    "prettier": "^3.9.6",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.61.1"
+  },
+  "resolutions": {
+    "diff": "^8.0.4",
+    "serialize-javascript": "^7.0.6"
+  },
+  "dependencies": {
+    "https-proxy-agent": "^7.0.6",
+    "semver": "^7.8.5",
+    "socks-proxy-agent": "^8.0.5"
+  }
+}

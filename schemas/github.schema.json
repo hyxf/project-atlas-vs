@@ -1,0 +1,70 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Project Atlas GitHub Configuration",
+  "type": "object",
+  "properties": {
+    "token": {
+      "type": "string",
+      "minLength": 1,
+      "description": "GitHub personal access token used to list repositories. A classic token needs the repo scope; a fine-grained token needs access to every private repository that should be displayed."
+    },
+    "user": {
+      "type": "string",
+      "minLength": 1,
+      "description": "GitHub user whose owned repositories are displayed."
+    },
+    "proxyEnabled": {
+      "type": "boolean",
+      "default": false,
+      "description": "Whether GitHub API requests and Git clone operations should use the configured proxy."
+    },
+    "httpProxy": {
+      "type": "string",
+      "default": "http://127.0.0.1:1087",
+      "description": "HTTP or HTTPS proxy URL used when proxyEnabled is true, for example http://127.0.0.1:1087."
+    },
+    "socketProxy": {
+      "type": "string",
+      "default": "socks5://127.0.0.1:1086",
+      "description": "SOCKS proxy URL used for socket-based requests and SSH clone connections."
+    },
+    "repositories": {
+      "type": "array",
+      "description": "Locally cached repositories. Updated only by the refresh action.",
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": { "type": "number" },
+          "name": { "type": "string" },
+          "fullName": { "type": "string" },
+          "owner": { "type": "string" },
+          "description": { "type": "string" },
+          "htmlUrl": { "type": "string" },
+          "sshUrl": { "type": "string" },
+          "cloneUrl": { "type": "string" },
+          "private": { "type": "boolean" },
+          "archived": { "type": "boolean" },
+          "fork": { "type": "boolean" },
+          "language": { "type": "string" },
+          "updatedAt": { "type": "string" }
+        },
+        "required": [
+          "id",
+          "name",
+          "fullName",
+          "owner",
+          "htmlUrl",
+          "sshUrl",
+          "cloneUrl",
+          "private",
+          "archived",
+          "fork",
+          "updatedAt"
+        ],
+        "additionalProperties": true
+      }
+    }
+  },
+  "required": ["token", "user", "repositories"],
+  "additionalProperties": true
+}
