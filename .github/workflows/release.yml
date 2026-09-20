@@ -45,6 +45,8 @@ jobs:
               run: npm pkg set version="$VERSION"
 
             - name: Test (excluding proxy tests)
+              env:
+                  NODE_OPTIONS: --no-deprecation
               run: xvfb-run -a yarn test --grep proxy --invert
 
             - name: Package extension
