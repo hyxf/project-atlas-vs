@@ -573,7 +573,7 @@ suite('Extension', () => {
         assert.ok(extension);
         const manifest = extension.packageJSON as {
             contributes: {
-                commands: Array<{ command: string; category?: string }>;
+                commands: Array<{ command: string; category?: string; enablement?: string }>;
                 menus: { commandPalette: Array<{ command: string; when?: string }> };
             };
         };
@@ -610,11 +610,39 @@ suite('Extension', () => {
                 'project-atlas.searchAiPrompts',
                 'project-atlas.aiPromptsListView',
                 'project-atlas.aiPromptsGroupView',
+                'project-atlas.backupTemplateData',
+                'project-atlas.restoreTemplateData',
+                'project-atlas.refreshTemplateBackup',
+                'project-atlas.deleteTemplateBackup',
+                'project-atlas.signInForTemplateBackup',
             ],
         );
         assert.strictEqual(paletteCommands[0]?.category, 'AICode');
         assert.strictEqual(paletteCommands[1]?.category, 'AICode');
         assert.strictEqual(paletteCommands[2]?.category, 'AICode');
+        for (const [command, enablement] of [
+            [
+                'project-atlas.backupTemplateData',
+                'projectAtlas.templateBackupSignedIn && !projectAtlas.templateBackupBusy',
+            ],
+            [
+                'project-atlas.restoreTemplateData',
+                'projectAtlas.templateBackupSignedIn && projectAtlas.templateBackupAvailable && !projectAtlas.templateBackupBusy',
+            ],
+            [
+                'project-atlas.refreshTemplateBackup',
+                'projectAtlas.templateBackupSignedIn && !projectAtlas.templateBackupBusy',
+            ],
+            [
+                'project-atlas.deleteTemplateBackup',
+                'projectAtlas.templateBackupSignedIn && projectAtlas.templateBackupAvailable && !projectAtlas.templateBackupBusy',
+            ],
+        ] as const) {
+            assert.strictEqual(
+                manifest.contributes.commands.find((candidate) => candidate.command === command)?.enablement,
+                enablement,
+            );
+        }
     });
 
     test('shows the package version command for a single workspace folder', () => {
@@ -732,6 +760,7 @@ suite('Extension', () => {
             { id: 'projectAtlas.commonCommands', name: 'Common Commands' },
             { id: 'projectAtlas.gitMessages', name: 'Git Messages' },
             { id: 'projectAtlas.aiPrompts', name: 'AI Prompts' },
+            { id: 'projectAtlas.templateBackup', name: 'Backup & Restore' },
         ]);
         assert.deepStrictEqual(contributes.views.projectAtlas, [
             { id: 'projectAtlas.projects', name: 'Projects', icon: 'resources/project-atlas.svg' },

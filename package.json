@@ -755,6 +755,40 @@
         "title": "Edit Tags",
         "category": "Project Atlas",
         "icon": "$(tag)"
+      },
+      {
+        "command": "project-atlas.backupTemplateData",
+        "title": "Back Up Template Data",
+        "category": "Project Atlas",
+        "icon": "$(cloud-upload)",
+        "enablement": "projectAtlas.templateBackupSignedIn && !projectAtlas.templateBackupBusy"
+      },
+      {
+        "command": "project-atlas.restoreTemplateData",
+        "title": "Restore Template Data",
+        "category": "Project Atlas",
+        "icon": "$(cloud-download)",
+        "enablement": "projectAtlas.templateBackupSignedIn && projectAtlas.templateBackupAvailable && !projectAtlas.templateBackupBusy"
+      },
+      {
+        "command": "project-atlas.refreshTemplateBackup",
+        "title": "Refresh Template Backup",
+        "category": "Project Atlas",
+        "icon": "$(refresh)",
+        "enablement": "projectAtlas.templateBackupSignedIn && !projectAtlas.templateBackupBusy"
+      },
+      {
+        "command": "project-atlas.deleteTemplateBackup",
+        "title": "Delete Synced Template Backup",
+        "category": "Project Atlas",
+        "icon": "$(trash)",
+        "enablement": "projectAtlas.templateBackupSignedIn && projectAtlas.templateBackupAvailable && !projectAtlas.templateBackupBusy"
+      },
+      {
+        "command": "project-atlas.signInForTemplateBackup",
+        "title": "Sign In for Template Backup",
+        "category": "Project Atlas",
+        "icon": "$(account)"
       }
     ],
     "submenus": [
@@ -817,6 +851,10 @@
         {
           "id": "projectAtlas.aiPrompts",
           "name": "AI Prompts"
+        },
+        {
+          "id": "projectAtlas.templateBackup",
+          "name": "Backup & Restore"
         }
       ],
       "aicode": [
@@ -1011,6 +1049,26 @@
         {
           "command": "project-atlas.refreshGitMessages",
           "when": "view == projectAtlas.gitMessages",
+          "group": "navigation@4"
+        },
+        {
+          "command": "project-atlas.backupTemplateData",
+          "when": "view == projectAtlas.templateBackup",
+          "group": "navigation@1"
+        },
+        {
+          "command": "project-atlas.restoreTemplateData",
+          "when": "view == projectAtlas.templateBackup",
+          "group": "navigation@2"
+        },
+        {
+          "command": "project-atlas.refreshTemplateBackup",
+          "when": "view == projectAtlas.templateBackup",
+          "group": "navigation@3"
+        },
+        {
+          "command": "project-atlas.deleteTemplateBackup",
+          "when": "view == projectAtlas.templateBackup",
           "group": "navigation@4"
         },
         {

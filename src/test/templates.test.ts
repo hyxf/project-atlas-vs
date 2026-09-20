@@ -18,6 +18,31 @@ import {
     loadGitMessageItems,
     TemplatesTreeProvider,
 } from '../features/templates/templatesFeature';
+import {
+    TemplateBackupService,
+    TemplateBackupStorage,
+    templateBackupKey,
+} from '../features/templateBackup/templateBackupFeature';
+
+class TestBackupStorage implements TemplateBackupStorage {
+    value: unknown;
+    syncedKeys: readonly string[] = [];
+
+    get<T>(section: string): T | undefined {
+        return section === templateBackupKey ? (this.value as T | undefined) : undefined;
+    }
+
+    update(section: string, value: unknown): Thenable<void> {
+        if (section === templateBackupKey) {
+            this.value = value;
+        }
+        return Promise.resolve();
+    }
+
+    setKeysForSync(keys: readonly string[]): void {
+        this.syncedKeys = keys;
+    }
+}
 
 suite('Template views', () => {
     test('keeps Close and Escape available during saving and restores controls after an error', () => {
@@ -107,6 +132,31 @@ suite('Template views', () => {
         temporary = await fs.mkdtemp(path.join(os.tmpdir(), 'project-atlas-templates-test-'));
     });
     teardown(async () => fs.rm(temporary, { recursive: true, force: true }));
+
+    test('backs up and restores all template files through one synced global state key', async () => {
+        const files = [
+            { name: 'aiprompts.json' as const, file: path.join(temporary, 'aiprompts.json') },
+            { name: 'commoncmd.json' as const, file: path.join(temporary, 'commoncmd.json') },
+            { name: 'gitmessage.json' as const, file: path.join(temporary, 'gitmessage.json') },
+        ];
+        const originals = ['{\n  "prompts": []\n}\n', '{"commands":[]}\n', '{"messages":[]}\n'];
+        await Promise.all(files.map(({ file }, index) => fs.writeFile(file, originals[index]!)));
+        const storage = new TestBackupStorage();
+        const service = new TemplateBackupService(storage, files, async () => {});
+
+        service.enableSync();
+        const backup = await service.backup();
+        assert.deepStrictEqual(storage.syncedKeys, [templateBackupKey]);
+        assert.strictEqual(backup.documents['aiprompts.json'].contents, originals[0]);
+        assert.strictEqual(backup.documents['commoncmd.json'].contents, originals[1]);
+        assert.strictEqual(backup.documents['gitmessage.json'].contents, originals[2]);
+
+        await Promise.all(files.map(({ file }) => fs.writeFile(file, '{"changed":true}\n')));
+        await service.restore();
+        assert.deepStrictEqual(await Promise.all(files.map(({ file }) => fs.readFile(file, 'utf8'))), originals);
+        await service.deleteBackup();
+        assert.strictEqual(service.getBackup(), undefined);
+    });
 
     test('adding uses blank edit forms and only persists on Save', async () => {
         const commandFile = path.join(temporary, 'commoncmd.json');
