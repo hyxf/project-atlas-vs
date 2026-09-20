@@ -1346,6 +1346,17 @@ suite('Extension', () => {
             }>
         ).find(({ command }) => command === 'project-atlas.closeCurrent');
         assert.strictEqual(menu?.when, 'viewItem == currentProject');
+        const commandPalette = extension.packageJSON.contributes.menus.commandPalette as Array<{
+            command: string;
+            when?: string;
+        }>;
+        assert.deepStrictEqual(
+            commandPalette.find(({ command }) => command === 'project-atlas.closeCurrent'),
+            {
+                command: 'project-atlas.closeCurrent',
+                when: 'false',
+            },
+        );
     });
 });
 

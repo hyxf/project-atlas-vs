@@ -1527,6 +1527,10 @@
           "command": "project-atlas.saveCurrent"
         },
         {
+          "command": "project-atlas.closeCurrent",
+          "when": "false"
+        },
+        {
           "command": "project-atlas.add"
         },
         {
