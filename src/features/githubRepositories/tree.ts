@@ -13,7 +13,12 @@ export class GitHubRepositoryNode extends vscode.TreeItem {
         readonly languageRepositories: GitHubRepository[],
         readonly visibilityRepositories: GitHubRepository[],
     ) {
-        super(repository.fullName, vscode.TreeItemCollapsibleState.None);
+        super(
+            repository.fullName,
+            repository.description?.trim()
+                ? vscode.TreeItemCollapsibleState.Collapsed
+                : vscode.TreeItemCollapsibleState.None,
+        );
         this.id = `github-repository:${repository.id}`;
         this.contextValue = addable ? 'githubRepositoryAddable' : 'githubRepositorySaved';
         if (repository.archived) {
@@ -33,6 +38,18 @@ export class GitHubRepositoryNode extends vscode.TreeItem {
             title: 'Open GitHub Repository',
             arguments: [this],
         };
+    }
+}
+
+export class GitHubRepositoryDescriptionNode extends vscode.TreeItem {
+    constructor(
+        readonly repositoryNode: GitHubRepositoryNode,
+        description: string,
+    ) {
+        super(description, vscode.TreeItemCollapsibleState.None);
+        this.id = `github-repository-description:${repositoryNode.repository.id}`;
+        this.contextValue = 'githubRepositoryDescription';
+        this.iconPath = new vscode.ThemeIcon('info');
     }
 }
 
@@ -64,12 +81,14 @@ export class GitHubLanguageNode extends vscode.TreeItem {
     }
 }
 
-export type GitHubTreeNode = GitHubVisibilityNode | GitHubLanguageNode | GitHubRepositoryNode;
+export type GitHubTreeNode =
+    GitHubVisibilityNode | GitHubLanguageNode | GitHubRepositoryNode | GitHubRepositoryDescriptionNode;
 
 export class GitHubRepositoriesTree implements vscode.TreeDataProvider<GitHubTreeNode> {
     private readonly changed = new vscode.EventEmitter<GitHubTreeNode | undefined>();
     private expansionGeneration = 0;
     private languageExpansionState = vscode.TreeItemCollapsibleState.Expanded;
+    private repositoryExpansionState = vscode.TreeItemCollapsibleState.Collapsed;
     readonly onDidChangeTreeData = this.changed.event;
 
     constructor(
@@ -86,12 +105,14 @@ export class GitHubRepositoriesTree implements vscode.TreeDataProvider<GitHubTre
 
     collapseAll(): void {
         this.languageExpansionState = vscode.TreeItemCollapsibleState.Collapsed;
+        this.repositoryExpansionState = vscode.TreeItemCollapsibleState.Collapsed;
         this.expansionGeneration += 1;
         this.refresh();
     }
 
     expandAll(): void {
         this.languageExpansionState = vscode.TreeItemCollapsibleState.Expanded;
+        this.repositoryExpansionState = vscode.TreeItemCollapsibleState.Expanded;
         this.expansionGeneration += 1;
         this.refresh();
     }
@@ -112,6 +133,9 @@ export class GitHubRepositoriesTree implements vscode.TreeDataProvider<GitHubTre
         if (element instanceof GitHubVisibilityNode) {
             return undefined;
         }
+        if (element instanceof GitHubRepositoryDescriptionNode) {
+            return element.repositoryNode;
+        }
         if (element instanceof GitHubLanguageNode) {
             return this.visibilityNode(element.visibilityRepositories, element.visibility);
         }
@@ -127,6 +151,10 @@ export class GitHubRepositoriesTree implements vscode.TreeDataProvider<GitHubTre
 
     async getChildren(element?: GitHubTreeNode): Promise<GitHubTreeNode[]> {
         if (element instanceof GitHubRepositoryNode) {
+            const description = element.repository.description?.trim();
+            return description ? [new GitHubRepositoryDescriptionNode(element, description)] : [];
+        }
+        if (element instanceof GitHubRepositoryDescriptionNode) {
             return [];
         }
         if (element instanceof GitHubLanguageNode) {
@@ -137,13 +165,17 @@ export class GitHubRepositoriesTree implements vscode.TreeDataProvider<GitHubTre
             );
             return element.repositories.sort(compareRepositories).map((repository) => {
                 const key = repositoryIdentityKey(repository.sshUrl);
-                return new GitHubRepositoryNode(
+                const node = new GitHubRepositoryNode(
                     repository,
                     key === undefined || !savedRepositoryKeys.has(key),
                     element.visibility,
                     element.repositories,
                     element.visibilityRepositories,
                 );
+                if (repository.description?.trim()) {
+                    node.collapsibleState = this.repositoryExpansionState;
+                }
+                return node;
             });
         }
         if (element instanceof GitHubVisibilityNode) {
