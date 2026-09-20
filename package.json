@@ -1,6 +1,7 @@
 {
   "name": "project-atlas-vs",
   "displayName": "Project Atlas VS",
+  "private": true,
   "description": "Save, organize, search, and quickly open local projects.",
   "version": "0.5.0",
   "publisher": "billchiu",
