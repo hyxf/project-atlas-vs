@@ -813,11 +813,16 @@ suite('Extension', () => {
             group?: string;
         }>;
         assert.deepStrictEqual(
-            titleMenu.filter(({ when }) => when === 'view == projectAtlas.repos'),
+            titleMenu.filter(({ when }) => when?.startsWith('view == projectAtlas.repos')),
             [
                 {
                     command: 'project-atlas.collapseRepositories',
-                    when: 'view == projectAtlas.repos',
+                    when: 'view == projectAtlas.repos && !projectAtlas.repositoriesCollapsed',
+                    group: 'navigation@3',
+                },
+                {
+                    command: 'project-atlas.expandRepositories',
+                    when: 'view == projectAtlas.repos && projectAtlas.repositoriesCollapsed',
                     group: 'navigation@3',
                 },
                 {
@@ -841,6 +846,18 @@ suite('Extension', () => {
                     group: 'view@1',
                 },
             ],
+        );
+        const repositoryCommands = extension.packageJSON.contributes.commands as Array<{
+            command: string;
+            icon?: string;
+        }>;
+        assert.strictEqual(
+            repositoryCommands.find(({ command }) => command === 'project-atlas.collapseRepositories')?.icon,
+            '$(collapse-all)',
+        );
+        assert.strictEqual(
+            repositoryCommands.find(({ command }) => command === 'project-atlas.expandRepositories')?.icon,
+            '$(expand-all)',
         );
         assert.deepStrictEqual(extension.packageJSON.contributes.menus['projectAtlas.repositoryViewMenu'], [
             {

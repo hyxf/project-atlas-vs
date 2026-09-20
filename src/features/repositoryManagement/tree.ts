@@ -76,6 +76,10 @@ export class RepositoriesTree implements vscode.TreeDataProvider<RepositoryTreeN
         return element;
     }
 
+    getParent(_element: RepositoryTreeNode): undefined {
+        return undefined;
+    }
+
     async getChildren(element?: RepositoryTreeNode): Promise<RepositoryTreeNode[]> {
         const repositories = await this.store.repositories();
         if (element instanceof RepositoryTagNode) {

@@ -397,6 +397,12 @@
         "icon": "$(collapse-all)"
       },
       {
+        "command": "project-atlas.expandRepositories",
+        "title": "Expand All",
+        "category": "Project Atlas",
+        "icon": "$(expand-all)"
+      },
+      {
         "command": "project-atlas.refreshRepositories",
         "title": "Refresh Repositories",
         "category": "Project Atlas",
@@ -1104,7 +1110,12 @@
         },
         {
           "command": "project-atlas.collapseRepositories",
-          "when": "view == projectAtlas.repos",
+          "when": "view == projectAtlas.repos && !projectAtlas.repositoriesCollapsed",
+          "group": "navigation@3"
+        },
+        {
+          "command": "project-atlas.expandRepositories",
+          "when": "view == projectAtlas.repos && projectAtlas.repositoriesCollapsed",
           "group": "navigation@3"
         },
         {
@@ -1524,6 +1535,10 @@
         },
         {
           "command": "project-atlas.collapseRepositories",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.expandRepositories",
           "when": "false"
         },
         {

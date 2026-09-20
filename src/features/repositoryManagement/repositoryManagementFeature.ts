@@ -19,7 +19,12 @@ export function activateRepositoryManagement(context: vscode.ExtensionContext): 
     const githubConfigurationStore = new GitHubConfigurationStore();
     const tree = new RepositoriesTree(store);
     void run(async () => setRepositoryViewMode(tree, await store.viewMode()));
-    context.subscriptions.push(vscode.window.createTreeView('projectAtlas.repos', { treeDataProvider: tree }));
+    const treeView = vscode.window.createTreeView('projectAtlas.repos', { treeDataProvider: tree });
+    context.subscriptions.push(
+        treeView,
+        treeView.onDidExpandElement(() => void setRepositoriesCollapsed(false)),
+    );
+    void setRepositoriesCollapsed(false);
     context.subscriptions.push(
         vscode.commands.registerCommand('project-atlas.saveCurrentRepository', () =>
             run(async () => {
@@ -50,6 +55,14 @@ export function activateRepositoryManagement(context: vscode.ExtensionContext): 
             run(async () => {
                 await vscode.commands.executeCommand('projectAtlas.repos.focus');
                 await vscode.commands.executeCommand('workbench.actions.treeView.projectAtlas.repos.collapseAll');
+                await setRepositoriesCollapsed(true);
+            }),
+        ),
+        vscode.commands.registerCommand('project-atlas.expandRepositories', () =>
+            run(async () => {
+                await vscode.commands.executeCommand('projectAtlas.repos.focus');
+                await expandAllRepositories(treeView, tree);
+                await setRepositoriesCollapsed(false);
             }),
         ),
         ...(['TAGS', 'GROUPS', 'HOSTS'] as const).map((mode) =>
@@ -208,6 +221,16 @@ export function activateRepositoryManagement(context: vscode.ExtensionContext): 
 async function setRepositoryViewMode(tree: RepositoriesTree, mode: RepositoryViewMode): Promise<void> {
     tree.setMode(mode);
     await vscode.commands.executeCommand('setContext', 'projectAtlas.repositoryViewMode', mode);
+}
+
+async function setRepositoriesCollapsed(collapsed: boolean): Promise<void> {
+    await vscode.commands.executeCommand('setContext', 'projectAtlas.repositoriesCollapsed', collapsed);
+}
+
+async function expandAllRepositories(treeView: vscode.TreeView<unknown>, tree: RepositoriesTree): Promise<void> {
+    for (const node of await tree.getChildren()) {
+        await treeView.reveal(node, { expand: true, focus: false, select: false });
+    }
 }
 
 async function remoteUrlForProject(project: ProjectItem): Promise<string | undefined> {
