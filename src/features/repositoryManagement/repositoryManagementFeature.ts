@@ -54,6 +54,7 @@ export function activateRepositoryManagement(context: vscode.ExtensionContext): 
         vscode.commands.registerCommand('project-atlas.collapseRepositories', () =>
             run(async () => {
                 await vscode.commands.executeCommand('projectAtlas.repos.focus');
+                tree.collapseAll();
                 await vscode.commands.executeCommand('workbench.actions.treeView.projectAtlas.repos.collapseAll');
                 await setRepositoriesCollapsed(true);
             }),
@@ -61,6 +62,7 @@ export function activateRepositoryManagement(context: vscode.ExtensionContext): 
         vscode.commands.registerCommand('project-atlas.expandRepositories', () =>
             run(async () => {
                 await vscode.commands.executeCommand('projectAtlas.repos.focus');
+                tree.expandAll();
                 await expandAllRepositories(treeView, tree);
                 await setRepositoriesCollapsed(false);
             }),
