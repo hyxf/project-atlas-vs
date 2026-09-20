@@ -12,10 +12,19 @@ export class ProjectNode extends vscode.TreeItem {
         this.id = id;
         this.tooltip = `${project.name}\n${project.path}${project.tags.length ? `\n${project.tags.join(' · ')}` : ''}`;
         this.resourceUri = vscode.Uri.from({ scheme: 'project-atlas', path: `/${project.id}`, query: project.path });
-        this.contextValue = 'project';
+        this.contextValue = isCurrentProject(project) ? 'currentProject' : 'project';
         this.command = { command: 'project-atlas.openOnDoubleClick', title: 'Open Project', arguments: [this] };
         this.iconPath = new vscode.ThemeIcon(project.favorite ? 'star-full' : 'folder');
     }
+}
+
+function isCurrentProject(project: ProjectItem): boolean {
+    const folders = vscode.workspace.workspaceFolders;
+    const activeFolder =
+        vscode.window.activeTextEditor &&
+        vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri);
+    const currentFolder = activeFolder ?? (folders?.length === 1 ? folders[0] : undefined);
+    return currentFolder !== undefined && normalizePath(project.path) === normalizePath(currentFolder.uri.fsPath);
 }
 
 export class ProjectDecorationProvider implements vscode.FileDecorationProvider {

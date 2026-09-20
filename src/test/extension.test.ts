@@ -1308,6 +1308,28 @@ suite('Extension', () => {
         ).find(({ command }) => command === 'project-atlas.saveCurrent');
         assert.strictEqual(command?.enablement, '!projectAtlas.currentProjectSaved');
     });
+
+    test('contributes Close Current Project only for the current project tree item', () => {
+        const extension = vscode.extensions.getExtension('billchiu.project-atlas-vs');
+        assert.ok(extension);
+        const commands = extension.packageJSON.contributes.commands as Array<{ command: string; title?: string }>;
+        assert.deepStrictEqual(
+            commands.find(({ command }) => command === 'project-atlas.closeCurrent'),
+            {
+                command: 'project-atlas.closeCurrent',
+                title: 'Close Current Project',
+                category: 'Project Atlas',
+                icon: '$(close)',
+            },
+        );
+        const menu = (
+            extension.packageJSON.contributes.menus['view/item/context'] as Array<{
+                command: string;
+                when?: string;
+            }>
+        ).find(({ command }) => command === 'project-atlas.closeCurrent');
+        assert.strictEqual(menu?.when, 'viewItem == currentProject');
+    });
 });
 
 suite('Repository HTML forms', () => {

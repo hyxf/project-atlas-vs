@@ -26,6 +26,7 @@ export function activateProjectManagement(context: vscode.ExtensionContext): voi
         openOnDoubleClick: (node) => openProjectOnDoubleClick(resolveProject(node)),
         openCurrentWindow: (node) => openProject(resolveProject(node), false),
         openNewWindow: (node) => openProject(resolveProject(node), true),
+        closeCurrent: (node) => closeCurrentProject(resolveProject(node)),
         edit: (node) => editProject(resolveProject(node)),
         toggleFavorite: (node) => toggleFavorite(resolveProject(node)),
         editTags: (node) => editTags(resolveProject(node)),
@@ -228,6 +229,18 @@ async function openProject(project: ProjectItem | undefined, newWindow?: boolean
     });
 }
 
+async function closeCurrentProject(project: ProjectItem | undefined): Promise<void> {
+    const folders = vscode.workspace.workspaceFolders;
+    const activeFolder =
+        vscode.window.activeTextEditor &&
+        vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri);
+    const currentFolder = activeFolder ?? (folders?.length === 1 ? folders[0] : undefined);
+    if (!project || !currentFolder || normalizePath(project.path) !== normalizePath(currentFolder.uri.fsPath)) {
+        return;
+    }
+    await vscode.commands.executeCommand('workbench.action.closeFolder');
+}
+
 async function openProjectOnDoubleClick(project: ProjectItem | undefined): Promise<void> {
     if (!project) {
         return;
@@ -422,6 +435,7 @@ async function syncCurrentProjectContext(): Promise<void> {
           )
         : false;
     await vscode.commands.executeCommand('setContext', 'projectAtlas.currentProjectSaved', saved);
+    tree.refresh();
 }
 function resolveProject(value: unknown): ProjectItem | undefined {
     if (value instanceof ProjectNode) {
