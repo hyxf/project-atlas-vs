@@ -1991,22 +1991,22 @@
         },
         {
           "command": "project-atlas.openGithubRepository",
-          "when": "view == projectAtlas.githubRepos && viewItem =~ /^githubRepository/",
+          "when": "view == projectAtlas.githubRepos && (viewItem == githubRepositoryAddable || viewItem == githubRepositorySaved)",
           "group": "navigation@2"
         },
         {
           "command": "project-atlas.addGithubRepositoryToRepos",
-          "when": "view == projectAtlas.githubRepos && viewItem =~ /^githubRepository/",
+          "when": "view == projectAtlas.githubRepos && (viewItem == githubRepositoryAddable || viewItem == githubRepositorySaved)",
           "group": "inline@1"
         },
         {
           "command": "project-atlas.copyGithubRepositorySshUrl",
-          "when": "view == projectAtlas.githubRepos && viewItem =~ /^githubRepository/",
+          "when": "view == projectAtlas.githubRepos && (viewItem == githubRepositoryAddable || viewItem == githubRepositorySaved)",
           "group": "navigation@1"
         },
         {
           "command": "project-atlas.cloneGithubRepository",
-          "when": "view == projectAtlas.githubRepos && viewItem =~ /^githubRepository/",
+          "when": "view == projectAtlas.githubRepos && (viewItem == githubRepositoryAddable || viewItem == githubRepositorySaved)",
           "group": "inline@3"
         },
         {

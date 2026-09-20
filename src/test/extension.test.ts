@@ -1151,7 +1151,7 @@ suite('Extension', () => {
             itemMenu.find(({ command }) => command === 'project-atlas.cloneGithubRepository'),
             {
                 command: 'project-atlas.cloneGithubRepository',
-                when: 'view == projectAtlas.githubRepos && viewItem =~ /^githubRepository/',
+                when: 'view == projectAtlas.githubRepos && (viewItem == githubRepositoryAddable || viewItem == githubRepositorySaved)',
                 group: 'inline@3',
             },
         );
@@ -1159,7 +1159,7 @@ suite('Extension', () => {
             itemMenu.find(({ command }) => command === 'project-atlas.copyGithubRepositorySshUrl'),
             {
                 command: 'project-atlas.copyGithubRepositorySshUrl',
-                when: 'view == projectAtlas.githubRepos && viewItem =~ /^githubRepository/',
+                when: 'view == projectAtlas.githubRepos && (viewItem == githubRepositoryAddable || viewItem == githubRepositorySaved)',
                 group: 'navigation@1',
             },
         );
@@ -1167,7 +1167,7 @@ suite('Extension', () => {
             itemMenu.find(({ command }) => command === 'project-atlas.addGithubRepositoryToRepos'),
             {
                 command: 'project-atlas.addGithubRepositoryToRepos',
-                when: 'view == projectAtlas.githubRepos && viewItem =~ /^githubRepository/',
+                when: 'view == projectAtlas.githubRepos && (viewItem == githubRepositoryAddable || viewItem == githubRepositorySaved)',
                 group: 'inline@1',
             },
         );
@@ -1175,7 +1175,7 @@ suite('Extension', () => {
             itemMenu.find(({ command }) => command === 'project-atlas.openGithubRepository'),
             {
                 command: 'project-atlas.openGithubRepository',
-                when: 'view == projectAtlas.githubRepos && viewItem =~ /^githubRepository/',
+                when: 'view == projectAtlas.githubRepos && (viewItem == githubRepositoryAddable || viewItem == githubRepositorySaved)',
                 group: 'navigation@2',
             },
         );
