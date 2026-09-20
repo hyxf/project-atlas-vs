@@ -502,6 +502,7 @@ suite('Extension', () => {
         await extension.activate();
         const commands = new Set(await vscode.commands.getCommands(true));
         for (const command of [
+            'project-atlas.checkForUpdates',
             'aicode.selectGroup',
             'aicode.createGroup',
             'aicode.renameGroup',
@@ -586,6 +587,7 @@ suite('Extension', () => {
         assert.deepStrictEqual(
             paletteCommands.map(({ command }) => command),
             [
+                'project-atlas.checkForUpdates',
                 'aicode.selectGroup',
                 'aicode.createGroup',
                 'aicode.openConfig',
@@ -617,9 +619,10 @@ suite('Extension', () => {
                 'project-atlas.signInForTemplateBackup',
             ],
         );
-        assert.strictEqual(paletteCommands[0]?.category, 'AICode');
+        assert.strictEqual(paletteCommands[0]?.category, 'Project Atlas');
         assert.strictEqual(paletteCommands[1]?.category, 'AICode');
         assert.strictEqual(paletteCommands[2]?.category, 'AICode');
+        assert.strictEqual(paletteCommands[3]?.category, 'AICode');
         for (const [command, enablement] of [
             [
                 'project-atlas.backupTemplateData',
@@ -673,35 +676,47 @@ suite('Extension', () => {
         assert.deepStrictEqual(extension.packageJSON.contributes.configuration, {
             title: 'Project Atlas',
             properties: {
+                'projectAtlas.update.enabled': {
+                    type: 'boolean',
+                    default: true,
+                    description: 'Enable Project Atlas update checks.',
+                    order: 1,
+                },
+                'projectAtlas.update.autoCheck': {
+                    type: 'boolean',
+                    default: true,
+                    description: 'Check for Project Atlas updates after startup at most once every 24 hours.',
+                    order: 2,
+                },
                 'projectAtlas.github.httpProxy': {
                     type: 'string',
                     default: 'http://127.0.0.1:1087',
                     description: 'HTTP or HTTPS proxy URL used when GitHub proxy is enabled.',
-                    order: 2,
+                    order: 3,
                 },
                 'projectAtlas.github.socketProxy': {
                     type: 'string',
                     default: 'socks5://127.0.0.1:1086',
                     description: 'SOCKS proxy URL used for socket-based requests and SSH clone connections.',
-                    order: 3,
+                    order: 4,
                 },
                 'projectAtlas.github.proxyEnabled': {
                     type: 'boolean',
                     default: false,
                     description: 'Use the configured proxy for GitHub repository refreshes and clone operations.',
-                    order: 4,
+                    order: 5,
                 },
                 'projectAtlas.github.token': {
                     type: 'string',
                     default: '',
                     description: 'GitHub personal access token used for repository refreshes and private clones.',
-                    order: 5,
+                    order: 6,
                 },
                 'projectAtlas.github.user': {
                     type: 'string',
                     default: '',
                     description: 'GitHub username that owns the configured personal access token.',
-                    order: 6,
+                    order: 7,
                 },
             },
         });
