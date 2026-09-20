@@ -24,6 +24,7 @@ export function activateAICodeContext(context: vscode.ExtensionContext): void {
     context.subscriptions.push(
         service,
         tree,
+        tree.onDidExpandElement(() => void setContextFilesCollapsed(false)),
         compareTree,
         compareProvider,
         decoration,
@@ -243,9 +244,11 @@ export function activateAICodeContext(context: vscode.ExtensionContext): void {
     command('aicode.refresh', async () => provider.refresh());
     command('aicode.expandAll', async () => {
         provider.resetToExpanded();
+        await setContextFilesCollapsed(false);
     });
     command('aicode.collapseAll', async () => {
         provider.resetToCollapsed();
+        await setContextFilesCollapsed(true);
     });
     command('aicode.showEditorIndicator', async (argument) =>
         indicator.setVisible(await selectFolder(service, argument), true),
@@ -269,6 +272,7 @@ export function activateAICodeContext(context: vscode.ExtensionContext): void {
             await openCompareResult(argument.result, argument.entry);
         }
     });
+    void setContextFilesCollapsed(false);
 }
 
 async function groupInput(service: ContextService, argument: unknown, title: string, copy: boolean): Promise<void> {
@@ -647,6 +651,10 @@ async function openCompareResult(result: CompareResult, relativePath: string): P
         workingUri,
         `${relativePath} — ${displayBranch(result.compare)} (Left) ↔ ${result.current} (Right, Working Tree)`,
     );
+}
+
+async function setContextFilesCollapsed(collapsed: boolean): Promise<void> {
+    await vscode.commands.executeCommand('setContext', 'aicode.contextFilesCollapsed', collapsed);
 }
 
 function displayBranch(branch: string): string {

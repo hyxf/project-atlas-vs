@@ -1035,13 +1035,13 @@
         },
         {
           "command": "aicode.expandAll",
-          "when": "view == aicode.contextFiles",
+          "when": "view == aicode.contextFiles && aicode.contextFilesCollapsed",
           "group": "navigation@5"
         },
         {
           "command": "aicode.collapseAll",
-          "when": "view == aicode.contextFiles",
-          "group": "navigation@6"
+          "when": "view == aicode.contextFiles && !aicode.contextFilesCollapsed",
+          "group": "navigation@5"
         },
         {
           "command": "aicode.refresh",
@@ -1150,13 +1150,13 @@
         },
         {
           "command": "project-atlas.expandGithubRepositories",
-          "when": "view == projectAtlas.githubRepos",
+          "when": "view == projectAtlas.githubRepos && projectAtlas.githubRepositoriesCollapsed",
           "group": "navigation@3"
         },
         {
           "command": "project-atlas.collapseGithubRepositories",
-          "when": "view == projectAtlas.githubRepos",
-          "group": "navigation@4"
+          "when": "view == projectAtlas.githubRepos && !projectAtlas.githubRepositoriesCollapsed",
+          "group": "navigation@3"
         },
         {
           "command": "project-atlas.refreshGithubRepositories",

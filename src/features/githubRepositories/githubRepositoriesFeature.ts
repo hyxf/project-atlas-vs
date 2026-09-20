@@ -96,6 +96,7 @@ export function activateGitHubRepositories(context: vscode.ExtensionContext): vo
     const treeView = vscode.window.createTreeView('projectAtlas.githubRepos', { treeDataProvider: tree });
     context.subscriptions.push(
         treeView,
+        treeView.onDidExpandElement(() => void setGithubRepositoriesCollapsed(false)),
         vscode.workspace.onDidChangeConfiguration((event) => {
             if (syncingSettings) {
                 return;
@@ -147,6 +148,7 @@ export function activateGitHubRepositories(context: vscode.ExtensionContext): vo
                 await vscode.commands.executeCommand('projectAtlas.githubRepos.focus');
                 revealRequest += 1;
                 tree.collapseAll();
+                await setGithubRepositoriesCollapsed(true);
             }),
         ),
         vscode.commands.registerCommand('project-atlas.expandGithubRepositories', () =>
@@ -163,6 +165,7 @@ export function activateGitHubRepositories(context: vscode.ExtensionContext): vo
                         await treeView.reveal(node, { select: false, focus: false, expand: true });
                     },
                 });
+                await setGithubRepositoriesCollapsed(false);
             }),
         ),
         vscode.commands.registerCommand('project-atlas.openGithubRepository', (node: unknown) =>
@@ -321,6 +324,11 @@ export function activateGitHubRepositories(context: vscode.ExtensionContext): vo
             }),
         ),
     );
+    void setGithubRepositoriesCollapsed(false);
+}
+
+async function setGithubRepositoriesCollapsed(collapsed: boolean): Promise<void> {
+    await vscode.commands.executeCommand('setContext', 'projectAtlas.githubRepositoriesCollapsed', collapsed);
 }
 
 async function run(action: () => Promise<void>): Promise<void> {

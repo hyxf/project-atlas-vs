@@ -1079,7 +1079,7 @@ suite('Extension', () => {
             group?: string;
         }>;
         assert.deepStrictEqual(
-            titleMenu.filter(({ when }) => when === 'view == projectAtlas.githubRepos'),
+            titleMenu.filter(({ when }) => when?.startsWith('view == projectAtlas.githubRepos')),
             [
                 {
                     command: 'project-atlas.searchGithubRepositories',
@@ -1093,13 +1093,13 @@ suite('Extension', () => {
                 },
                 {
                     command: 'project-atlas.expandGithubRepositories',
-                    when: 'view == projectAtlas.githubRepos',
+                    when: 'view == projectAtlas.githubRepos && projectAtlas.githubRepositoriesCollapsed',
                     group: 'navigation@3',
                 },
                 {
                     command: 'project-atlas.collapseGithubRepositories',
-                    when: 'view == projectAtlas.githubRepos',
-                    group: 'navigation@4',
+                    when: 'view == projectAtlas.githubRepos && !projectAtlas.githubRepositoriesCollapsed',
+                    group: 'navigation@3',
                 },
                 {
                     command: 'project-atlas.refreshGithubRepositories',
