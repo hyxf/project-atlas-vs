@@ -43,6 +43,12 @@ Project Atlas 用于集中保存、分类、搜索和快速打开本地项目。
 
 提交信息自动使用 `chore: bump version to <新版本>`，无需额外输入。执行前会显示仓库、分支、文件清单和推送目标；此前取消不会修改文件。推送优先使用当前分支的上游；没有上游且有多个远端时需选择远端，首次推送使用同名分支并建立跟踪关系。推送包含当前分支之前尚未推送的提交。
 
+## 升级
+
+在命令面板执行 `Project Atlas: 检查升级` 可立即查询稳定版更新；扩展启动后也会在后台每天最多查询一次。更新元数据由 GitHub Pages 提供，VSIX 与校验文件由对应的 GitHub Release 提供。选择“立即升级”后，下载 VSIX 并运行 VS Code 的 `Extensions: Install from VSIX...` 完成安装。
+
+首次发布前，请在仓库 **Settings → Pages** 将发布源设为 **GitHub Actions**。推送形如 `v0.6.0` 的 tag 后，发布工作流会创建 Release、上传 VSIX 与 `checksums.txt`，并部署 `update/stable.json` 到 GitHub Pages。
+
 提交前需保存仓库中的编辑器文件，并处理冲突或未完成的 Git 操作。提交失败保留修改；推送失败保留本地提交，点击 **Retry Push** 仅重试推送。该功能不创建版本标签，不自动合并或强制推送，也不更新锁文件中的版本号。
 
 ## 设置与数据安全

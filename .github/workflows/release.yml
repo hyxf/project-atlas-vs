@@ -7,11 +7,16 @@ on:
 
 permissions:
     contents: write
+    pages: write
+    id-token: write
 
 jobs:
     release:
         name: Build and release VSIX
         runs-on: ubuntu-latest
+        environment:
+            name: github-pages
+            url: ${{ steps.deployment.outputs.page_url }}
 
         steps:
             - name: Check out repository
@@ -54,9 +59,40 @@ jobs:
                   VSIX_FILE: ${{ steps.version.outputs.vsix }}
               run: yarn package:extension --out "$VSIX_FILE"
 
+            - name: Generate checksums
+              env:
+                  VSIX_FILE: ${{ steps.version.outputs.vsix }}
+              run: sha256sum "$VSIX_FILE" > checksums.txt
+
             - name: Create GitHub Release
               env:
                   GH_TOKEN: ${{ github.token }}
                   TAG_NAME: ${{ github.ref_name }}
                   VSIX_FILE: ${{ steps.version.outputs.vsix }}
-              run: gh release create "$TAG_NAME" "$VSIX_FILE" --verify-tag --generate-notes --title "$TAG_NAME"
+              run: gh release create "$TAG_NAME" "$VSIX_FILE" checksums.txt --verify-tag --generate-notes --title "$TAG_NAME"
+
+            - name: Generate update manifest
+              env:
+                  VERSION: ${{ steps.version.outputs.version }}
+                  VSIX_FILE: ${{ steps.version.outputs.vsix }}
+              run: |
+                  SHA256="$(sha256sum "$VSIX_FILE" | awk '{print $1}')"
+                  mkdir -p pages/update
+                  jq -n \
+                    --arg version "$VERSION" \
+                    --arg publishedAt "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
+                    --arg sha256 "$SHA256" \
+                    '{schemaVersion: 1, channel: "stable", latestVersion: $version, publishedAt: $publishedAt, releaseNotes: ("https://github.com/hyxf/project-atlas-vs/releases/tag/v" + $version), download: {url: ("https://github.com/hyxf/project-atlas-vs/releases/download/v" + $version + "/project-atlas-vs-" + $version + ".vsix"), fileName: ("project-atlas-vs-" + $version + ".vsix"), sha256: $sha256}, compatibility: {vscode: ">=1.134.0"}}' \
+                    > pages/update/stable.json
+
+            - name: Configure GitHub Pages
+              uses: actions/configure-pages@v5
+
+            - name: Upload GitHub Pages artifact
+              uses: actions/upload-pages-artifact@v4
+              with:
+                  path: pages
+
+            - name: Deploy GitHub Pages
+              id: deployment
+              uses: actions/deploy-pages@v4

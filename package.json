@@ -25,6 +25,12 @@
   "contributes": {
     "commands": [
       {
+        "command": "project-atlas.checkForUpdates",
+        "title": "检查升级",
+        "category": "Project Atlas",
+        "icon": "$(cloud-download)"
+      },
+      {
         "command": "project-atlas.addCommonCommand",
         "title": "Add Common Command",
         "category": "Project Atlas",
@@ -2086,6 +2092,18 @@
     "configuration": {
       "title": "Project Atlas",
       "properties": {
+        "projectAtlas.update.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Enable Project Atlas update checks.",
+          "order": 1
+        },
+        "projectAtlas.update.autoCheck": {
+          "type": "boolean",
+          "default": true,
+          "description": "Check for Project Atlas updates after startup at most once every 24 hours.",
+          "order": 2
+        },
         "projectAtlas.github.httpProxy": {
           "type": "string",
           "default": "http://127.0.0.1:1087",
