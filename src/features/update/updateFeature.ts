@@ -113,7 +113,7 @@ async function installUpdate(update: AvailableUpdate): Promise<void> {
                 await fs.writeFile(temporaryFile, contents, { flag: 'wx' });
             },
         );
-        await vscode.commands.executeCommand('workbench.extensions.action.installVSIX', [
+        await vscode.commands.executeCommand('workbench.extensions.command.installFromVSIX', [
             vscode.Uri.file(temporaryFile),
         ]);
     } catch (error) {
