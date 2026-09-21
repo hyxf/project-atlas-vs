@@ -1,33 +1,28 @@
 # Project Atlas for VS Code
 
-Project Atlas 用于集中保存、分类、搜索和快速打开本地项目，并提供 Git 仓库、AICode 上下文、模板和发布辅助工具。它与 IntelliJ IDEA 版共用 `~/.project-atlas/project.json`，项目、Tag、收藏状态及最近打开时间可在两个 IDE 之间同步。
+Project Atlas 是一款用于管理本地项目、Git 仓库和开发素材的 VS Code 扩展。它与 IntelliJ IDEA 版共享项目数据，并提供 AICode 上下文和 Git 发布工具。
 
-## 主要功能
+## 目录
 
-- 保存当前工作区，或选择任意目录添加项目。
-- 使用列表视图浏览项目，或切换到按 Tag 分组的视图。
-- 显示全部、最近或收藏项目，并支持多选 Tag 与 `Untagged` 筛选。
-- 按名称、路径或最近打开时间排序。
-- 按名称、路径和 Tag 搜索，在当前窗口或新窗口打开项目。
-- 编辑项目名称、Tag 和收藏状态；复制项目、复制路径或移除记录。
-- 在 Finder / Explorer 中直接打开项目目录，或在该目录启动终端。
-- 对不存在的目录显示警告；支持将项目目录移到废纸篓或永久删除。
+- [快速开始](#快速开始)
+- [项目与仓库](#项目与仓库)
+- [AICode 上下文](#aicode-上下文)
+- [模板与提示词](#模板与提示词)
+- [Git 与发布工具](#git-与发布工具)
+- [数据、安全与更新](#数据安全与更新)
+- [本地开发与发布](#本地开发与发布)
 
-## 使用方法
+## 快速开始
 
-安装扩展后，点击 Activity Bar 中的 **Project Atlas** 图标。
+安装后，在 Activity Bar 中打开所需容器：
 
-- 单击项目可选中，双击项目会在当前窗口打开。
-- 当前已打开的工作区项目会在列表右侧显示 `✓`。
-- 使用标题栏按钮保存项目、搜索、切换视图、编辑数据文件、按 Tag 筛选或刷新。
-- 使用标题栏的更多操作菜单筛选和排序项目。
-- 右键项目可在当前窗口或新窗口打开、编辑、收藏、复制、显示目录、启动终端、移除或删除。
-- Tag 筛选支持复选；不选择任何 Tag 表示显示所有项目。
-- 搜索后选择项目会在当前窗口打开；如需新窗口，请使用 `Open Project in New Window...`。
+| 容器                         | 视图                                                        | 用途                       |
+| ---------------------------- | ----------------------------------------------------------- | -------------------------- |
+| **Project Atlas: Projects**  | Projects、Git Repositories、GitHub Repositories             | 本地项目与远端仓库。       |
+| **Project Atlas: AICode**    | Context Files、Compare Results                              | 准备 AI 上下文并比较分支。 |
+| **Project Atlas: Templates** | Common Commands、Git Messages、AI Prompts、Backup & Restore | 管理可复用内容。           |
 
-命令面板提供 `Project Atlas: Search Projects`，其他操作可从 Project Atlas 视图的标题栏或项目右键菜单运行。
-
-默认快捷键：
+项目管理的默认快捷键：
 
 | 操作                | Windows / Linux | macOS         |
 | ------------------- | --------------- | ------------- |
@@ -35,70 +30,79 @@ Project Atlas 用于集中保存、分类、搜索和快速打开本地项目，
 | 切换列表 / Tag 视图 | `Ctrl+Shift+T`  | `Cmd+Shift+T` |
 | 显示 Project Atlas  | `Ctrl+Shift+,`  | `Cmd+Shift+,` |
 
-如有快捷键冲突，请在 VS Code 的 Keyboard Shortcuts 中修改。
+快捷键可在 VS Code 的 **Keyboard Shortcuts** 中修改。
 
-## Git 仓库与 GitHub
+## 项目与仓库
 
-**Project Atlas: Projects** Activity Bar 容器还包含两个仓库视图。
+### 本地项目
 
-- **Git Repositories** 将常用远端地址保存在 `~/.project-atlas/repos.json`。可保存当前仓库、手动添加或编辑记录，按 Tag、组织/分组或托管平台浏览，复制 URL、编辑 Tag 和克隆仓库。
-- **GitHub Repositories** 从 GitHub API 同步指定账户拥有的仓库，并缓存至 `~/.project-atlas/github.json`。配置 GitHub 用户名与 personal access token 后点击刷新；支持搜索、在浏览器打开、复制 SSH URL、克隆，或将仓库加入 Git Repositories。
+在 **Projects** 视图中保存当前工作区，或选择任意目录添加项目。支持列表或 Tag 视图、全部/最近/收藏/多 Tag（含 `Untagged`）筛选、按名称/路径/最近打开时间排序，以及按名称、路径和 Tag 搜索。
 
-私有仓库要求令牌具有相应访问权限：经典 token 通常需要 `repo` scope，fine-grained token 需获授权访问要显示的私有仓库。网络需要代理时，可在扩展设置配置 HTTP/HTTPS 代理、SOCKS 代理及启用状态；代理同时用于 GitHub 刷新和克隆。token 保存在本地 `github.json`，请勿提交或分享该文件。
+可编辑名称、Tag 和收藏状态，复制项目或路径，在 Finder / Explorer 显示目录，或在该目录启动终端。单击项目会选中它；双击按默认打开方式打开，当前工作区的项目显示 `✓`。标题栏和右键菜单提供保存、搜索、筛选、排序、编辑、打开、移除和删除操作。
+
+### Git Repositories
+
+**Git Repositories** 将常用远端地址保存在 `~/.project-atlas/repos.json`。可保存当前仓库、手动添加或编辑记录，按 Tag、组织/分组或托管平台浏览，并可复制 URL、编辑 Tag 和克隆仓库。
+
+### GitHub Repositories
+
+**GitHub Repositories** 从 GitHub API 同步指定账户拥有的仓库，缓存保存在 `~/.project-atlas/github.json`。在扩展设置或配置文件中填写 GitHub 用户名和 personal access token 后刷新；支持搜索、在浏览器打开、复制 SSH URL、克隆，以及加入 Git Repositories。
+
+私有仓库需要令牌具有相应权限：经典 token 通常需要 `repo` scope，fine-grained token 需获授权访问目标仓库。网络需要代理时，可在扩展设置配置 HTTP/HTTPS 代理、SOCKS 代理和启用状态；代理同时用于 GitHub 刷新与克隆。
 
 ## AICode 上下文
 
-在 **Project Atlas: AICode** 中管理当前工作区提供给 AI 的文件清单。配置保存在工作区根目录 `.aicode.json`，可随项目版本控制或团队共享。
+**Project Atlas: AICode** 管理当前工作区要提供给 AI 的文件清单。每个工作区根目录使用自己的 `.aicode.json`；首次使用时会创建 `Default` 分组，多根工作区可独立维护。
 
-- 从资源管理器右键 **Add to AICode**，或在上下文视图中添加、移除文件和目录。
-- 创建、选择、重命名、复制或删除上下文分组；每组保存一组相对路径。
-- 打开上下文文件、复制相对路径或文件列表、将路径插入终端，以及将当前分组复制为 Markdown 以粘贴到 AI 对话。
-- 展开、折叠、刷新或补齐缺失文件；可显示编辑器装饰标记。
-- 比较上下文文件在两个 Git 分支之间的差异。比较前默认获取远端，也可选择不获取。
+- 从资源管理器右键 **Add to AICode**，或在上下文视图添加、移除文件和目录。
+- 创建、选择、重命名、复制或删除分组；每组保存相对路径列表。
+- 打开上下文文件、复制相对路径或文件列表、将路径插入终端，或将当前分组复制为 Markdown。
+- 展开、折叠、刷新、补齐缺失文件，或显示编辑器装饰标记。
+- 比较上下文文件在两个 Git 分支之间的差异；默认会获取远端，也可选择不获取。
 
-首次需要时会创建 `Default` 分组。多根工作区中，每个工作区文件夹分别维护自己的 `.aicode.json`；手动编辑时 VS Code 会提供 Schema 补全和校验。
+`.aicode.json` 可随项目提交并与团队共享，编辑时有 VS Code Schema 补全和校验。
 
-## Git 辅助工具
+## 模板与提示词
 
-扩展还在命令面板、资源管理器和 Git 相关菜单中提供以下功能：
+| 视图                 | 数据文件                           | 功能                                                           |
+| -------------------- | ---------------------------------- | -------------------------------------------------------------- |
+| **Common Commands**  | `~/.project-atlas/commoncmd.json`  | 保存带说明的常用命令，并插入终端。                             |
+| **Git Messages**     | `~/.project-atlas/gitmessage.json` | 保存 `type(scope): subject` 提交消息，支持复制和按 type 分组。 |
+| **AI Prompts**       | `~/.project-atlas/aiprompts.json`  | 保存带标题、正文、说明和标签的本地提示词。                     |
+| **Backup & Restore** | VS Code globalState                | 备份并恢复以上三个模板文件。                                   |
+
+三类模板均支持新增、编辑、删除、编辑原始 JSON 和刷新。保存会保留未知字段，并检查文件冲突和编辑器未保存修改。拖动项目可直接调整 JSON 数组顺序：Git Messages 仅列表模式可排序；AI Prompts 仅“显示全部”的列表模式可排序。
+
+AI Prompts 默认按标签分组，支持全文搜索、只读预览、复制正文、标签编辑和创建副本；首次加载且文件不存在时会创建六条默认提示词。Backup & Restore 依托 VS Code Settings Sync：登录 GitHub 或 Microsoft 并启用同步后，备份可由 VS Code 原生跨设备同步；恢复和删除均需确认。
+
+## Git 与发布工具
 
 - **Copy/Open Remote URL**：识别当前 Git remote，并生成 GitHub、GitLab 等托管平台的 Web URL。
-- **Create Release Tag**：基于仓库状态创建发布标签，并在执行前显示警告与确认。
+- **Create Release Tag**：根据仓库状态创建发布标签，并在执行前显示警告和确认。
 - **Create or Update CHANGELOG.md**：从 Git 历史生成预览，确认后才写入 `CHANGELOG.md`。
+- **Update Package Version**：选择 Major、Minor 或 Patch，修改 `package.json` 版本；可选择只修改版本，或提交当前仓库所有已保存改动。
 
-## 更新版本并提交代码
+Update Package Version 的提交信息固定为 `chore: bump version to <新版本>`。没有 Git 仓库时只修改版本；有仓库但无远端时创建本地提交，配置远端时提交后推送。执行前会显示仓库、分支、文件清单和推送目标；取消不会修改文件。推送失败会保留本地提交，可使用 **Retry Push** 重试。该工具不创建版本标签、不自动合并、不强制推送，也不更新锁文件版本。
 
-运行 **Update Package Version** 后选择 Major、Minor 或 Patch，再选择仅修改版本，或提交当前仓库全部已保存的改动（包含已暂存、未暂存、新增和删除的文件，遵守 `.gitignore`）。没有 Git 仓库时仅提供修改版本；有仓库但没有远端时提交到本地，配置了远端时提交后推送。
+## 数据、安全与更新
 
-提交信息自动使用 `chore: bump version to <新版本>`，无需额外输入。执行前会显示仓库、分支、文件清单和推送目标；此前取消不会修改文件。推送优先使用当前分支的上游；没有上游且有多个远端时需选择远端，首次推送使用同名分支并建立跟踪关系。推送包含当前分支之前尚未推送的提交。
+| 文件                                                                   | 内容                                                                   |
+| ---------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| `~/.project-atlas/project.json`                                        | 项目、Tag、收藏、最近打开时间和项目视图设置；与 IntelliJ IDEA 版共享。 |
+| `~/.project-atlas/repos.json`                                          | 已保存 Git 仓库及其分组、Tag 和视图偏好。                              |
+| `~/.project-atlas/github.json`                                         | GitHub 用户、token、代理设置和仓库缓存。                               |
+| `~/.project-atlas/commoncmd.json`、`gitmessage.json`、`aiprompts.json` | 个人模板与提示词。                                                     |
+| 工作区 `.aicode.json`                                                  | AICode 分组与相对路径。                                                |
 
-## 升级
+双击项目与搜索后打开项目时，`project.json` 的 `settings.defaultOpenMode` 决定默认方式：`CURRENT_WINDOW` 或 `NEW_WINDOW`；未配置时使用当前窗口。上述 JSON 文件均提供 VS Code Schema 补全和校验。
 
-在命令面板执行 `Project Atlas: Check for Updates` 可立即查询稳定版更新；扩展启动后也会在后台每天最多查询一次。更新元数据由 GitHub Pages 提供，VSIX 与校验文件由对应的 GitHub Release 提供。选择“Upgrade Now”后，扩展会下载、校验并交给 VS Code 直接安装该 VSIX。
+写入共享数据时，扩展会保留未知字段并使用临时文件原子替换。JSON 损坏时不会覆盖原文件，修复后执行刷新。模板保存使用同目录 `<文件名>.lock` 排他锁来降低跨进程覆盖风险；请避免与不遵守该协议的程序同时保存。
 
-首次发布前，请在仓库 **Settings → Pages** 将发布源设为 **GitHub Actions**。推送形如 `v0.6.0` 的 tag 后，发布工作流会创建 Release、上传 VSIX 与 `checksums.txt` 和升级元数据；后续 Pages 工作流会在默认分支上下文部署 `update/stable.json`。默认支持所有历史版本；如需强制升级，请在仓库 Actions variable 中设置 `PROJECT_ATLAS_MINIMUM_SUPPORTED_VERSION` 为最低仍支持的扩展版本。因此 `github-pages` Environment 的分支保护可以继续只允许默认分支，无需向发布 tag 放行。
+**Remove from Project Atlas** 只删除项目记录，不影响磁盘内容；**Delete Project** 才会删除目录，且扩展拒绝删除文件系统根目录和当前打开的工作区。GitHub token 是敏感信息，只应保存在本机，切勿提交或分享。
 
-提交前需保存仓库中的编辑器文件，并处理冲突或未完成的 Git 操作。提交失败保留修改；推送失败保留本地提交，点击 **Retry Push** 仅重试推送。该功能不创建版本标签，不自动合并或强制推送，也不更新锁文件中的版本号。
+在命令面板执行 `Project Atlas: Check for Updates` 可立即查询稳定版；扩展启动后也会每天最多后台查询一次。可通过 `projectAtlas.update.enabled` 和 `projectAtlas.update.autoCheck` 设置关闭检查或自动检查。选择 **Upgrade Now** 后，扩展会下载、校验 SHA-256 并交由 VS Code 安装 VSIX。
 
-## 设置与数据安全
-
-**Common Commands** 和 **Git Messages** 标题栏在刷新按钮前提供 **Add**（`+`）。新增复用编辑表单，以空白字段打开；保存后追加到列表末尾，取消不写入。常用命令会检查重复，新增同样保留未知字段并检查文件冲突。
-
-Activity Bar 中的 **Project Atlas: Templates** 包含三个视图：**Common Commands** 展示 `commoncmd.json` 中的命令及描述，**Git Messages** 展示 `gitmessage.json` 中的提交消息（`type(scope): subject`）。**AI Prompts** 管理 `aiprompts.json` 中的本地提示词。三个视图均提供编辑文件和刷新按钮，文件保存或外部变更后自动刷新；读取失败时在视图中显示错误信息。
-
-Templates 列表支持原生拖动排序：将记录拖到另一条记录上，会插入到目标记录之前；拖到列表空白处会移至末尾。Git Messages 标题栏提供列表／按 type 分组切换，默认分组显示，并记住所选模式。只有列表模式支持拖动排序，可跨 type 调整记录顺序；分组模式完全禁用排序。切换模式不修改数据。描述行和分组标题不能拖动。顺序直接保存到原 JSON 数组，保留未知字段。所有模板增删改和排序在读取至提交期间持有同目录的 `<文件名>.lock` 排他锁，避免遵守该协议的扩展进程互相覆盖；检测到文件冲突时拒绝保存。手动编辑、旧版扩展或其他 IDE 若不遵守此锁协议，仍无法保证并发写入安全，应避免同时保存。锁不会因超时被强制抢占；若进程崩溃遗留锁，请确认写入进程已退出后再删除锁文件。
-
-每条记录右侧提供 **Edit**、**Delete** 图标。编辑在一个表单面板中展示全部字段，点击 **Save**（或 `Ctrl/Cmd+Enter`）统一保存；点击 **Cancel**、按 `Esc` 或保存前关闭面板均不保存。描述和 scope 可清空，保存失败时在表单中显示原因并保留输入。删除需确认，只移除对应 JSON 记录。编辑保持原位置并保留未知字段；文件已发生变化或编辑器中存在未保存修改时，操作会停止，请处理文件修改并刷新后重新打开表单。各平台均不涉及 Finder/Explorer 文件删除。
-
-扩展启动时会在 `~/.project-atlas/` 下自动创建缺失的 `commoncmd.json` 和 `gitmessage.json`，分别包含常用 Git 查询命令和 Git 提交消息模板。已有文件保持原样，包括空文件或损坏的 JSON。可通过命令面板中的 **Project Atlas: Edit Common Commands** 和 **Project Atlas: Edit Git Messages** 编辑默认数据。
-
-双击项目和搜索后打开项目时，打开方式由 `~/.project-atlas/project.json` 中的 `settings.defaultOpenMode` 控制，请手动配置：`CURRENT_WINDOW` 为当前窗口，`NEW_WINDOW` 为新窗口。未配置时使用当前窗口。
-
-在 VS Code 中编辑 `.project-atlas/project.json` 时，自动提供项目字段、设置项的补全、悬停说明及枚举值提示，无需添加 `$schema`。保留原有的 `defaultOpenMode` 提示，并兼容旧版设置值及未知字段；智能提示不会修改已有数据。
-
-数据采用临时文件原子替换写入，并保留未知的顶层、设置及项目字段。JSON 损坏时不会覆盖原文件；修复后执行 **Refresh Projects**。**Remove from Project Atlas** 只删除记录，不影响磁盘内容；**Delete Project** 才会删除目录，并且拒绝删除文件系统根目录和当前打开的工作区。
-
-## 本地开发
+## 本地开发与发布
 
 需要 Node.js 22 和 Yarn Classic：
 
@@ -110,26 +114,12 @@ yarn lint
 yarn test
 ```
 
-在 VS Code 中按 `F5` 可启动 Extension Development Host。执行 `yarn package:extension` 可生成 VSIX 安装包；执行
-`yarn install:extension` 会生成 `project-atlas-vs.vsix`，并通过 VS Code 命令行工具立即覆盖安装。使用后者前请确保
-`code` 命令已加入 `PATH`。
+在 VS Code 按 `F5` 启动 Extension Development Host。执行 `yarn package:extension` 生成 VSIX；`yarn install:extension` 会生成 `project-atlas-vs.vsix` 并通过 VS Code CLI 覆盖安装，使用前请确保 `code` 已加入 `PATH`。
 
-## 自动发布
+推送与 `package.json` 版本对应的 `v*` 标签（例如 `0.5.0` 对应 `v0.5.0`）会触发 GitHub Actions：安装依赖、运行检查、构建 VSIX、创建 GitHub Release，并生成稳定更新元数据。首次配置升级服务时，请在仓库 **Settings → Pages** 将发布源设置为 **GitHub Actions**。
 
-推送与 `package.json` 版本一致的 `v*` 标签（例如版本 `0.2.0` 对应 `v0.2.0`）后，GitHub Actions 会运行完整检查并发布到 VS Code Marketplace。发布前需要在仓库的 Actions secrets 中配置 `VSCE_PAT`。也可在 Actions 页面手动运行 **Publish Extension** 工作流。
+Marketplace 发布需要仓库 Actions secret `VSCE_PAT`，并应仅在授权发布流程中使用。若要强制旧版本升级，可设置 Actions variable `PROJECT_ATLAS_MINIMUM_SUPPORTED_VERSION` 为最低受支持扩展版本。
 
 ## 许可证
 
 [MIT](LICENSE)
-
-### AI Prompts
-
-提示词存放在 `~/.project-atlas/aiprompts.json`，首次加载且文件不存在时，自动创建 6 条默认提示词：代码审查、排查问题、编写单元测试、重构代码、润色文案和总结提炼。已有文件保持原样，包括空列表、空文件或损坏的 JSON。结构包含 `schemaVersion: 1` 和 `prompts` 数组；每条记录必须有唯一 UUID `id`、`title` 和 `content`，可选 `description`、`tags`（字符串数组）。支持 JSON Schema 编辑提示，写入时保留未知字段。
-
-**Backup & Restore** 视图可将 `aiprompts.json`、`commoncmd.json` 和 `gitmessage.json` 备份至 VS Code `globalState`。未登录 GitHub 或 Microsoft 时，视图仅显示登录引导，不会显示备份信息。该备份会在用户登录并启用 VS Code Settings Sync 后由 VS Code 原生跨设备同步；备份、恢复、刷新和删除操作均在后台异步执行。恢复和删除会先要求确认；删除会通过原生同步移除服务端备份，恢复会拒绝覆盖尚未保存的 JSON 编辑内容。
-
-默认按标签分组，多标签提示词会出现在每个对应标签下；未设置标签的记录显示在“无标签”下。列表模式每条提示词只显示一次。标题栏依次提供新增、列表／标签切换、编辑 JSON、全文搜索和刷新。空列表显示原生欢迎页，可直接编辑 `aiprompts.json`。显示模式和标签展开状态会被记住。只有显示全部记录的列表模式支持拖动排序，顺序保存到原数组。
-
-单击提示词打开只读预览，行内按钮复制完整正文并提示成功；标签按钮或右键“Edit Tags”打开原生多选框，支持勾选已有标签、输入新增和清空标签。右键还支持编辑、创建副本和删除记录。标签右键可以预填标签新增。编辑表单支持多个标签（每行一个，自动去空白和去重；逗号作为标签内容保留）、多行正文和 Tab 缩进；取消时确认未保存的修改，通过标签页关闭后选择保留修改会重新打开表单。保存冲突时保留输入，需刷新数据后重新编辑。正文复制不附加标题、不裁剪空白。
-
-AI Prompts 的操作在 macOS、Windows 和 Linux 上相同，不调用 Finder/Explorer，也不会删除提示词以外的本地文件。
