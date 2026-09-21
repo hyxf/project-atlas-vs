@@ -1,6 +1,10 @@
 import * as vscode from 'vscode';
+import { createHash, randomUUID } from 'crypto';
+import * as fs from 'fs/promises';
+import * as os from 'os';
+import * as path from 'path';
 import { AvailableUpdate } from './model';
-import { UpdateService } from './updateService';
+import { downloadUpdate, UpdateService } from './updateService';
 
 const LAST_CHECK_AT = 'projectAtlas.update.lastCheckAt';
 const IGNORED_VERSION = 'projectAtlas.update.ignoredVersion';
@@ -12,9 +16,6 @@ export function activateUpdateFeature(context: vscode.ExtensionContext): void {
     let checking = false;
     const check = async (manual: boolean): Promise<void> => {
         if (checking) {
-            if (manual) {
-                await vscode.window.showInformationMessage('Project Atlas: An update check is already in progress.');
-            }
             return;
         }
         checking = true;
@@ -75,15 +76,60 @@ async function showUpdate(context: vscode.ExtensionContext, update: AvailableUpd
         'Ignore This Version',
     );
     if (choice === 'Upgrade Now') {
-        await vscode.env.openExternal(vscode.Uri.parse(manifest.download.url));
-        await vscode.window.showInformationMessage(
-            'After downloading, run “Extensions: Install from VSIX...” to install Project Atlas.',
-        );
+        await installUpdate(update);
     } else if (choice === 'View Release Notes') {
         await vscode.env.openExternal(vscode.Uri.parse(manifest.releaseNotes));
     } else if (choice === 'Ignore This Version') {
         await context.globalState.update(IGNORED_VERSION, manifest.latestVersion);
     }
+}
+
+async function installUpdate(update: AvailableUpdate): Promise<void> {
+    const { manifest } = update;
+    const temporaryFile = path.join(os.tmpdir(), `project-atlas-${manifest.latestVersion}-${randomUUID()}.vsix`);
+    try {
+        await vscode.window.withProgress(
+            {
+                location: vscode.ProgressLocation.Notification,
+                title: `Project Atlas: Downloading ${manifest.download.fileName}…`,
+                cancellable: false,
+            },
+            async (progress) => {
+                let lastProgress = 0;
+                const contents = await downloadUpdate(manifest.download.url, (downloadedBytes, totalBytes) => {
+                    const percentage = totalBytes === undefined ? undefined : (downloadedBytes / totalBytes) * 100;
+                    progress.report({
+                        message: percentage === undefined ? formatBytes(downloadedBytes) : `${Math.round(percentage)}%`,
+                        ...(percentage === undefined ? {} : { increment: percentage - lastProgress }),
+                    });
+                    if (percentage !== undefined) {
+                        lastProgress = percentage;
+                    }
+                });
+                const checksum = createHash('sha256').update(contents).digest('hex');
+                if (checksum !== manifest.download.sha256) {
+                    throw new Error('The downloaded update failed SHA-256 verification.');
+                }
+                await fs.writeFile(temporaryFile, contents, { flag: 'wx' });
+            },
+        );
+        await vscode.commands.executeCommand('workbench.extensions.action.installVSIX', [
+            vscode.Uri.file(temporaryFile),
+        ]);
+    } catch (error) {
+        await vscode.window.showErrorMessage(
+            `Project Atlas: Unable to install the update: ${error instanceof Error ? error.message : String(error)}`,
+        );
+    } finally {
+        await fs.rm(temporaryFile, { force: true }).catch(() => undefined);
+    }
+}
+
+function formatBytes(bytes: number): string {
+    if (bytes < 1024 * 1024) {
+        return `${Math.max(1, Math.round(bytes / 1024))} KB`;
+    }
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
 function wasCheckedRecently(context: vscode.ExtensionContext): boolean {

@@ -5,6 +5,7 @@ import { UpdateCheckResult, UpdateManifest } from './model';
 const REPOSITORY = 'hyxf/project-atlas-vs';
 export const UPDATE_METADATA_URL = 'https://hyxf.github.io/project-atlas-vs/update/stable.json';
 const REQUEST_TIMEOUT_MS = 5_000;
+const MAX_DOWNLOAD_BYTES = 100 * 1024 * 1024;
 
 type Request = (url: string) => Promise<{ status: number; body: string }>;
 
@@ -32,6 +33,13 @@ export class UpdateService {
             },
         };
     }
+}
+
+export async function downloadUpdate(
+    url: string,
+    onProgress?: (downloadedBytes: number, totalBytes: number | undefined) => void,
+): Promise<Buffer> {
+    return requestUpdateFile(new URL(url), onProgress, 0);
 }
 
 export function parseUpdateManifest(body: string): UpdateManifest {
@@ -105,6 +113,65 @@ function requestUpdateManifest(url: string): Promise<{ status: number; body: str
         );
         request.on('error', reject);
         request.setTimeout(REQUEST_TIMEOUT_MS, () => request.destroy(new Error('Update check timed out.')));
+    });
+}
+
+function requestUpdateFile(
+    url: URL,
+    onProgress: ((downloadedBytes: number, totalBytes: number | undefined) => void) | undefined,
+    redirectCount: number,
+): Promise<Buffer> {
+    if (url.protocol !== 'https:') {
+        return Promise.reject(new Error('Update download must use HTTPS.'));
+    }
+    if (redirectCount > 5) {
+        return Promise.reject(new Error('Update download redirected too many times.'));
+    }
+    return new Promise((resolve, reject) => {
+        const request = https.get(
+            url,
+            { headers: { Accept: 'application/octet-stream', 'User-Agent': 'project-atlas-vs' } },
+            (response) => {
+                const status = response.statusCode ?? 0;
+                const location = response.headers.location;
+                if (status >= 300 && status < 400 && location !== undefined) {
+                    response.resume();
+                    void requestUpdateFile(new URL(location, url), onProgress, redirectCount + 1).then(resolve, reject);
+                    return;
+                }
+                if (status !== 200) {
+                    response.resume();
+                    reject(new Error(`Update download returned HTTP ${status}.`));
+                    return;
+                }
+                const totalBytes = response.headers['content-length']
+                    ? Number(response.headers['content-length'])
+                    : undefined;
+                if (
+                    totalBytes !== undefined &&
+                    (!Number.isSafeInteger(totalBytes) || totalBytes > MAX_DOWNLOAD_BYTES)
+                ) {
+                    response.resume();
+                    reject(new Error('Update download is too large.'));
+                    return;
+                }
+                const chunks: Buffer[] = [];
+                let downloadedBytes = 0;
+                response.on('data', (chunk: Buffer) => {
+                    downloadedBytes += chunk.length;
+                    if (downloadedBytes > MAX_DOWNLOAD_BYTES) {
+                        response.destroy(new Error('Update download is too large.'));
+                        return;
+                    }
+                    chunks.push(chunk);
+                    onProgress?.(downloadedBytes, totalBytes);
+                });
+                response.on('end', () => resolve(Buffer.concat(chunks)));
+                response.on('error', reject);
+            },
+        );
+        request.on('error', reject);
+        request.setTimeout(REQUEST_TIMEOUT_MS, () => request.destroy(new Error('Update download timed out.')));
     });
 }
 
