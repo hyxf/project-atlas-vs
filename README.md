@@ -1,6 +1,6 @@
 # Project Atlas for VS Code
 
-Project Atlas 用于集中保存、分类、搜索和快速打开本地项目。它与 IntelliJ IDEA 版共用 `~/.project-atlas/project.json`，项目、Tag、收藏状态及最近打开时间可在两个 IDE 之间同步。
+Project Atlas 用于集中保存、分类、搜索和快速打开本地项目，并提供 Git 仓库、AICode 上下文、模板和发布辅助工具。它与 IntelliJ IDEA 版共用 `~/.project-atlas/project.json`，项目、Tag、收藏状态及最近打开时间可在两个 IDE 之间同步。
 
 ## 主要功能
 
@@ -36,6 +36,35 @@ Project Atlas 用于集中保存、分类、搜索和快速打开本地项目。
 | 显示 Project Atlas  | `Ctrl+Shift+,`  | `Cmd+Shift+,` |
 
 如有快捷键冲突，请在 VS Code 的 Keyboard Shortcuts 中修改。
+
+## Git 仓库与 GitHub
+
+**Project Atlas: Projects** Activity Bar 容器还包含两个仓库视图。
+
+- **Git Repositories** 将常用远端地址保存在 `~/.project-atlas/repos.json`。可保存当前仓库、手动添加或编辑记录，按 Tag、组织/分组或托管平台浏览，复制 URL、编辑 Tag 和克隆仓库。
+- **GitHub Repositories** 从 GitHub API 同步指定账户拥有的仓库，并缓存至 `~/.project-atlas/github.json`。配置 GitHub 用户名与 personal access token 后点击刷新；支持搜索、在浏览器打开、复制 SSH URL、克隆，或将仓库加入 Git Repositories。
+
+私有仓库要求令牌具有相应访问权限：经典 token 通常需要 `repo` scope，fine-grained token 需获授权访问要显示的私有仓库。网络需要代理时，可在扩展设置配置 HTTP/HTTPS 代理、SOCKS 代理及启用状态；代理同时用于 GitHub 刷新和克隆。token 保存在本地 `github.json`，请勿提交或分享该文件。
+
+## AICode 上下文
+
+在 **Project Atlas: AICode** 中管理当前工作区提供给 AI 的文件清单。配置保存在工作区根目录 `.aicode.json`，可随项目版本控制或团队共享。
+
+- 从资源管理器右键 **Add to AICode**，或在上下文视图中添加、移除文件和目录。
+- 创建、选择、重命名、复制或删除上下文分组；每组保存一组相对路径。
+- 打开上下文文件、复制相对路径或文件列表、将路径插入终端，以及将当前分组复制为 Markdown 以粘贴到 AI 对话。
+- 展开、折叠、刷新或补齐缺失文件；可显示编辑器装饰标记。
+- 比较上下文文件在两个 Git 分支之间的差异。比较前默认获取远端，也可选择不获取。
+
+首次需要时会创建 `Default` 分组。多根工作区中，每个工作区文件夹分别维护自己的 `.aicode.json`；手动编辑时 VS Code 会提供 Schema 补全和校验。
+
+## Git 辅助工具
+
+扩展还在命令面板、资源管理器和 Git 相关菜单中提供以下功能：
+
+- **Copy/Open Remote URL**：识别当前 Git remote，并生成 GitHub、GitLab 等托管平台的 Web URL。
+- **Create Release Tag**：基于仓库状态创建发布标签，并在执行前显示警告与确认。
+- **Create or Update CHANGELOG.md**：从 Git 历史生成预览，确认后才写入 `CHANGELOG.md`。
 
 ## 更新版本并提交代码
 
