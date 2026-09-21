@@ -13,9 +13,18 @@ permissions:
     pages: write
     id-token: write
 
+concurrency:
+    group: github-pages
+    cancel-in-progress: false
+
 jobs:
     deploy:
-        if: ${{ github.event.workflow_run.conclusion == 'success' }}
+        if: >-
+            ${{
+              github.event.workflow_run.conclusion == 'success' &&
+              github.event.workflow_run.event == 'push' &&
+              github.event.workflow_run.head_repository.full_name == github.repository
+            }}
         runs-on: ubuntu-latest
         environment:
             name: github-pages
@@ -32,6 +41,9 @@ jobs:
 
             - name: Configure GitHub Pages
               uses: actions/configure-pages@v5
+
+            - name: Validate update metadata
+              run: test -s pages/update/stable.json
 
             - name: Upload GitHub Pages artifact
               uses: actions/upload-pages-artifact@v4

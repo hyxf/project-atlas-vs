@@ -16,12 +16,17 @@ jobs:
         steps:
             - name: Check out repository
               uses: actions/checkout@v4
+              with:
+                  persist-credentials: false
 
             - name: Set up Node.js
               uses: actions/setup-node@v4
               with:
                   node-version: 22
                   cache: yarn
+
+            - name: Enable Corepack
+              run: corepack enable
 
             - name: Install dependencies
               run: yarn install --frozen-lockfile
@@ -59,13 +64,6 @@ jobs:
                   VSIX_FILE: ${{ steps.version.outputs.vsix }}
               run: sha256sum "$VSIX_FILE" > checksums.txt
 
-            - name: Create GitHub Release
-              env:
-                  GH_TOKEN: ${{ github.token }}
-                  TAG_NAME: ${{ github.ref_name }}
-                  VSIX_FILE: ${{ steps.version.outputs.vsix }}
-              run: gh release create "$TAG_NAME" "$VSIX_FILE" checksums.txt --verify-tag --generate-notes --title "$TAG_NAME"
-
             - name: Generate update manifest
               env:
                   VERSION: ${{ steps.version.outputs.version }}
@@ -91,3 +89,10 @@ jobs:
               with:
                   name: update-pages
                   path: pages
+
+            - name: Create GitHub Release
+              env:
+                  GH_TOKEN: ${{ github.token }}
+                  TAG_NAME: ${{ github.ref_name }}
+                  VSIX_FILE: ${{ steps.version.outputs.vsix }}
+              run: gh release create "$TAG_NAME" "$VSIX_FILE" checksums.txt --verify-tag --generate-notes --title "$TAG_NAME"

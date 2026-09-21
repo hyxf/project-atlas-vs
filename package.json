@@ -1,5 +1,6 @@
 {
   "name": "project-atlas-vs",
+  "packageManager": "yarn@1.22.22",
   "displayName": "Project Atlas VS",
   "private": true,
   "description": "Save, organize, search, and quickly open local projects.",
