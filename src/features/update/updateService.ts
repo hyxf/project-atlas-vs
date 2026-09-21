@@ -12,8 +12,9 @@ type Request = (url: string) => Promise<{ status: number; body: string }>;
 export class UpdateService {
     constructor(private readonly request: Request = requestUpdateManifest) {}
 
-    async check(currentVersion: string): Promise<UpdateCheckResult> {
+    async check(currentVersion: string, vscodeVersion: string): Promise<UpdateCheckResult> {
         const normalizedCurrentVersion = requireVersion(currentVersion, 'The installed extension version');
+        const normalizedVscodeVersion = requireVersion(vscodeVersion, 'The installed VS Code version');
         const response = await this.request(`${UPDATE_METADATA_URL}?t=${Date.now()}`);
         if (response.status !== 200) {
             throw new Error(`Update service returned HTTP ${response.status}.`);
@@ -21,6 +22,11 @@ export class UpdateService {
         const manifest = parseUpdateManifest(response.body);
         if (!semver.gt(manifest.latestVersion, normalizedCurrentVersion)) {
             return { kind: 'upToDate', currentVersion: normalizedCurrentVersion };
+        }
+        if (!semver.satisfies(normalizedVscodeVersion, manifest.compatibility.vscode, { includePrerelease: true })) {
+            throw new Error(
+                `Project Atlas ${manifest.latestVersion} requires VS Code ${manifest.compatibility.vscode} (current: ${normalizedVscodeVersion}).`,
+            );
         }
         return {
             kind: 'available',
@@ -76,7 +82,11 @@ export function parseUpdateManifest(body: string): UpdateManifest {
     if (typeof value.download.sha256 !== 'string' || !/^[a-f0-9]{64}$/i.test(value.download.sha256)) {
         throw new Error('Update manifest contains an invalid SHA-256 checksum.');
     }
-    if (typeof value.compatibility.vscode !== 'string' || !value.compatibility.vscode.trim()) {
+    if (
+        typeof value.compatibility.vscode !== 'string' ||
+        !value.compatibility.vscode.trim() ||
+        semver.validRange(value.compatibility.vscode.trim()) === null
+    ) {
         throw new Error('Update manifest contains an invalid VS Code compatibility range.');
     }
     const manifest: UpdateManifest = {
@@ -90,7 +100,7 @@ export function parseUpdateManifest(body: string): UpdateManifest {
             fileName,
             sha256: value.download.sha256.toLowerCase(),
         },
-        compatibility: { vscode: value.compatibility.vscode },
+        compatibility: { vscode: value.compatibility.vscode.trim() },
     };
     if (minimumSupportedVersion !== undefined) {
         manifest.minimumSupportedVersion = minimumSupportedVersion;
@@ -109,6 +119,8 @@ function requestUpdateManifest(url: string): Promise<{ status: number; body: str
                 response.on('end', () =>
                     resolve({ status: response.statusCode ?? 0, body: Buffer.concat(chunks).toString('utf8') }),
                 );
+                response.once('aborted', () => reject(new Error('Update service response was aborted.')));
+                response.once('error', reject);
             },
         );
         request.on('error', reject);
@@ -167,6 +179,7 @@ function requestUpdateFile(
                     onProgress?.(downloadedBytes, totalBytes);
                 });
                 response.on('end', () => resolve(Buffer.concat(chunks)));
+                response.once('aborted', () => reject(new Error('Update download was aborted.')));
                 response.on('error', reject);
             },
         );

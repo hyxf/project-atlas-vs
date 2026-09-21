@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
-import { createHash, randomUUID } from 'crypto';
-import * as fs from 'fs/promises';
+import { randomUUID } from 'crypto';
 import * as os from 'os';
 import * as path from 'path';
 import { AvailableUpdate } from './model';
+import { downloadAndInstallUpdate } from './updateInstaller';
 import { downloadUpdate, UpdateService } from './updateService';
 
 const LAST_CHECK_AT = 'projectAtlas.update.lastCheckAt';
@@ -24,9 +24,9 @@ export function activateUpdateFeature(context: vscode.ExtensionContext): void {
             const result = manual
                 ? await vscode.window.withProgress(
                       { location: vscode.ProgressLocation.Notification, title: 'Project Atlas: Checking for updates…' },
-                      () => service.check(currentVersion),
+                      () => service.check(currentVersion, vscode.version),
                   )
-                : await service.check(currentVersion);
+                : await service.check(currentVersion, vscode.version);
             await context.globalState.update(LAST_CHECK_AT, Date.now());
             if (result.kind === 'upToDate') {
                 if (manual) {
@@ -67,14 +67,7 @@ async function showUpdate(context: vscode.ExtensionContext, update: AvailableUpd
     const options: vscode.MessageOptions = mandatory
         ? { modal: true, detail: 'Your installed version is no longer supported.' }
         : { modal: false };
-    const choice = await vscode.window.showInformationMessage(
-        message,
-        options,
-        'Upgrade Now',
-        'View Release Notes',
-        'Later',
-        'Ignore This Version',
-    );
+    const choice = await vscode.window.showInformationMessage(message, options, ...updateActions(mandatory));
     if (choice === 'Upgrade Now') {
         await installUpdate(update);
     } else if (choice === 'View Release Notes') {
@@ -82,6 +75,12 @@ async function showUpdate(context: vscode.ExtensionContext, update: AvailableUpd
     } else if (choice === 'Ignore This Version') {
         await context.globalState.update(IGNORED_VERSION, manifest.latestVersion);
     }
+}
+
+export function updateActions(mandatory: boolean): readonly string[] {
+    return mandatory
+        ? ['Upgrade Now', 'View Release Notes']
+        : ['Upgrade Now', 'View Release Notes', 'Later', 'Ignore This Version'];
 }
 
 async function installUpdate(update: AvailableUpdate): Promise<void> {
@@ -96,32 +95,33 @@ async function installUpdate(update: AvailableUpdate): Promise<void> {
             },
             async (progress) => {
                 let lastProgress = 0;
-                const contents = await downloadUpdate(manifest.download.url, (downloadedBytes, totalBytes) => {
-                    const percentage = totalBytes === undefined ? undefined : (downloadedBytes / totalBytes) * 100;
-                    progress.report({
-                        message: percentage === undefined ? formatBytes(downloadedBytes) : `${Math.round(percentage)}%`,
-                        ...(percentage === undefined ? {} : { increment: percentage - lastProgress }),
-                    });
-                    if (percentage !== undefined) {
-                        lastProgress = percentage;
-                    }
-                });
-                const checksum = createHash('sha256').update(contents).digest('hex');
-                if (checksum !== manifest.download.sha256) {
-                    throw new Error('The downloaded update failed SHA-256 verification.');
-                }
-                await fs.writeFile(temporaryFile, contents, { flag: 'wx' });
+                await downloadAndInstallUpdate(
+                    manifest,
+                    temporaryFile,
+                    downloadUpdate,
+                    async (file) => {
+                        await vscode.commands.executeCommand('workbench.extensions.command.installFromVSIX', [
+                            vscode.Uri.file(file),
+                        ]);
+                    },
+                    (downloadedBytes, totalBytes) => {
+                        const percentage = totalBytes === undefined ? undefined : (downloadedBytes / totalBytes) * 100;
+                        progress.report({
+                            message:
+                                percentage === undefined ? formatBytes(downloadedBytes) : `${Math.round(percentage)}%`,
+                            ...(percentage === undefined ? {} : { increment: percentage - lastProgress }),
+                        });
+                        if (percentage !== undefined) {
+                            lastProgress = percentage;
+                        }
+                    },
+                );
             },
         );
-        await vscode.commands.executeCommand('workbench.extensions.command.installFromVSIX', [
-            vscode.Uri.file(temporaryFile),
-        ]);
     } catch (error) {
         await vscode.window.showErrorMessage(
             `Project Atlas: Unable to install the update: ${error instanceof Error ? error.message : String(error)}`,
         );
-    } finally {
-        await fs.rm(temporaryFile, { force: true }).catch(() => undefined);
     }
 }
 

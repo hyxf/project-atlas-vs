@@ -70,14 +70,20 @@ jobs:
               env:
                   VERSION: ${{ steps.version.outputs.version }}
                   VSIX_FILE: ${{ steps.version.outputs.vsix }}
+                  MINIMUM_SUPPORTED_VERSION: ${{ vars.PROJECT_ATLAS_MINIMUM_SUPPORTED_VERSION || '0.0.0' }}
               run: |
                   SHA256="$(sha256sum "$VSIX_FILE" | awk '{print $1}')"
+                  if ! yarn --silent semver "$MINIMUM_SUPPORTED_VERSION" >/dev/null; then
+                    echo "PROJECT_ATLAS_MINIMUM_SUPPORTED_VERSION must be a valid semantic version." >&2
+                    exit 1
+                  fi
                   mkdir -p pages/update
                   jq -n \
                     --arg version "$VERSION" \
+                    --arg minimumSupportedVersion "$MINIMUM_SUPPORTED_VERSION" \
                     --arg publishedAt "$(date -u +%Y-%m-%dT%H:%M:%SZ)" \
                     --arg sha256 "$SHA256" \
-                    '{schemaVersion: 1, channel: "stable", latestVersion: $version, publishedAt: $publishedAt, releaseNotes: ("https://github.com/hyxf/project-atlas-vs/releases/tag/v" + $version), download: {url: ("https://github.com/hyxf/project-atlas-vs/releases/download/v" + $version + "/project-atlas-vs-" + $version + ".vsix"), fileName: ("project-atlas-vs-" + $version + ".vsix"), sha256: $sha256}, compatibility: {vscode: ">=1.134.0"}}' \
+                    '{schemaVersion: 1, channel: "stable", latestVersion: $version, minimumSupportedVersion: $minimumSupportedVersion, publishedAt: $publishedAt, releaseNotes: ("https://github.com/hyxf/project-atlas-vs/releases/tag/v" + $version), download: {url: ("https://github.com/hyxf/project-atlas-vs/releases/download/v" + $version + "/project-atlas-vs-" + $version + ".vsix"), fileName: ("project-atlas-vs-" + $version + ".vsix"), sha256: $sha256}, compatibility: {vscode: ">=1.134.0"}}' \
                     > pages/update/stable.json
 
             - name: Upload update metadata
