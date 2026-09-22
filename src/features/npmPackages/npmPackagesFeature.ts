@@ -3,6 +3,7 @@ import * as https from 'https';
 import * as os from 'os';
 import * as path from 'path';
 import { promises as fs } from 'fs';
+import { applyEdits, modify } from 'jsonc-parser';
 import * as vscode from 'vscode';
 import { ensureDocumentSaved, ensureSourceUnchanged } from '../packageVersion/packageVersionService';
 
@@ -325,20 +326,16 @@ async function updateDependencies(name: string, kind: DependencyKind, add: boole
     }
     ensurePackageJsonSaved(uri);
     const initial = await vscode.workspace.fs.readFile(uri);
-    const document = parsePackageJson(initial);
-    const values = document[kind];
-    const dependencies =
-        values && typeof values === 'object' && !Array.isArray(values) ? (values as Record<string, unknown>) : {};
+    parsePackageJson(initial);
     if (add) {
         if (await isInstalled(name)) {
             throw new Error(`${name} is already installed.`);
         }
-        dependencies[name] = version ?? 'latest';
-    } else {
-        delete dependencies[name];
     }
-    document[kind] = dependencies;
-    const updated = new TextEncoder().encode(`${JSON.stringify(document, null, 2)}\n`);
+    const source = new TextDecoder().decode(initial);
+    const updated = new TextEncoder().encode(
+        updatePackageJsonText(source, kind, name, add ? (version ?? 'latest') : undefined),
+    );
     const temporary = vscode.Uri.joinPath(vscode.Uri.joinPath(uri, '..'), `.package.json.${randomUUID()}.tmp`);
     try {
         await vscode.workspace.fs.writeFile(temporary, updated);
@@ -349,6 +346,25 @@ async function updateDependencies(name: string, kind: DependencyKind, add: boole
     } finally {
         await Promise.resolve(vscode.workspace.fs.delete(temporary)).catch(() => undefined);
     }
+}
+
+function updatePackageJsonText(
+    source: string,
+    kind: DependencyKind,
+    name: string,
+    version: string | undefined,
+): string {
+    const indentation = source.match(/\n(\s+)"/)?.[1] ?? '  ';
+    return applyEdits(
+        source,
+        modify(source, [kind, name], version, {
+            formattingOptions: {
+                insertSpaces: !indentation.includes('\t'),
+                tabSize: indentation.includes('\t') ? 4 : indentation.length,
+                eol: source.includes('\r\n') ? '\r\n' : '\n',
+            },
+        }),
+    );
 }
 
 function ensurePackageJsonSaved(uri: vscode.Uri): void {
