@@ -410,6 +410,12 @@
         "icon": "$(add)"
       },
       {
+        "command": "project-atlas.editNpmFavoritesFile",
+        "title": "Edit npm Favorites",
+        "category": "Project Atlas",
+        "icon": "$(edit)"
+      },
+      {
         "command": "project-atlas.removeNpmPackage",
         "title": "Remove from package.json",
         "category": "Project Atlas",
@@ -1238,6 +1244,11 @@
           "command": "project-atlas.refreshNpmPackages",
           "when": "view == projectAtlas.npmPackages",
           "group": "navigation@2"
+        },
+        {
+          "command": "project-atlas.editNpmFavoritesFile",
+          "when": "view == projectAtlas.npmPackages",
+          "group": "navigation@3"
         },
         {
           "command": "project-atlas.add",
