@@ -781,6 +781,7 @@ suite('Extension', () => {
             { id: 'projectAtlas.projects', name: 'Projects', icon: 'resources/project-atlas.svg' },
             { id: 'projectAtlas.repos', name: 'Git Repositories' },
             { id: 'projectAtlas.githubRepos', name: 'GitHub Repositories' },
+            { id: 'projectAtlas.npmPackages', name: 'npm packages', when: 'projectAtlas.npmPackagesAvailable' },
         ]);
         assert.deepStrictEqual(
             contributes.viewsWelcome.find(({ view }) => view === 'aicode.compareResults'),

@@ -392,6 +392,62 @@
         "icon": "$(refresh)"
       },
       {
+        "command": "project-atlas.refreshNpmPackages",
+        "title": "Refresh npm Packages",
+        "category": "Project Atlas",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "project-atlas.searchNpmPackages",
+        "title": "Search npm Packages",
+        "category": "Project Atlas",
+        "icon": "$(search)"
+      },
+      {
+        "command": "project-atlas.addNpmPackage",
+        "title": "Add npm Package",
+        "category": "Project Atlas",
+        "icon": "$(add)"
+      },
+      {
+        "command": "project-atlas.removeNpmPackage",
+        "title": "Remove from package.json",
+        "category": "Project Atlas",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "project-atlas.openNpmPackageHomepage",
+        "title": "Open npm Package in Browser",
+        "category": "Project Atlas",
+        "icon": "$(globe)"
+      },
+      {
+        "command": "project-atlas.addFavoriteNpmPackageToDependencies",
+        "title": "Add to Dependencies",
+        "category": "Project Atlas",
+        "icon": "$(add)",
+        "enablement": "viewItem == npmFavoritePackageAddable"
+      },
+      {
+        "command": "project-atlas.addFavoriteNpmPackageToDevDependencies",
+        "title": "Add to Dev Dependencies",
+        "category": "Project Atlas",
+        "icon": "$(flask)",
+        "enablement": "viewItem == npmFavoritePackageAddable"
+      },
+      {
+        "command": "project-atlas.addNpmPackageFavorite",
+        "title": "Add to Favorites",
+        "category": "Project Atlas",
+        "icon": "$(star-empty)"
+      },
+      {
+        "command": "project-atlas.removeNpmPackageFavorite",
+        "title": "Remove from Favorites",
+        "category": "Project Atlas",
+        "icon": "$(star-full)"
+      },
+      {
         "command": "project-atlas.saveCurrentRepository",
         "title": "Refresh Saved Project Repositories",
         "category": "Project Atlas",
@@ -887,6 +943,11 @@
         {
           "id": "projectAtlas.githubRepos",
           "name": "GitHub Repositories"
+        },
+        {
+          "id": "projectAtlas.npmPackages",
+          "name": "npm packages",
+          "when": "projectAtlas.npmPackagesAvailable"
         }
       ]
     },
@@ -1167,6 +1228,16 @@
           "command": "project-atlas.saveCurrentRepository",
           "when": "view == projectAtlas.projects",
           "group": "navigation@8"
+        },
+        {
+          "command": "project-atlas.refreshNpmPackages",
+          "when": "view == projectAtlas.npmPackages",
+          "group": "navigation@1"
+        },
+        {
+          "command": "project-atlas.addNpmPackage",
+          "when": "view == projectAtlas.npmPackages",
+          "group": "navigation@2"
         },
         {
           "command": "project-atlas.add",
@@ -2050,6 +2121,41 @@
           "command": "project-atlas.editAiPromptTags",
           "when": "view == projectAtlas.aiPrompts && viewItem == aiPrompt",
           "group": "aiPrompts@2"
+        },
+        {
+          "command": "project-atlas.removeNpmPackage",
+          "when": "view == projectAtlas.npmPackages && (viewItem == npmInstalledPackage || viewItem == npmInstalledPackageFavorite)",
+          "group": "inline@2"
+        },
+        {
+          "command": "project-atlas.addNpmPackageFavorite",
+          "when": "view == projectAtlas.npmPackages && viewItem == npmInstalledPackage",
+          "group": "inline@1"
+        },
+        {
+          "command": "project-atlas.removeNpmPackageFavorite",
+          "when": "view == projectAtlas.npmPackages && viewItem == npmInstalledPackageFavorite",
+          "group": "inline@1"
+        },
+        {
+          "command": "project-atlas.addFavoriteNpmPackageToDependencies",
+          "when": "view == projectAtlas.npmPackages && (viewItem == npmFavoritePackage || viewItem == npmFavoritePackageAddable)",
+          "group": "npmPackages@1"
+        },
+        {
+          "command": "project-atlas.addFavoriteNpmPackageToDevDependencies",
+          "when": "view == projectAtlas.npmPackages && (viewItem == npmFavoritePackage || viewItem == npmFavoritePackageAddable)",
+          "group": "npmPackages@2"
+        },
+        {
+          "command": "project-atlas.removeNpmPackageFavorite",
+          "when": "view == projectAtlas.npmPackages && (viewItem == npmFavoritePackage || viewItem == npmFavoritePackageAddable)",
+          "group": "danger@1"
+        },
+        {
+          "command": "project-atlas.openNpmPackageHomepage",
+          "when": "view == projectAtlas.npmPackages && (viewItem == npmInstalledPackage || viewItem == npmInstalledPackageFavorite || viewItem == npmFavoritePackage || viewItem == npmFavoritePackageAddable)",
+          "group": "navigation@1"
         }
       ]
     },

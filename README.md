@@ -16,11 +16,11 @@ Project Atlas 是一款用于管理本地项目、Git 仓库和开发素材的 V
 
 安装后，在 Activity Bar 中打开所需容器：
 
-| 容器                         | 视图                                                        | 用途                       |
-| ---------------------------- | ----------------------------------------------------------- | -------------------------- |
-| **Project Atlas: Projects**  | Projects、Git Repositories、GitHub Repositories             | 本地项目与远端仓库。       |
-| **Project Atlas: AICode**    | Context Files、Compare Results                              | 准备 AI 上下文并比较分支。 |
-| **Project Atlas: Templates** | Common Commands、Git Messages、AI Prompts、Backup & Restore | 管理可复用内容。           |
+| 容器                         | 视图                                                          | 用途                            |
+| ---------------------------- | ------------------------------------------------------------- | ------------------------------- |
+| **Project Atlas: Projects**  | Projects、Git Repositories、GitHub Repositories、npm packages | 本地项目、远端仓库与 npm 依赖。 |
+| **Project Atlas: AICode**    | Context Files、Compare Results                                | 准备 AI 上下文并比较分支。      |
+| **Project Atlas: Templates** | Common Commands、Git Messages、AI Prompts、Backup & Restore   | 管理可复用内容。                |
 
 项目管理的默认快捷键：
 
@@ -49,6 +49,10 @@ Project Atlas 是一款用于管理本地项目、Git 仓库和开发素材的 V
 **GitHub Repositories** 从 GitHub API 同步指定账户拥有的仓库，缓存保存在 `~/.project-atlas/github.json`。在扩展设置或配置文件中填写 GitHub 用户名和 personal access token 后刷新；支持搜索、在浏览器打开、复制 SSH URL、克隆，以及加入 Git Repositories。
 
 私有仓库需要令牌具有相应权限：经典 token 通常需要 `repo` scope，fine-grained token 需获授权访问目标仓库。网络需要代理时，可在扩展设置配置 HTTP/HTTPS 代理、SOCKS 代理和启用状态；代理同时用于 GitHub 刷新与克隆。
+
+### npm packages
+
+当打开的单一工作区根目录包含 `package.json` 时，**npm packages** 视图会显示 `dependencies`、`devDependencies` 和收藏列表。可从右键菜单移除已安装依赖；收藏仅在尚未安装时可加入任一依赖类别。标题栏的搜索或新增操作会打开 npm Registry 搜索页，每页 20 条结果，可将结果收藏或添加到安装列表。收藏保存于 `~/.project-atlas/npmfav.json`。
 
 ## AICode 上下文
 

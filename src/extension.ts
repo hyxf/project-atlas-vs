@@ -19,6 +19,7 @@ import { ensureGitMessagesFile } from './features/gitMessages/gitMessageStore';
 import { activateTemplates } from './features/templates/templatesFeature';
 import { activateTemplateBackup } from './features/templateBackup/templateBackupFeature';
 import { activateUpdateFeature } from './features/update/updateFeature';
+import { activateNpmPackages } from './features/npmPackages/npmPackagesFeature';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
     await Promise.all([run(() => ensureCommonCommandsFile()), run(() => ensureGitMessagesFile())]);
@@ -33,6 +34,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     activateAiPrompts(context);
     activateTemplateBackup(context);
     activateUpdateFeature(context);
+    activateNpmPackages(context);
     const handlers: Record<string, (...args: unknown[]) => unknown> = {
         createReleaseTag: createReleaseTagCommand,
         insertCommonCommand,
