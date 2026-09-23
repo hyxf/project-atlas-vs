@@ -44,7 +44,12 @@ import { readGitMessageSnapshot, updateGitMessage, deleteGitMessage } from '../f
 import { ProjectService } from '../features/projectManagement/service';
 import { ProjectStore } from '../features/projectManagement/store';
 import { editProjectForm } from '../features/projectManagement/projectForm';
-import { parseTrashDocument, serializeTrashDocument } from '../features/npmPackages/npmPackagesStore';
+import {
+    parseFavoritesDocument,
+    parseTrashDocument,
+    serializeFavoritesDocument,
+    serializeTrashDocument,
+} from '../features/npmPackages/npmPackagesStore';
 
 suite('npm package trash data safety', () => {
     test('preserves unknown fields and ignores malformed trash entries', () => {
@@ -67,6 +72,21 @@ suite('npm package trash data safety', () => {
             trash: {
                 'file:///workspace/package.json': [{ name: 'valid', version: '^1.0.0', kind: 'dependencies' }],
             },
+        });
+    });
+});
+
+suite('npm package favorite tags', () => {
+    test('keeps legacy favorites untagged without modifying their metadata', () => {
+        const document = parseFavoritesDocument({
+            favorites: [{ name: 'lodash', version: '^4.17.21', metadata: { source: 'another-client' } }],
+        });
+
+        assert.deepStrictEqual(document.items, [
+            { name: 'lodash', version: '^4.17.21', metadata: { source: 'another-client' } },
+        ]);
+        assert.deepStrictEqual(JSON.parse(serializeFavoritesDocument(document)), {
+            favorites: [{ name: 'lodash', version: '^4.17.21', metadata: { source: 'another-client' } }],
         });
     });
 });

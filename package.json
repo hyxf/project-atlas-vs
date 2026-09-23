@@ -490,6 +490,12 @@
         "icon": "$(star-full)"
       },
       {
+        "command": "project-atlas.editNpmFavoriteTag",
+        "title": "Edit Favorite Tag",
+        "category": "Project Atlas",
+        "icon": "$(tag)"
+      },
+      {
         "command": "project-atlas.saveCurrentRepository",
         "title": "Refresh Saved Project Repositories",
         "category": "Project Atlas",
@@ -1489,6 +1495,10 @@
           "when": "false"
         },
         {
+          "command": "project-atlas.editNpmFavoriteTag",
+          "when": "false"
+        },
+        {
           "command": "project-atlas.removeNpmPackage",
           "when": "false"
         },
@@ -2276,6 +2286,11 @@
           "command": "project-atlas.removeNpmPackageFavorite",
           "when": "view == projectAtlas.npmPackages && (viewItem == npmFavoritePackage || viewItem == npmFavoritePackageAddable)",
           "group": "danger@1"
+        },
+        {
+          "command": "project-atlas.editNpmFavoriteTag",
+          "when": "view == projectAtlas.npmPackages && (viewItem == npmFavoritePackage || viewItem == npmFavoritePackageAddable)",
+          "group": "inline@2"
         },
         {
           "command": "project-atlas.openNpmPackageHomepage",

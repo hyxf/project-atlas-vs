@@ -1,8 +1,8 @@
 import * as vscode from 'vscode';
-import { npmPackageTooltip, readFavorites, readInstalled, readTrash } from './npmPackagesStore';
+import { favoriteTags, npmPackageTooltip, readFavorites, readInstalled, readTrash } from './npmPackagesStore';
 import { DependencyKind, PackageEntry } from './npmPackagesTypes';
 
-type NpmTreeNode = NpmInstallNode | NpmPackageGroupNode | NpmPackageNode;
+type NpmTreeNode = NpmInstallNode | NpmPackageGroupNode | NpmFavoriteTagNode | NpmPackageNode;
 
 export class NpmPackagesTree implements vscode.TreeDataProvider<NpmTreeNode> {
     private readonly changed = new vscode.EventEmitter<NpmTreeNode | undefined>();
@@ -22,18 +22,7 @@ export class NpmPackagesTree implements vscode.TreeDataProvider<NpmTreeNode> {
         }
         if (element instanceof NpmPackageGroupNode) {
             if (element.kind === 'favorites') {
-                const installed = await readInstalled();
-                const names = new Set(
-                    [...installed.dependencies, ...installed.devDependencies].map((entry) => entry.name),
-                );
-                return element.entries.map(
-                    (entry) =>
-                        new NpmPackageNode(
-                            entry,
-                            names.has(entry.name) ? 'npmFavoritePackage' : 'npmFavoritePackageAddable',
-                            element,
-                        ),
-                );
+                return groupFavorites(element.entries, element);
             }
             if (element.kind === 'trash') {
                 return element.entries.map((entry) => new NpmPackageNode(entry, 'npmTrashedPackage', element));
@@ -44,6 +33,18 @@ export class NpmPackagesTree implements vscode.TreeDataProvider<NpmTreeNode> {
                     new NpmPackageNode(
                         entry,
                         favorites.has(entry.name) ? 'npmInstalledPackageFavorite' : 'npmInstalledPackage',
+                        element,
+                    ),
+            );
+        }
+        if (element instanceof NpmFavoriteTagNode) {
+            const installed = await readInstalled();
+            const names = new Set([...installed.dependencies, ...installed.devDependencies].map((entry) => entry.name));
+            return element.entries.map(
+                (entry) =>
+                    new NpmPackageNode(
+                        entry,
+                        names.has(entry.name) ? 'npmFavoritePackage' : 'npmFavoritePackageAddable',
                         element,
                     ),
             );
@@ -59,8 +60,12 @@ export class NpmPackagesTree implements vscode.TreeDataProvider<NpmTreeNode> {
         return element;
     }
 
-    getParent(element: NpmTreeNode): NpmInstallNode | NpmPackageGroupNode | undefined {
-        return element instanceof NpmPackageNode || element instanceof NpmPackageGroupNode ? element.parent : undefined;
+    getParent(element: NpmTreeNode): NpmInstallNode | NpmPackageGroupNode | NpmFavoriteTagNode | undefined {
+        return element instanceof NpmPackageNode ||
+            element instanceof NpmPackageGroupNode ||
+            element instanceof NpmFavoriteTagNode
+            ? element.parent
+            : undefined;
     }
 }
 
@@ -73,7 +78,7 @@ export class NpmPackageNode extends vscode.TreeItem {
             | 'npmFavoritePackage'
             | 'npmFavoritePackageAddable'
             | 'npmTrashedPackage',
-        readonly parent: NpmPackageGroupNode,
+        readonly parent: NpmPackageGroupNode | NpmFavoriteTagNode,
     ) {
         super(entry.name, vscode.TreeItemCollapsibleState.None);
         this.id = `${parent.id}:${entry.name}`;
@@ -124,4 +129,39 @@ class NpmPackageGroupNode extends vscode.TreeItem {
             kind === 'favorites' ? 'star-full' : kind === 'trash' ? 'trash' : 'library',
         );
     }
+}
+
+class NpmFavoriteTagNode extends vscode.TreeItem {
+    constructor(
+        readonly tag: string,
+        readonly entries: PackageEntry[],
+        readonly parent: NpmPackageGroupNode,
+    ) {
+        super(tag, vscode.TreeItemCollapsibleState.Expanded);
+        this.id = `${parent.id}:tag:${tag}`;
+        this.contextValue = 'npmFavoriteTagGroup';
+        this.description = String(entries.length);
+        this.iconPath = new vscode.ThemeIcon('tag');
+    }
+}
+
+function groupFavorites(entries: PackageEntry[], parent: NpmPackageGroupNode): NpmFavoriteTagNode[] {
+    const groups = new Map<string, PackageEntry[]>();
+    for (const entry of entries) {
+        const tags = favoriteTags(entry);
+        for (const tag of tags.length ? tags : ['untagged']) {
+            groups.set(tag, [...(groups.get(tag) ?? []), entry]);
+        }
+    }
+    return [...groups.entries()]
+        .sort(([left], [right]) => {
+            if (left === 'untagged') {
+                return 1;
+            }
+            if (right === 'untagged') {
+                return -1;
+            }
+            return left.localeCompare(right);
+        })
+        .map(([tag, taggedEntries]) => new NpmFavoriteTagNode(tag, taggedEntries, parent));
 }

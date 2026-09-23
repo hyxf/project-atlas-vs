@@ -1,13 +1,17 @@
 import * as vscode from 'vscode';
+import { pickRepositoryTags } from '../repositoryManagement/tagPicker';
 import {
+    favoriteTags,
     isInstalled,
     openFavoritesFile,
     openTrashFile,
+    readFavorites,
     removeFromTrash,
     removeFavorite,
     saveFavorite,
     saveToTrash,
     updateDependencies,
+    updateFavoriteTags,
     workspacePackageUri,
 } from './npmPackagesStore';
 import { openSearchPanel, refreshFavoritePackageDescriptions } from './npmPackagesSearch';
@@ -86,7 +90,7 @@ export function activateNpmPackages(context: vscode.ExtensionContext): void {
         await refresh();
     });
     register('restoreNpmPackage', async (item: NpmPackageNode) => {
-        if (!item || item.parent.kind !== 'trash' || !item.entry.kind) {
+        if (!item || item.parent.contextValue !== 'npmTrashPackageGroup' || !item.entry.kind) {
             return;
         }
         await updateDependencies(item.entry.name, item.entry.kind, true, item.entry.version || 'latest');
@@ -94,7 +98,7 @@ export function activateNpmPackages(context: vscode.ExtensionContext): void {
         await refresh();
     });
     register('deleteNpmPackageFromTrash', async (item: NpmPackageNode) => {
-        if (!item || item.parent.kind !== 'trash') {
+        if (!item || item.parent.contextValue !== 'npmTrashPackageGroup') {
             return;
         }
         if (
@@ -108,6 +112,20 @@ export function activateNpmPackages(context: vscode.ExtensionContext): void {
         }
         await removeFromTrash(item.entry.name);
         await refresh();
+    });
+    register('editNpmFavoriteTag', async (item: NpmPackageNode) => {
+        if (!item || item.parent.contextValue !== 'npmFavoriteTagGroup') {
+            return;
+        }
+        const tags = await pickRepositoryTags(
+            (await readFavorites()).flatMap(favoriteTags),
+            favoriteTags(item.entry),
+            `Edit Favorite Tags: ${item.entry.name}`,
+        );
+        if (tags !== undefined) {
+            await updateFavoriteTags(item.entry.name, tags);
+            await refresh();
+        }
     });
     register('addFavoriteNpmPackageToDependencies', async (item: NpmPackageNode) =>
         addFavoriteDependency(item, 'dependencies', refresh),

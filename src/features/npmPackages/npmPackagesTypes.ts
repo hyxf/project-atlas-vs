@@ -5,6 +5,8 @@ export interface PackageEntry {
     version?: string | undefined;
     kind?: DependencyKind | undefined;
     description?: string | undefined;
+    tag?: string | undefined;
+    tags?: string[] | undefined;
 }
 
 export interface TrashedPackageEntry extends PackageEntry {

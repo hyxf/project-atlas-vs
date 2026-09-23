@@ -79,7 +79,7 @@ export async function saveFavorite(entry: PackageEntry): Promise<void> {
     }
     await writeFavorites(document.root, [
         ...document.items,
-        { name: entry.name, version: entry.version, description: entry.description },
+        { name: entry.name, version: entry.version, description: entry.description, tags: [] },
     ]);
 }
 
@@ -91,6 +91,23 @@ export async function removeFavorite(name: string): Promise<void> {
             document.items.filter((entry) => entry.name !== name),
         );
     }
+}
+
+export async function updateFavoriteTags(name: string, tags: string[]): Promise<void> {
+    const document = await readFavoritesDocument();
+    if (!document.items.some((entry) => entry.name === name)) {
+        return;
+    }
+    await writeFavorites(
+        document.root,
+        document.items.map((entry) => {
+            if (entry.name !== name) {
+                return entry;
+            }
+            const { tag: _legacyTag, ...rest } = entry;
+            return { ...rest, tags: normalizeFavoriteTags(tags) };
+        }),
+    );
 }
 
 export async function readTrash(): Promise<TrashedPackageEntry[]> {
@@ -330,6 +347,24 @@ function updatePackageJsonText(
             },
         }),
     );
+}
+
+export function favoriteTags(entry: PackageEntry): string[] {
+    if (Array.isArray(entry.tags)) {
+        return normalizeFavoriteTags(entry.tags.filter((tag): tag is string => typeof tag === 'string'));
+    }
+    return typeof entry.tag === 'string' && entry.tag !== 'untagged' ? [entry.tag] : [];
+}
+
+function normalizeFavoriteTags(tags: readonly string[]): string[] {
+    const unique = new Map<string, string>();
+    for (const value of tags) {
+        const tag = value.trim();
+        if (tag && !unique.has(tag.toLocaleLowerCase())) {
+            unique.set(tag.toLocaleLowerCase(), tag);
+        }
+    }
+    return [...unique.values()].sort((left, right) => left.localeCompare(right, undefined, { sensitivity: 'base' }));
 }
 
 function ensurePackageJsonSaved(uri: vscode.Uri): void {
