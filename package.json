@@ -398,6 +398,12 @@
         "icon": "$(refresh)"
       },
       {
+        "command": "project-atlas.editWorkspacePackageJson",
+        "title": "Edit package.json",
+        "category": "Project Atlas",
+        "icon": "$(edit)"
+      },
+      {
         "command": "project-atlas.refreshNpmFavoriteDescriptions",
         "title": "Refresh npm Favorites",
         "category": "Project Atlas",
@@ -1271,11 +1277,6 @@
           "group": "navigation@1"
         },
         {
-          "command": "project-atlas.refreshNpmPackages",
-          "when": "view == projectAtlas.npmPackages",
-          "group": "navigation@2"
-        },
-        {
           "command": "project-atlas.add",
           "when": "view == projectAtlas.projects",
           "group": "project@1"
@@ -1483,6 +1484,10 @@
         }
       ],
       "commandPalette": [
+        {
+          "command": "project-atlas.editWorkspacePackageJson",
+          "when": "false"
+        },
         {
           "command": "project-atlas.removeNpmPackage",
           "when": "false"
@@ -2206,6 +2211,16 @@
           "command": "project-atlas.removeNpmPackage",
           "when": "view == projectAtlas.npmPackages && (viewItem == npmInstalledPackage || viewItem == npmInstalledPackageFavorite)",
           "group": "inline@2"
+        },
+        {
+          "command": "project-atlas.refreshNpmPackages",
+          "when": "view == projectAtlas.npmPackages && viewItem == npmInstall",
+          "group": "inline@1"
+        },
+        {
+          "command": "project-atlas.editWorkspacePackageJson",
+          "when": "view == projectAtlas.npmPackages && viewItem == npmInstall",
+          "group": "inline@0"
         },
         {
           "command": "project-atlas.restoreNpmPackage",

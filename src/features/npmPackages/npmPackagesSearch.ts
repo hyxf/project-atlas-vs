@@ -4,6 +4,8 @@ import { readFavorites, saveFavorite, updateDependencies, updateFavoriteDescript
 import { NpmPackagesTree } from './npmPackagesTree';
 import { NpmSearchResult, PackageEntry } from './npmPackagesTypes';
 
+const searchPageSize = 10;
+
 export async function refreshFavoritePackageDescriptions(
     token?: vscode.CancellationToken,
     report?: vscode.Progress<{ message?: string; increment?: number }>,
@@ -88,7 +90,7 @@ async function searchNpm(
         return { results: [], total: 0, from: 0 };
     }
     const offset = Math.max(0, from);
-    const url = `https://registry.npmjs.org/-/v1/search?text=${encodeURIComponent(query)}&size=20&from=${offset}`;
+    const url = `https://registry.npmjs.org/-/v1/search?text=${encodeURIComponent(query)}&size=${searchPageSize}&from=${offset}`;
     return requestNpmSearch(url, offset);
 }
 
@@ -193,7 +195,7 @@ function searchHtml(): string {
     function search(page){query=query.trim();if(!query){status.textContent='Enter a package name first.';return}from=page;status.textContent='Searching npm…';vscode.postMessage({action:'search',text:query,from})}
     function button(label,action,entry,secondary=false){const element=document.createElement('button');element.textContent=label;element.className=secondary?'secondary':'';element.onclick=()=>vscode.postMessage({action,entry});return element}
     function pageButton(label,target,secondary){const element=button(label,'',null,secondary);element.disabled=target===from||target<0||target>=total;element.onclick=()=>search(target);return element}
-    function show(message){if(message.type==='error'){status.textContent=message.message;return}if(message.type==='done'){status.textContent=message.name+' updated.';return}if(message.type!=='results')return;from=message.from;total=message.total;status.textContent=total?'Showing '+(from+1)+'–'+Math.min(from+20,total)+' of '+total+' packages.':'No packages found.';results.replaceChildren(...message.results.map(item=>{const card=document.createElement('article');card.className='card';const detail=document.createElement('div');const name=document.createElement('div');name.className='name';name.textContent=item.name;const version=document.createElement('span');version.className='version';version.textContent='v'+item.version;name.append(version);const description=document.createElement('div');description.className='description';description.textContent=item.description||'No description provided.';detail.append(name,description);const actions=document.createElement('div');actions.className='actions';actions.append(button('Favorite','favorite',item,true),button('Add','install',item),button('Add dev','installDev',item));card.append(detail,actions);return card}));pages.replaceChildren();if(!total)return;const page=Math.floor(from/20)+1,pageCount=Math.ceil(total/20),indicator=document.createElement('span');indicator.className='page-indicator';indicator.textContent='Page '+page+' / '+pageCount;pages.append(pageButton('← Previous',from-20,true),indicator,pageButton('Next →',from+20,false))}
+    function show(message){if(message.type==='error'){status.textContent=message.message;return}if(message.type==='done'){status.textContent=message.name+' updated.';return}if(message.type!=='results')return;from=message.from;total=message.total;status.textContent=total?'Showing '+(from+1)+'–'+Math.min(from+${searchPageSize},total)+' of '+total+' packages.':'No packages found.';results.replaceChildren(...message.results.map(item=>{const card=document.createElement('article');card.className='card';const detail=document.createElement('div');const name=document.createElement('div');name.className='name';name.textContent=item.name;const version=document.createElement('span');version.className='version';version.textContent='v'+item.version;name.append(version);const description=document.createElement('div');description.className='description';description.textContent=item.description||'No description provided.';detail.append(name,description);const actions=document.createElement('div');actions.className='actions';actions.append(button('Favorite','favorite',item,true),button('Add','install',item),button('Add dev','installDev',item));card.append(detail,actions);return card}));pages.replaceChildren();if(!total)return;const page=Math.floor(from/${searchPageSize})+1,pageCount=Math.ceil(total/${searchPageSize}),indicator=document.createElement('span');indicator.className='page-indicator';indicator.textContent='Page '+page+' / '+pageCount;pages.append(pageButton('← Previous',from-${searchPageSize},true),indicator,pageButton('Next →',from+${searchPageSize},false))}
     window.addEventListener('message',event=>show(event.data));
   </script>
 </body>

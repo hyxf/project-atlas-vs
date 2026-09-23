@@ -44,6 +44,12 @@ export function activateNpmPackages(context: vscode.ExtensionContext): void {
         context.subscriptions.push(vscode.commands.registerCommand(`project-atlas.${name}`, action));
 
     register('refreshNpmPackages', refresh);
+    register('editWorkspacePackageJson', async () => {
+        const uri = workspacePackageUri();
+        if (uri) {
+            await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(uri));
+        }
+    });
     register('searchNpmPackages', async () => openSearchPanel(provider));
     register('addNpmPackage', async () => openSearchPanel(provider));
     register('editNpmFavoritesFile', openFavoritesFile);
