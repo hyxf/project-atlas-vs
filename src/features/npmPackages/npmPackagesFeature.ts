@@ -7,7 +7,7 @@ import {
     updateDependencies,
     workspacePackageUri,
 } from './npmPackagesStore';
-import { openSearchPanel } from './npmPackagesSearch';
+import { openSearchPanel, refreshFavoritePackageDescriptions } from './npmPackagesSearch';
 import { NpmPackageNode, NpmPackagesTree } from './npmPackagesTree';
 
 export { npmPackageTooltip, parseFavoritesDocument, serializeFavoritesDocument } from './npmPackagesStore';
@@ -79,6 +79,32 @@ export function activateNpmPackages(context: vscode.ExtensionContext): void {
             await removeFavorite(item.entry.name);
             await refresh();
         }
+    });
+    register('refreshNpmFavoriteDescriptions', async () => {
+        void vscode.window.withProgress(
+            {
+                location: vscode.ProgressLocation.Notification,
+                title: 'Refreshing npm Favorites',
+                cancellable: true,
+            },
+            async (progress, token) => {
+                try {
+                    const result = await refreshFavoritePackageDescriptions(token, progress);
+                    if (result.cancelled) {
+                        void vscode.window.showInformationMessage('Refreshing npm Favorites was cancelled.');
+                        return;
+                    }
+                    await refresh();
+                    void vscode.window.showInformationMessage(
+                        `Refreshed metadata for ${result.updated} npm favorite${result.updated === 1 ? '' : 's'}.`,
+                    );
+                } catch (error) {
+                    void vscode.window.showErrorMessage(
+                        `Could not refresh npm Favorites: ${error instanceof Error ? error.message : String(error)}`,
+                    );
+                }
+            },
+        );
     });
 
     context.subscriptions.push(vscode.window.registerTreeDataProvider('projectAtlas.npmPackages', provider));

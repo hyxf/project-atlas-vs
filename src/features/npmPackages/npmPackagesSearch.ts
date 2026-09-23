@@ -1,14 +1,28 @@
-import * as https from 'https';
 import { randomUUID } from 'crypto';
-import { HttpsProxyAgent } from 'https-proxy-agent';
-import { SocksProxyAgent } from 'socks-proxy-agent';
 import * as vscode from 'vscode';
-import { GitHubConfigurationStore } from '../githubRepositories/config';
-import { saveFavorite, updateDependencies } from './npmPackagesStore';
+import { readFavorites, saveFavorite, updateDependencies, updateFavoriteDescriptions } from './npmPackagesStore';
 import { NpmPackagesTree } from './npmPackagesTree';
 import { NpmSearchResult, PackageEntry } from './npmPackagesTypes';
 
-const proxyConfigurationStore = new GitHubConfigurationStore();
+export async function refreshFavoritePackageDescriptions(
+    token?: vscode.CancellationToken,
+    report?: vscode.Progress<{ message?: string; increment?: number }>,
+): Promise<{ updated: number; cancelled: boolean }> {
+    const favorites = await readFavorites();
+    const metadata = new Map<string, { version: string; description?: string | undefined }>();
+    for (const favorite of favorites) {
+        if (token?.isCancellationRequested) {
+            return { updated: 0, cancelled: true };
+        }
+        report?.report({
+            message: `Fetching ${favorite.name}`,
+            increment: favorites.length ? 100 / favorites.length : 100,
+        });
+        metadata.set(favorite.name, await requestNpmPackage(favorite.name));
+    }
+    await updateFavoriteDescriptions(metadata);
+    return { updated: metadata.size, cancelled: false };
+}
 
 export function openSearchPanel(provider: NpmPackagesTree): void {
     const panel = vscode.window.createWebviewPanel(
@@ -73,83 +87,56 @@ async function searchNpm(
     if (!query) {
         return { results: [], total: 0, from: 0 };
     }
-    const url = `https://registry.npmjs.org/-/v1/search?text=${encodeURIComponent(query)}&size=20&from=${Math.max(0, from)}`;
-    const proxyUrl = await npmProxyUrl();
-    try {
-        return await requestNpmSearch(url, from, proxyUrl);
-    } catch (error) {
-        if (proxyUrl) {
-            return requestNpmSearch(url, from);
-        }
-        throw error;
-    }
+    const offset = Math.max(0, from);
+    const url = `https://registry.npmjs.org/-/v1/search?text=${encodeURIComponent(query)}&size=20&from=${offset}`;
+    return requestNpmSearch(url, offset);
 }
 
-function requestNpmSearch(
+async function requestNpmSearch(
     url: string,
     from: number,
-    proxyUrl?: string,
 ): Promise<{ results: NpmSearchResult[]; total: number; from: number }> {
-    return new Promise((resolve, reject) => {
-        const request = https.get(
-            url,
-            {
-                ...(proxyUrl
-                    ? {
-                          agent: proxyUrl.toLowerCase().startsWith('socks')
-                              ? new SocksProxyAgent(proxyUrl)
-                              : new HttpsProxyAgent(proxyUrl),
-                      }
-                    : {}),
-                headers: { Accept: 'application/json', 'User-Agent': 'project-atlas-vs' },
-            },
-            (response) => {
-                let body = '';
-                response.setEncoding('utf8');
-                response.on('data', (chunk: string) => (body += chunk));
-                response.on('end', () => {
-                    if (response.statusCode !== 200) {
-                        return reject(new Error(`npm search failed with status ${response.statusCode ?? 'unknown'}.`));
-                    }
-                    try {
-                        const parsed = JSON.parse(body) as {
-                            total?: unknown;
-                            objects?: Array<{ package?: NpmSearchResult }>;
-                        };
-                        resolve({
-                            results: (parsed.objects ?? [])
-                                .map((item) => item.package)
-                                .filter((item): item is NpmSearchResult => Boolean(item?.name && item.version)),
-                            total: typeof parsed.total === 'number' ? parsed.total : 0,
-                            from: Math.max(0, from),
-                        });
-                    } catch {
-                        reject(new Error('npm returned an invalid search response.'));
-                    }
-                });
-            },
-        );
-        request.on('error', () =>
-            reject(
-                new Error('Could not connect to the npm registry. Check your network connection and proxy settings.'),
-            ),
-        );
-        request.setTimeout(30_000, () => request.destroy(new Error('npm search timed out.')));
-    });
+    let response: Response;
+    try {
+        response = await fetch(url, {
+            headers: { Accept: 'application/json', 'User-Agent': 'project-atlas-vs' },
+            signal: AbortSignal.timeout(30_000),
+        });
+    } catch (error) {
+        throw new Error('Could not connect to the npm registry. Check your network connection and proxy settings.', {
+            cause: error,
+        });
+    }
+    if (!response.ok) {
+        throw new Error(`npm search failed with status ${response.status}.`);
+    }
+    try {
+        const parsed = JSON.parse(await response.text()) as {
+            total?: unknown;
+            objects?: Array<{ package?: NpmSearchResult }>;
+        };
+        if (!Array.isArray(parsed.objects)) {
+            throw new Error('Invalid response');
+        }
+        return {
+            results: parsed.objects
+                .map((item) => item.package)
+                .filter((item): item is NpmSearchResult => Boolean(item?.name && item.version)),
+            total: typeof parsed.total === 'number' ? parsed.total : 0,
+            from,
+        };
+    } catch {
+        throw new Error('npm returned an invalid search response.');
+    }
 }
 
-async function npmProxyUrl(): Promise<string | undefined> {
-    const githubProxy = await proxyConfigurationStore.proxyConfiguration();
-    if (githubProxy.enabled) {
-        return githubProxy.url ?? githubProxy.socketUrl;
+async function requestNpmPackage(name: string): Promise<{ version: string; description?: string | undefined }> {
+    const result = await searchNpm(name, 0);
+    const packageMetadata = result.results.find((item) => item.name === name);
+    if (!packageMetadata) {
+        throw new Error(`npm did not return metadata for ${name}.`);
     }
-    return (
-        vscode.workspace.getConfiguration('http').get<string>('proxy')?.trim() ||
-        process.env.HTTPS_PROXY ||
-        process.env.https_proxy ||
-        process.env.HTTP_PROXY ||
-        process.env.http_proxy
-    );
+    return { version: packageMetadata.version, description: packageMetadata.description };
 }
 
 function searchHtml(): string {

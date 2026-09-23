@@ -62,7 +62,10 @@ export async function saveFavorite(entry: PackageEntry): Promise<void> {
     if (document.items.some((favorite) => favorite.name === entry.name)) {
         return;
     }
-    await writeFavorites(document.root, [...document.items, { name: entry.name, version: entry.version }]);
+    await writeFavorites(document.root, [
+        ...document.items,
+        { name: entry.name, version: entry.version, description: entry.description },
+    ]);
 }
 
 export async function removeFavorite(name: string): Promise<void> {
@@ -73,6 +76,25 @@ export async function removeFavorite(name: string): Promise<void> {
             document.items.filter((entry) => entry.name !== name),
         );
     }
+}
+
+export async function updateFavoriteDescriptions(
+    descriptions: ReadonlyMap<string, { version: string; description?: string | undefined }>,
+): Promise<void> {
+    const document = await readFavoritesDocument();
+    await writeFavorites(
+        document.root,
+        document.items.map((entry) => {
+            const metadata = descriptions.get(entry.name);
+            if (!metadata) {
+                return entry;
+            }
+            const { description: _previousDescription, ...rest } = entry;
+            return metadata.description
+                ? { ...rest, version: metadata.version, description: metadata.description }
+                : { ...rest, version: metadata.version };
+        }),
+    );
 }
 
 export async function isInstalled(name: string): Promise<boolean> {

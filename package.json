@@ -398,6 +398,12 @@
         "icon": "$(refresh)"
       },
       {
+        "command": "project-atlas.refreshNpmFavoriteDescriptions",
+        "title": "Refresh npm Favorites",
+        "category": "Project Atlas",
+        "icon": "$(refresh)"
+      },
+      {
         "command": "project-atlas.searchNpmPackages",
         "title": "Search npm Packages",
         "category": "Project Atlas",
@@ -1463,6 +1469,10 @@
           "when": "false"
         },
         {
+          "command": "project-atlas.refreshNpmFavoriteDescriptions",
+          "when": "false"
+        },
+        {
           "command": "project-atlas.openNpmPackageHomepage",
           "when": "false"
         },
@@ -2161,6 +2171,11 @@
           "command": "project-atlas.removeNpmPackage",
           "when": "view == projectAtlas.npmPackages && (viewItem == npmInstalledPackage || viewItem == npmInstalledPackageFavorite)",
           "group": "inline@2"
+        },
+        {
+          "command": "project-atlas.refreshNpmFavoriteDescriptions",
+          "when": "view == projectAtlas.npmPackages && viewItem == npmFavoritePackageGroup",
+          "group": "inline@1"
         },
         {
           "command": "project-atlas.addNpmPackageFavorite",
