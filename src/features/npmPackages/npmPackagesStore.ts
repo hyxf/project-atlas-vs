@@ -58,6 +58,20 @@ export async function openFavoritesFile(): Promise<void> {
     await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(vscode.Uri.file(favoritesFile)));
 }
 
+export async function ensureTrashFile(): Promise<void> {
+    await fs.mkdir(path.dirname(trashFile), { recursive: true });
+    await fs.writeFile(trashFile, '{\n  "trash": {}\n}\n', { encoding: 'utf8', flag: 'wx' }).catch((error) => {
+        if ((error as NodeJS.ErrnoException).code !== 'EEXIST') {
+            throw error;
+        }
+    });
+}
+
+export async function openTrashFile(): Promise<void> {
+    await ensureTrashFile();
+    await vscode.window.showTextDocument(await vscode.workspace.openTextDocument(vscode.Uri.file(trashFile)));
+}
+
 export async function saveFavorite(entry: PackageEntry): Promise<void> {
     const document = await readFavoritesDocument();
     if (document.items.some((favorite) => favorite.name === entry.name)) {

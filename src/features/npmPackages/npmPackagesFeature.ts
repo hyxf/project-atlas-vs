@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import {
     isInstalled,
     openFavoritesFile,
+    openTrashFile,
     removeFromTrash,
     removeFavorite,
     saveFavorite,
@@ -46,6 +47,8 @@ export function activateNpmPackages(context: vscode.ExtensionContext): void {
     register('searchNpmPackages', async () => openSearchPanel(provider));
     register('addNpmPackage', async () => openSearchPanel(provider));
     register('editNpmFavoritesFile', openFavoritesFile);
+    register('editNpmTrashFile', openTrashFile);
+    register('refreshNpmTrash', refresh);
     register('openNpmPackageHomepage', async (item: NpmPackageNode) => {
         if (item) {
             await vscode.env.openExternal(

@@ -111,7 +111,12 @@ class NpmPackageGroupNode extends vscode.TreeItem {
                     : 'Trash';
         super(label, vscode.TreeItemCollapsibleState.Expanded);
         this.id = parent ? `${parent.id}:${kind}` : `npm-group:${kind}`;
-        this.contextValue = kind === 'favorites' ? 'npmFavoritePackageGroup' : 'npmPackageGroup';
+        this.contextValue =
+            kind === 'favorites'
+                ? 'npmFavoritePackageGroup'
+                : kind === 'trash'
+                  ? 'npmTrashPackageGroup'
+                  : 'npmPackageGroup';
         this.description = String(entries.length);
         this.iconPath = new vscode.ThemeIcon(
             kind === 'favorites' ? 'star-full' : kind === 'trash' ? 'trash' : 'library',

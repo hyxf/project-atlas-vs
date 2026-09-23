@@ -422,6 +422,18 @@
         "icon": "$(edit)"
       },
       {
+        "command": "project-atlas.editNpmTrashFile",
+        "title": "Edit npm Trash",
+        "category": "Project Atlas",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "project-atlas.refreshNpmTrash",
+        "title": "Refresh npm Trash",
+        "category": "Project Atlas",
+        "icon": "$(refresh)"
+      },
+      {
         "command": "project-atlas.removeNpmPackage",
         "title": "Remove from package.json",
         "category": "Project Atlas",
@@ -1259,14 +1271,9 @@
           "group": "navigation@1"
         },
         {
-          "command": "project-atlas.editNpmFavoritesFile",
-          "when": "view == projectAtlas.npmPackages",
-          "group": "navigation@2"
-        },
-        {
           "command": "project-atlas.refreshNpmPackages",
           "when": "view == projectAtlas.npmPackages",
-          "group": "navigation@3"
+          "group": "navigation@2"
         },
         {
           "command": "project-atlas.add",
@@ -1486,6 +1493,14 @@
         },
         {
           "command": "project-atlas.deleteNpmPackageFromTrash",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.editNpmTrashFile",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.refreshNpmTrash",
           "when": "false"
         },
         {
@@ -2205,6 +2220,21 @@
         {
           "command": "project-atlas.refreshNpmFavoriteDescriptions",
           "when": "view == projectAtlas.npmPackages && viewItem == npmFavoritePackageGroup",
+          "group": "inline@1"
+        },
+        {
+          "command": "project-atlas.editNpmFavoritesFile",
+          "when": "view == projectAtlas.npmPackages && viewItem == npmFavoritePackageGroup",
+          "group": "inline@0"
+        },
+        {
+          "command": "project-atlas.editNpmTrashFile",
+          "when": "view == projectAtlas.npmPackages && viewItem == npmTrashPackageGroup",
+          "group": "inline@0"
+        },
+        {
+          "command": "project-atlas.refreshNpmTrash",
+          "when": "view == projectAtlas.npmPackages && viewItem == npmTrashPackageGroup",
           "group": "inline@1"
         },
         {
