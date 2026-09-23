@@ -348,13 +348,8 @@ suite('Template views', () => {
                 gitCommands.map((item) => item.label),
                 ['git status'],
             );
-            const descriptions = await provider.getChildren(gitCommands[0]);
-            assert.deepStrictEqual(
-                descriptions.map((item) => item.label),
-                ['Working tree'],
-            );
-            assert.strictEqual(descriptions[0]?.contextValue, undefined);
-            assert.deepStrictEqual(await provider.getChildren(descriptions[0]), []);
+            assert.strictEqual(gitCommands[0]?.description, 'Working tree');
+            assert.deepStrictEqual(await provider.getChildren(gitCommands[0]), []);
             assert.deepStrictEqual(
                 (await provider.getChildren(commands[1])).map((item) => item.label),
                 ['git status'],

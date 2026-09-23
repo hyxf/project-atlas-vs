@@ -141,14 +141,7 @@ function createCommonCommandItem(
 ): TemplateItem<CommonCommand> {
     const item = new TemplateItem<CommonCommand>(command.command, snapshot, index, file, 'commonCommand');
     item.id = JSON.stringify(['commonCommand', tag, index]);
-    if (command.description) {
-        item.collapsibleState = vscode.TreeItemCollapsibleState.Expanded;
-        for (const line of command.description.split(/\r?\n/)) {
-            const description = new vscode.TreeItem(line || ' ');
-            description.tooltip = command.description;
-            item.children.push(description);
-        }
-    }
+    item.description = command.description ?? '';
     item.tooltip = [command.command, (command.tags ?? []).join(', ') || 'Untagged', command.description]
         .filter(Boolean)
         .join('\n\n');
