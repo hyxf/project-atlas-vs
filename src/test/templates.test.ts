@@ -348,7 +348,7 @@ suite('Template views', () => {
                 gitCommands.map((item) => item.label),
                 ['git status'],
             );
-            assert.strictEqual(gitCommands[0]?.description, 'Working tree');
+            assert.strictEqual(gitCommands[0]?.description, '· Working tree');
             assert.deepStrictEqual(await provider.getChildren(gitCommands[0]), []);
             assert.deepStrictEqual(
                 (await provider.getChildren(commands[1])).map((item) => item.label),

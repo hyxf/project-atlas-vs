@@ -1677,7 +1677,7 @@ suite('AI Prompts data safety', () => {
         const snapshot = {
             contents: '',
             entries: [
-                { id: first, title: 'A', content: 'hidden search term' },
+                { id: first, title: 'A', description: 'First prompt', content: 'hidden search term' },
                 { id: second, title: 'B', content: 'text', tags: ['开发', '审查'], favorite: true },
             ],
         };
@@ -1695,6 +1695,7 @@ suite('AI Prompts data safety', () => {
             items.map((item) => item.id),
             [first, second],
         );
+        assert.strictEqual(items[0]?.description, '· First prompt');
         assert.ok(items.every((item) => (item.iconPath as vscode.ThemeIcon).id === 'note'));
         assert.strictEqual(matchesPrompt(snapshot.entries[0]!, 'HIDDEN term'), true);
         assert.strictEqual(matchesPrompt(snapshot.entries[1]!, 'hidden'), false);

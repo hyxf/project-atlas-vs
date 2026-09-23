@@ -37,7 +37,7 @@ export function buildPromptItems(
         const createItem = (tag?: string) => {
             const item = new TemplateItem(prompt.title, snapshot, index, file, 'aiPrompt');
             item.id = tag === undefined ? prompt.id : JSON.stringify(['aiPrompt', tag, prompt.id]);
-            item.description = prompt.description ?? '';
+            item.description = prompt.description ? `· ${prompt.description}` : '';
             item.tooltip = [
                 prompt.title,
                 tags.join(', ') || 'Untagged',

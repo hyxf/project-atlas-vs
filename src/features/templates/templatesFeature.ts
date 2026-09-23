@@ -141,7 +141,7 @@ function createCommonCommandItem(
 ): TemplateItem<CommonCommand> {
     const item = new TemplateItem<CommonCommand>(command.command, snapshot, index, file, 'commonCommand');
     item.id = JSON.stringify(['commonCommand', tag, index]);
-    item.description = command.description ?? '';
+    item.description = command.description ? `· ${command.description}` : '';
     item.tooltip = [command.command, (command.tags ?? []).join(', ') || 'Untagged', command.description]
         .filter(Boolean)
         .join('\n\n');
