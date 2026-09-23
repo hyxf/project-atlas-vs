@@ -78,7 +78,9 @@ export class NpmPackageNode extends vscode.TreeItem {
         super(entry.name, vscode.TreeItemCollapsibleState.None);
         this.id = `${parent.id}:${entry.name}`;
         if (entry.version) {
-            this.description = entry.version;
+            this.description = contextValue === 'npmFavoritePackage' ? `${entry.version} · ✓` : entry.version;
+        } else if (contextValue === 'npmFavoritePackage') {
+            this.description = '✓';
         }
         this.tooltip = npmPackageTooltip(entry.name, entry.version, entry.description);
         this.contextValue = contextValue;
