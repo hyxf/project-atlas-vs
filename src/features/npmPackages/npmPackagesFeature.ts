@@ -215,7 +215,7 @@ class NpmPackageNode extends vscode.TreeItem {
         }
         this.tooltip = entry.version ? `${entry.name}@${entry.version}` : entry.name;
         this.contextValue = contextValue;
-        this.iconPath = new vscode.ThemeIcon(contextValue.startsWith('npmInstalled') ? 'package' : 'star-full');
+        this.iconPath = new vscode.ThemeIcon('package');
     }
 }
 
@@ -256,9 +256,9 @@ async function readFavorites(): Promise<PackageEntry[]> {
         const items = Array.isArray(source) ? source : (source as { favorites?: unknown }).favorites;
         return Array.isArray(items)
             ? items
-                .filter((item): item is PackageEntry => Boolean(item) && typeof item.name === 'string')
-                .map(({ name, version }) => ({ name, version }))
-                .sort((left, right) => left.name.localeCompare(right.name))
+                  .filter((item): item is PackageEntry => Boolean(item) && typeof item.name === 'string')
+                  .map(({ name, version }) => ({ name, version }))
+                  .sort((left, right) => left.name.localeCompare(right.name))
             : [];
     } catch (error) {
         if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
@@ -474,10 +474,10 @@ function requestNpmSearch(
             {
                 ...(proxyUrl
                     ? {
-                        agent: proxyUrl.toLowerCase().startsWith('socks')
-                            ? new SocksProxyAgent(proxyUrl)
-                            : new HttpsProxyAgent(proxyUrl),
-                    }
+                          agent: proxyUrl.toLowerCase().startsWith('socks')
+                              ? new SocksProxyAgent(proxyUrl)
+                              : new HttpsProxyAgent(proxyUrl),
+                      }
                     : {}),
                 headers: { Accept: 'application/json', 'User-Agent': 'project-atlas-vs' },
             },
