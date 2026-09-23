@@ -1459,6 +1459,30 @@
       ],
       "commandPalette": [
         {
+          "command": "project-atlas.removeNpmPackage",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.openNpmPackageHomepage",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.addFavoriteNpmPackageToDependencies",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.addFavoriteNpmPackageToDevDependencies",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.addNpmPackageFavorite",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.removeNpmPackageFavorite",
+          "when": "false"
+        },
+        {
           "command": "project-atlas.collapseCommonCommands",
           "when": "false"
         },

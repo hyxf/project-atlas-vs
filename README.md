@@ -54,6 +54,8 @@ Project Atlas 是一款用于管理本地项目、Git 仓库和开发素材的 V
 
 当打开的单一工作区根目录包含 `package.json` 时，**npm packages** 视图会显示 `dependencies`、`devDependencies` 和收藏列表。可从右键菜单移除已安装依赖；收藏仅在尚未安装时可加入任一依赖类别。标题栏的搜索或新增操作会打开 npm Registry 搜索页，每页 20 条结果，可将结果收藏或添加到安装列表。收藏保存于 `~/.project-atlas/npmfav.json`。
 
+命令面板提供 `Project Atlas: Refresh npm Packages`、`Search npm Packages`、`Add npm Package` 和 `Edit npm Favorites`。移除依赖、打开包主页和单个包的收藏操作需从树节点菜单触发。
+
 ## AICode 上下文
 
 **Project Atlas: AICode** 管理当前工作区要提供给 AI 的文件清单。每个工作区根目录使用自己的 `.aicode.json`；首次使用时会创建 `Default` 分组，多根工作区可独立维护。
