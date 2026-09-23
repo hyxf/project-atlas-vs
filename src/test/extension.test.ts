@@ -23,6 +23,7 @@ import {
     TemplatesTreeProvider,
     loadCommonCommandItems,
     loadGitMessageItems,
+    CommonCommandTagGroup,
     GitMessageTypeGroup,
 } from '../features/templates/templatesFeature';
 import { editRepositoryForm } from '../features/repositoryManagement/repositoryForm';
@@ -284,25 +285,25 @@ suite('Template record data safety', () => {
         });
         const token = new vscode.CancellationTokenSource();
         try {
-            let items = await loadCommonCommandItems(file);
+            let items = (await loadCommonCommandItems(file))[0] as CommonCommandTagGroup;
             const transfer = new vscode.DataTransfer();
-            controller.handleDrag([items[2]!], transfer, token.token);
-            await controller.handleDrop(items[0], transfer, token.token);
+            controller.handleDrag([items.children[2]!], transfer, token.token);
+            await controller.handleDrop(items.children[0], transfer, token.token);
             assert.deepStrictEqual(
                 (await readCommonCommandSnapshot(file)).entries.map((item) => item.command),
                 ['c', 'a', 'b'],
             );
-            items = await loadCommonCommandItems(file);
-            controller.handleDrag([items[0]!], transfer, token.token);
+            items = (await loadCommonCommandItems(file))[0] as CommonCommandTagGroup;
+            controller.handleDrag([items.children[0]!], transfer, token.token);
             await controller.handleDrop(undefined, transfer, token.token);
             assert.deepStrictEqual(
                 (await readCommonCommandSnapshot(file)).entries.map((item) => item.command),
                 ['a', 'b', 'c'],
             );
-            items = await loadCommonCommandItems(file);
-            controller.handleDrag([items[0]!], transfer, token.token);
+            items = (await loadCommonCommandItems(file))[0] as CommonCommandTagGroup;
+            controller.handleDrag([items.children[0]!], transfer, token.token);
             await controller.handleDrop(new vscode.TreeItem('description'), transfer, token.token);
-            await controller.handleDrop(items[0], transfer, token.token);
+            await controller.handleDrop(items.children[0], transfer, token.token);
             token.cancel();
             await controller.handleDrop(undefined, transfer, token.token);
             assert.strictEqual(refreshed, 2);

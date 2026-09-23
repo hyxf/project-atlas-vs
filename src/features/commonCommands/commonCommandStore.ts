@@ -7,6 +7,7 @@ import { changeTemplate, queueTemplateWrite, readTemplateSnapshot, TemplateSnaps
 export interface CommonCommand {
     command: string;
     description?: string;
+    tags?: string[];
 }
 
 export const commonCommandsFile = path.join(os.homedir(), '.project-atlas', 'commoncmd.json');
@@ -31,6 +32,12 @@ export function updateCommonCommand(
             entry.description = value.description.trim();
         } else {
             delete entry.description;
+        }
+        const tags = normalizeCommonCommandTags(value.tags ?? []);
+        if (tags.length) {
+            entry.tags = tags;
+        } else {
+            delete entry.tags;
         }
     });
 }
@@ -84,6 +91,7 @@ export async function addCommonCommand(
     command: string,
     description?: string,
     file = commonCommandsFile,
+    tags: readonly string[] = [],
 ): Promise<void> {
     const normalizedCommand = command.trim();
     if (!normalizedCommand) {
@@ -104,9 +112,11 @@ export async function addCommonCommand(
         }
 
         const document = data as { commands: unknown[] } & Record<string, unknown>;
+        const normalizedTags = normalizeCommonCommandTags(tags);
         document.commands.push({
             command: normalizedCommand,
             ...(normalizedDescription ? { description: normalizedDescription } : {}),
+            ...(normalizedTags.length ? { tags: normalizedTags } : {}),
         });
         const temporary = `${file}.${process.pid}.${randomUUID()}.tmp`;
         try {
@@ -129,17 +139,25 @@ function parseCommonCommands(data: unknown): CommonCommand[] {
         if (!entry || typeof entry !== 'object') {
             throw new Error(`Common command ${index + 1} must be an object.`);
         }
-        const { command, description } = entry as { command?: unknown; description?: unknown };
+        const { command, description, tags } = entry as { command?: unknown; description?: unknown; tags?: unknown };
         if (typeof command !== 'string' || !command.trim()) {
             throw new Error(`Common command ${index + 1} must have a non-empty command.`);
         }
         if (description !== undefined && typeof description !== 'string') {
             throw new Error(`Common command ${index + 1} has an invalid description.`);
         }
+        if (tags !== undefined && (!Array.isArray(tags) || tags.some((tag) => typeof tag !== 'string'))) {
+            throw new Error(`Common command ${index + 1} has invalid tags.`);
+        }
         const normalizedDescription = description?.trim();
         return {
             command: command.trim(),
             ...(normalizedDescription ? { description: normalizedDescription } : {}),
+            ...(tags ? { tags: normalizeCommonCommandTags(tags as string[]) } : {}),
         };
     });
+}
+
+export function normalizeCommonCommandTags(tags: readonly string[]): string[] {
+    return [...new Set(tags.map((tag) => tag.trim()).filter(Boolean))];
 }

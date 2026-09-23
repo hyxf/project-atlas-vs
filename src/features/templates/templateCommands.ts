@@ -6,6 +6,7 @@ import {
     readCommonCommandSnapshot,
     updateCommonCommand,
 } from '../commonCommands/commonCommandStore';
+import { pickRepositoryTags } from '../repositoryManagement/tagPicker';
 import {
     deleteGitMessage,
     formatGitMessage,
@@ -45,17 +46,50 @@ export async function editCommonCommandItem(
                 placeholder: 'Show the working tree status',
                 hint: 'A short note to help you find this command later.',
             },
+            {
+                name: 'tags',
+                label: 'Tags',
+                value: (value.tags ?? []).join('\n'),
+                multiline: true,
+                placeholder: 'Git\nReview',
+                hint: 'One tag per line. Leave empty for no tags.',
+            },
         ],
         save: async (values) => {
             assertSaved(item.file);
             await updateCommonCommand(
                 item.snapshot,
                 creating ? null : item.index,
-                { command: values.command!, description: values.description! },
+                {
+                    command: values.command!,
+                    description: values.description!,
+                    tags: values.tags!.split(/\r\n|[\r\n]/),
+                },
                 item.file,
             );
         },
     });
+}
+
+export async function editCommonCommandTags(
+    item: TemplateItem<CommonCommand>,
+    picker: typeof pickRepositoryTags = pickRepositoryTags,
+): Promise<void> {
+    assertSaved(item.file);
+    const command = item.snapshot.entries[item.index];
+    if (!command) {
+        throw new Error('This command no longer exists.');
+    }
+    const tags = await picker(
+        item.snapshot.entries.flatMap((entry) => entry.tags ?? []),
+        command.tags ?? [],
+        `Edit Tags: ${command.command}`,
+    );
+    if (tags === undefined) {
+        return;
+    }
+    assertSaved(item.file);
+    await updateCommonCommand(item.snapshot, item.index, { ...command, tags }, item.file);
 }
 
 export async function editGitMessageItem(
@@ -201,4 +235,20 @@ export function registerTemplateCommands(context: vscode.ExtensionContext): void
             );
         }
     }
+    context.subscriptions.push(
+        vscode.commands.registerCommand('project-atlas.editCommonCommandTags', async (item: unknown) => {
+            if (!(item instanceof TemplateItem) || item.contextValue !== 'commonCommand') {
+                return;
+            }
+            try {
+                await editCommonCommandTags(item);
+            } catch (error) {
+                await vscode.window.showErrorMessage(
+                    `Project Atlas: ${error instanceof Error ? error.message : String(error)}`,
+                );
+            } finally {
+                await vscode.commands.executeCommand('project-atlas.refreshCommonCommands');
+            }
+        }),
+    );
 }

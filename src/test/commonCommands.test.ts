@@ -6,6 +6,8 @@ import {
     addCommonCommand,
     ensureCommonCommandsFile,
     readCommonCommands,
+    readCommonCommandSnapshot,
+    updateCommonCommand,
 } from '../features/commonCommands/commonCommandStore';
 
 suite('Common Commands', () => {
@@ -17,10 +19,19 @@ suite('Common Commands', () => {
 
     test('reads and validates commands', async () => {
         const file = path.join(temporary, 'commoncmd.json');
-        await fs.writeFile(file, JSON.stringify({ commands: [{ command: ' git status ', description: ' Show ' }] }));
-        assert.deepStrictEqual(await readCommonCommands(file), [{ command: 'git status', description: 'Show' }]);
+        await fs.writeFile(
+            file,
+            JSON.stringify({
+                commands: [{ command: ' git status ', description: ' Show ', tags: [' Git ', 'Git', ''] }],
+            }),
+        );
+        assert.deepStrictEqual(await readCommonCommands(file), [
+            { command: 'git status', description: 'Show', tags: ['Git'] },
+        ]);
         await fs.writeFile(file, JSON.stringify({ commands: [{ command: '' }] }));
         await assert.rejects(() => readCommonCommands(file), /non-empty command/);
+        await fs.writeFile(file, JSON.stringify({ commands: [{ command: 'git status', tags: 'Git' }] }));
+        await assert.rejects(() => readCommonCommands(file), /invalid tags/);
     });
 
     test('initializes a missing commands file', async () => {
@@ -55,5 +66,17 @@ suite('Common Commands', () => {
             (await readCommonCommands(file)).map(({ command }) => command),
             ['git status', 'git pull', 'git push'],
         );
+    });
+
+    test('saves normalized tags while preserving unknown command fields', async () => {
+        const file = path.join(temporary, 'commoncmd.json');
+        await fs.writeFile(file, JSON.stringify({ commands: [{ command: 'git status', future: true }] }));
+        const snapshot = await readCommonCommandSnapshot(file);
+        await updateCommonCommand(snapshot, 0, { command: 'git status', tags: [' Git ', 'Git', 'Review'] }, file);
+        assert.deepStrictEqual(JSON.parse(await fs.readFile(file, 'utf8')).commands[0], {
+            command: 'git status',
+            future: true,
+            tags: ['Git', 'Review'],
+        });
     });
 });

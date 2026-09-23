@@ -32,6 +32,17 @@ export class GitMessageTypeGroup extends vscode.TreeItem {
     }
 }
 
+export class CommonCommandTagGroup extends vscode.TreeItem {
+    readonly children: TemplateItem<CommonCommand>[] = [];
+
+    constructor(readonly tag: string) {
+        super(tag || 'Untagged', vscode.TreeItemCollapsibleState.Expanded);
+        this.id = JSON.stringify(['commonCommandTagGroup', tag]);
+        this.contextValue = 'commonCommandTagGroup';
+        this.iconPath = new vscode.ThemeIcon('tag');
+    }
+}
+
 export class TemplatesTreeProvider implements vscode.TreeDataProvider<vscode.TreeItem>, vscode.Disposable {
     private readonly changed = new vscode.EventEmitter<void>();
     private readonly parents = new Map<vscode.TreeItem, vscode.TreeItem | undefined>();
@@ -50,7 +61,11 @@ export class TemplatesTreeProvider implements vscode.TreeDataProvider<vscode.Tre
     async getChildren(element?: vscode.TreeItem): Promise<vscode.TreeItem[]> {
         if (element) {
             const children =
-                element instanceof TemplateItem || element instanceof GitMessageTypeGroup ? element.children : [];
+                element instanceof TemplateItem ||
+                element instanceof GitMessageTypeGroup ||
+                element instanceof CommonCommandTagGroup
+                    ? element.children
+                    : [];
             for (const child of children) {
                 this.parents.set(child, element);
             }
@@ -99,20 +114,46 @@ export async function expandTreeView(
 
 export async function loadCommonCommandItems(file = commonCommandsFile): Promise<vscode.TreeItem[]> {
     const snapshot = await readCommonCommandSnapshot(file);
-    return snapshot.entries.map((command, index) => {
-        const item = new TemplateItem<CommonCommand>(command.command, snapshot, index, file, 'commonCommand');
-        if (command.description) {
-            item.collapsibleState = vscode.TreeItemCollapsibleState.Expanded;
-            for (const line of command.description.split(/\r?\n/)) {
-                const description = new vscode.TreeItem(line || ' ');
-                description.tooltip = command.description;
-                item.children.push(description);
+    const groups = new Map<string, CommonCommandTagGroup>();
+    for (const [index, command] of snapshot.entries.entries()) {
+        const tags = [...new Set(command.tags ?? [])];
+        for (const tag of tags.length ? tags : ['']) {
+            let group = groups.get(tag);
+            if (!group) {
+                group = new CommonCommandTagGroup(tag);
+                groups.set(tag, group);
             }
+            group.children.push(createCommonCommandItem(command, snapshot, index, file, tag));
+            group.description = String(group.children.length);
         }
-        item.tooltip = [command.command, command.description].filter(Boolean).join('\n\n');
-        item.iconPath = new vscode.ThemeIcon('terminal');
-        return item;
-    });
+    }
+    const untagged = groups.get('');
+    groups.delete('');
+    return [...groups.values(), ...(untagged ? [untagged] : [])];
+}
+
+function createCommonCommandItem(
+    command: CommonCommand,
+    snapshot: TemplateSnapshot<CommonCommand>,
+    index: number,
+    file: string,
+    tag: string,
+): TemplateItem<CommonCommand> {
+    const item = new TemplateItem<CommonCommand>(command.command, snapshot, index, file, 'commonCommand');
+    item.id = JSON.stringify(['commonCommand', tag, index]);
+    if (command.description) {
+        item.collapsibleState = vscode.TreeItemCollapsibleState.Expanded;
+        for (const line of command.description.split(/\r?\n/)) {
+            const description = new vscode.TreeItem(line || ' ');
+            description.tooltip = command.description;
+            item.children.push(description);
+        }
+    }
+    item.tooltip = [command.command, (command.tags ?? []).join(', ') || 'Untagged', command.description]
+        .filter(Boolean)
+        .join('\n\n');
+    item.iconPath = new vscode.ThemeIcon('terminal');
+    return item;
 }
 
 export type GitMessageViewMode = 'LIST' | 'GROUP';

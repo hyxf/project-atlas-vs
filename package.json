@@ -56,6 +56,12 @@
         "icon": "$(trash)"
       },
       {
+        "command": "project-atlas.editCommonCommandTags",
+        "title": "Edit Common Command Tags",
+        "category": "Project Atlas",
+        "icon": "$(tag)"
+      },
+      {
         "command": "project-atlas.editGitMessage",
         "title": "Edit Git Message",
         "category": "Project Atlas",
@@ -1491,6 +1497,10 @@
       ],
       "commandPalette": [
         {
+          "command": "project-atlas.editCommonCommandTags",
+          "when": "false"
+        },
+        {
           "command": "project-atlas.editWorkspacePackageJson",
           "when": "false"
         },
@@ -2031,6 +2041,11 @@
           "command": "project-atlas.deleteCommonCommand",
           "when": "view == projectAtlas.commonCommands && viewItem == commonCommand",
           "group": "danger@1"
+        },
+        {
+          "command": "project-atlas.editCommonCommandTags",
+          "when": "view == projectAtlas.commonCommands && viewItem == commonCommand",
+          "group": "edit@2"
         },
         {
           "command": "project-atlas.editGitMessage",

@@ -72,12 +72,12 @@ Project Atlas 是一款用于管理本地项目、Git 仓库和开发素材的 V
 
 | 视图                 | 数据文件                           | 功能                                                           |
 | -------------------- | ---------------------------------- | -------------------------------------------------------------- |
-| **Common Commands**  | `~/.project-atlas/commoncmd.json`  | 保存带说明的常用命令，并插入终端。                             |
+| **Common Commands**  | `~/.project-atlas/commoncmd.json`  | 保存带说明和标签的常用命令，并按标签分组后插入终端。           |
 | **Git Messages**     | `~/.project-atlas/gitmessage.json` | 保存 `type(scope): subject` 提交消息，支持复制和按 type 分组。 |
 | **AI Prompts**       | `~/.project-atlas/aiprompts.json`  | 保存带标题、正文、说明和标签的本地提示词。                     |
 | **Backup & Restore** | VS Code globalState                | 备份并恢复以上三个模板文件。                                   |
 
-三类模板均支持新增、编辑、删除、编辑原始 JSON 和刷新。保存会保留未知字段，并检查文件冲突和编辑器未保存修改。拖动项目可直接调整 JSON 数组顺序：Git Messages 仅列表模式可排序；AI Prompts 仅“显示全部”的列表模式可排序。
+三类模板均支持新增、编辑、删除、编辑原始 JSON 和刷新。保存会保留未知字段，并检查文件冲突和编辑器未保存修改。Common Commands 和 AI Prompts 支持在条目菜单中快速编辑标签；两者的列表均按标签分组。拖动项目可直接调整 JSON 数组顺序：Git Messages 仅列表模式可排序；AI Prompts 仅“显示全部”的列表模式可排序。
 
 AI Prompts 默认按标签分组，支持全文搜索、只读预览、复制正文、标签编辑和创建副本；首次加载且文件不存在时会创建六条默认提示词。Backup & Restore 依托 VS Code Settings Sync：登录 GitHub 或 Microsoft 并启用同步后，备份可由 VS Code 原生跨设备同步；恢复和删除均需确认。
 

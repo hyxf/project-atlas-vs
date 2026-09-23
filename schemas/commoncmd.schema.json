@@ -20,6 +20,13 @@
           "description": {
             "description": "Optional human-readable explanation shown alongside the command.",
             "type": "string"
+          },
+          "tags": {
+            "description": "Optional tags used to group common commands.",
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
           }
         },
         "defaultSnippets": [
@@ -27,7 +34,8 @@
             "label": "Common command",
             "body": {
               "command": "${1:command}",
-              "description": "${2:Describe the command}"
+              "description": "${2:Describe the command}",
+              "tags": ["${3:Tag}"]
             }
           }
         ]
@@ -41,7 +49,8 @@
         "commands": [
           {
             "command": "${1:command}",
-            "description": "${2:Describe the command}"
+            "description": "${2:Describe the command}",
+            "tags": ["${3:Tag}"]
           }
         ]
       }

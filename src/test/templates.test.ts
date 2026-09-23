@@ -8,6 +8,7 @@ import { CommonCommand, readCommonCommandSnapshot } from '../features/commonComm
 import { GitMessage, readGitMessageSnapshot } from '../features/gitMessages/gitMessageStore';
 import {
     addCommonCommandItem,
+    editCommonCommandTags,
     addGitMessageItem,
     editCommonCommandItem,
     editGitMessageItem,
@@ -176,9 +177,9 @@ suite('Template views', () => {
         await addCommonCommandItem(commandFile, async ({ fields, save }) => {
             assert.deepStrictEqual(
                 fields.map(({ name }) => name),
-                ['command', 'description'],
+                ['command', 'description', 'tags'],
             );
-            await save({ command: 'git status', description: '' });
+            await save({ command: 'git status', description: '', tags: 'Git\nReview' });
         });
         await addGitMessageItem(messageFile, async ({ fields, save }) => {
             assert.deepStrictEqual(
@@ -187,7 +188,9 @@ suite('Template views', () => {
             );
             await save({ type: 'feat', scope: 'ui', subject: 'Add form' });
         });
-        assert.deepStrictEqual((await readCommonCommandSnapshot(commandFile)).entries, [{ command: 'git status' }]);
+        assert.deepStrictEqual((await readCommonCommandSnapshot(commandFile)).entries, [
+            { command: 'git status', tags: ['Git', 'Review'] },
+        ]);
         assert.deepStrictEqual((await readGitMessageSnapshot(messageFile)).entries, [
             { type: 'feat', scope: 'ui', subject: 'Add form' },
         ]);
@@ -205,7 +208,7 @@ suite('Template views', () => {
             async ({ fields }) => {
                 assert.deepStrictEqual(
                     fields.map(({ value }) => value),
-                    ['git status', ''],
+                    ['git status', '', ''],
                 );
             },
         );
@@ -234,14 +237,42 @@ suite('Template views', () => {
         await editCommonCommandItem(
             new TemplateItem('git status', snapshot, 0, file, 'commonCommand'),
             async ({ save }) => {
-                await assert.rejects(save({ command: 'git diff', description: 'New' }), /already exists/);
+                await assert.rejects(save({ command: 'git diff', description: 'New', tags: '' }), /already exists/);
                 assert.strictEqual(await fs.readFile(file, 'utf8'), snapshot.contents);
-                await save({ command: 'git log\ngit status', description: '' });
+                await save({ command: 'git log\ngit status', description: '', tags: 'Git\nReview' });
             },
         );
         assert.deepStrictEqual(JSON.parse(await fs.readFile(file, 'utf8')).commands[0], {
             command: 'git log\ngit status',
             extra: true,
+            tags: ['Git', 'Review'],
+        });
+    });
+
+    test('edits command tags with the shared tag picker', async () => {
+        const file = path.join(temporary, 'commoncmd.json');
+        await fs.writeFile(
+            file,
+            JSON.stringify({
+                commands: [
+                    { command: 'git status', tags: ['Git'] },
+                    { command: 'git diff', tags: ['Review'] },
+                ],
+            }),
+        );
+        const snapshot = await readCommonCommandSnapshot(file);
+        await editCommonCommandTags(
+            new TemplateItem('git status', snapshot, 0, file, 'commonCommand'),
+            async (existing, selected, title) => {
+                assert.deepStrictEqual(existing, ['Git', 'Review']);
+                assert.deepStrictEqual(selected, ['Git']);
+                assert.strictEqual(title, 'Edit Tags: git status');
+                return ['Git', 'Review'];
+            },
+        );
+        assert.deepStrictEqual((await readCommonCommandSnapshot(file)).entries[0], {
+            command: 'git status',
+            tags: ['Git', 'Review'],
         });
     });
 
@@ -282,13 +313,16 @@ suite('Template views', () => {
         });
     });
 
-    test('displays commands with descriptions and Git messages grouped by type in file order', async () => {
+    test('displays commands grouped by tags and Git messages grouped by type in file order', async () => {
         const commandsFile = path.join(temporary, 'commoncmd.json');
         const messagesFile = path.join(temporary, 'gitmessage.json');
         await fs.writeFile(
             commandsFile,
             JSON.stringify({
-                commands: [{ command: 'git status', description: 'Working tree' }, { command: 'git diff' }],
+                commands: [
+                    { command: 'git status', description: 'Working tree', tags: ['Git', 'Review'] },
+                    { command: 'git diff' },
+                ],
             }),
         );
         await fs.writeFile(
@@ -305,19 +339,30 @@ suite('Template views', () => {
         const commands = await loadCommonCommandItems(commandsFile);
         assert.deepStrictEqual(
             commands.map((item) => item.label),
-            ['git status', 'git diff'],
+            ['Git', 'Review', 'Untagged'],
         );
-        assert.strictEqual(commands[0]?.description, undefined);
         const provider = new TemplatesTreeProvider(() => loadCommonCommandItems(commandsFile));
         try {
-            const descriptions = await provider.getChildren(commands[0]);
+            const gitCommands = await provider.getChildren(commands[0]);
+            assert.deepStrictEqual(
+                gitCommands.map((item) => item.label),
+                ['git status'],
+            );
+            const descriptions = await provider.getChildren(gitCommands[0]);
             assert.deepStrictEqual(
                 descriptions.map((item) => item.label),
                 ['Working tree'],
             );
             assert.strictEqual(descriptions[0]?.contextValue, undefined);
             assert.deepStrictEqual(await provider.getChildren(descriptions[0]), []);
-            assert.deepStrictEqual(await provider.getChildren(commands[1]), []);
+            assert.deepStrictEqual(
+                (await provider.getChildren(commands[1])).map((item) => item.label),
+                ['git status'],
+            );
+            assert.deepStrictEqual(
+                (await provider.getChildren(commands[2])).map((item) => item.label),
+                ['git diff'],
+            );
         } finally {
             provider.dispose();
         }
