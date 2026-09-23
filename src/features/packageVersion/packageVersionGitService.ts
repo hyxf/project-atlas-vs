@@ -150,6 +150,39 @@ export async function pushVersionCommit(
     commit: string,
     target: VersionPushTarget,
 ): Promise<void> {
+    await ensureVersionPushTarget(root, branch, commit, target);
+    await git(root, ['push', target.remote, `${commit}:refs/heads/${target.branch}`]);
+    if (target.setUpstream) {
+        await git(root, ['config', `branch.${branch}.remote`, target.remote]);
+        await git(root, ['config', `branch.${branch}.merge`, `refs/heads/${target.branch}`]);
+    }
+}
+
+/** Creates a lightweight version tag at the recorded commit and pushes it to the selected remote. */
+export async function pushVersionTag(
+    root: string,
+    branch: string,
+    commit: string,
+    target: VersionPushTarget,
+    tag: string,
+): Promise<void> {
+    await ensureVersionPushTarget(root, branch, commit, target);
+    const existing = await runGit(root, ['rev-parse', '--verify', '--quiet', `refs/tags/${tag}^{commit}`]);
+    if (existing.code === 0 && existing.stdout.trim() !== commit) {
+        throw new Error(`Tag ${tag} already exists locally and points to a different commit.`);
+    }
+    if (existing.code !== 0) {
+        await git(root, ['tag', tag, commit]);
+    }
+    await git(root, ['push', target.remote, `refs/tags/${tag}`]);
+}
+
+async function ensureVersionPushTarget(
+    root: string,
+    branch: string,
+    commit: string,
+    target: VersionPushTarget,
+): Promise<void> {
     const currentBranch = await git(root, ['symbolic-ref', '--quiet', '--short', 'HEAD']);
     const head = await git(root, ['rev-parse', 'HEAD']);
     if (currentBranch !== branch || head !== commit) {
@@ -158,10 +191,5 @@ export async function pushVersionCommit(
     const urls = (await git(root, ['remote', 'get-url', '--push', '--all', target.remote])).split(/\r?\n/);
     if (urls.length !== 1 || urls[0] !== target.url) {
         throw new Error('Remote push URL changed. Review the remote configuration before pushing manually.');
-    }
-    await git(root, ['push', target.remote, `${commit}:refs/heads/${target.branch}`]);
-    if (target.setUpstream) {
-        await git(root, ['config', `branch.${branch}.remote`, target.remote]);
-        await git(root, ['config', `branch.${branch}.merge`, `refs/heads/${target.branch}`]);
     }
 }

@@ -8,6 +8,7 @@ import {
     inspectVersionRepository,
     preferredVersionRemote,
     pushVersionCommit,
+    pushVersionTag,
     resolveVersionPushTarget,
     readVersionRemoteNames,
     VersionPushTarget,
@@ -87,6 +88,16 @@ export async function updatePackageVersion(): Promise<void> {
                               description: 'Include all saved repository changes',
                               commit: true,
                           },
+                          ...(remotes.length
+                              ? [
+                                    {
+                                        label: 'Update, commit, push and tag',
+                                        description: `Create and push tag v${update.newVersion}`,
+                                        commit: true,
+                                        tag: true,
+                                    },
+                                ]
+                              : []),
                       ]
                     : []),
             ],
@@ -128,6 +139,7 @@ export async function updatePackageVersion(): Promise<void> {
                         `Version: ${update.oldVersion} → ${update.newVersion}`,
                         `Commit: ${message}`,
                         target ? `Push target: ${target.remote}/${target.branch}` : 'Local commit only',
+                        ...(action.tag ? [`Tag: v${update.newVersion}`] : []),
                         ...(target ? ['Push includes any earlier unpushed commits on this branch.'] : []),
                         '',
                         'All saved changes, including new and deleted files, will be committed:',
@@ -135,7 +147,7 @@ export async function updatePackageVersion(): Promise<void> {
                         `Version update: ${path.relative(root, packageJsonUri.fsPath)}`,
                     ].join('\n'),
                 },
-                target ? 'Commit and Push' : 'Commit Locally',
+                action.tag ? 'Commit, Push and Tag' : target ? 'Commit and Push' : 'Commit Locally',
             );
             if (!confirmed) {
                 return;
@@ -165,7 +177,7 @@ export async function updatePackageVersion(): Promise<void> {
             );
             return;
         }
-        await pushWithRetry(state, commit, target, update.newVersion);
+        await pushWithRetry(state, commit, target, update.newVersion, action.tag === true);
     } catch (error) {
         void vscode.window.showErrorMessage(
             `${versionWritten ? 'Package version was updated, but the commit workflow failed. Changes have been kept' : 'Failed to update package version'}: ${error instanceof Error ? error.message : String(error)}`,
@@ -196,6 +208,7 @@ async function pushWithRetry(
     commit: string,
     target: VersionPushTarget,
     version: string,
+    createTag: boolean,
 ): Promise<void> {
     for (;;) {
         try {
@@ -206,8 +219,19 @@ async function pushWithRetry(
                 },
                 () => pushVersionCommit(state.root, state.branch, commit, target),
             );
+            if (createTag) {
+                await vscode.window.withProgress(
+                    {
+                        location: vscode.ProgressLocation.Notification,
+                        title: `Creating and pushing tag v${version}…`,
+                    },
+                    () => pushVersionTag(state.root, state.branch, commit, target, `v${version}`),
+                );
+            }
             void vscode.window.showInformationMessage(
-                `Package version ${version} committed (${commit.slice(0, 8)}) and pushed to ${target.remote}/${target.branch}.`,
+                createTag
+                    ? `Package version ${version} committed (${commit.slice(0, 8)}), pushed to ${target.remote}/${target.branch}, and tagged v${version}.`
+                    : `Package version ${version} committed (${commit.slice(0, 8)}) and pushed to ${target.remote}/${target.branch}.`,
             );
             return;
         } catch (error) {

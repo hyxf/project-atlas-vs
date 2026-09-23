@@ -86,9 +86,9 @@ AI Prompts 默认按标签分组，支持全文搜索、只读预览、复制正
 - **Copy/Open Remote URL**：识别当前 Git remote，并生成 GitHub、GitLab 等托管平台的 Web URL。
 - **Create Release Tag**：根据仓库状态创建发布标签，并在执行前显示警告和确认。
 - **Create or Update CHANGELOG.md**：从 Git 历史生成预览，确认后才写入 `CHANGELOG.md`。
-- **Update Package Version**：选择 Major、Minor 或 Patch，修改 `package.json` 版本；可选择只修改版本，或提交当前仓库所有已保存改动。
+- **Update Package Version**：选择 Major、Minor 或 Patch，修改 `package.json` 版本；可选择只修改版本、提交当前仓库所有已保存改动，或在提交并推送后创建版本标签。
 
-Update Package Version 的提交信息固定为 `chore: bump version to <新版本>`。没有 Git 仓库时只修改版本；有仓库但无远端时创建本地提交，配置远端时提交后推送。执行前会显示仓库、分支、文件清单和推送目标；取消不会修改文件。推送失败会保留本地提交，可使用 **Retry Push** 重试。该工具不创建版本标签、不自动合并、不强制推送，也不更新锁文件版本。
+Update Package Version 的提交信息固定为 `chore: bump version to <新版本>`。没有 Git 仓库时只修改版本；有仓库但无远端时创建本地提交，配置远端时可选择提交后推送，或提交、推送并创建 `v<新版本>` 标签。执行前会显示仓库、分支、文件清单、推送目标和标签；取消不会修改文件。推送或标签推送失败会保留本地提交（和已创建的本地标签），可使用 **Retry Push** 重试。该工具不自动合并、不强制推送，也不更新锁文件版本。
 
 ## 数据、安全与更新
 

@@ -13,6 +13,7 @@ import {
     inspectVersionRepository,
     preferredVersionRemote,
     pushVersionCommit,
+    pushVersionTag,
     resolveVersionPushTarget,
 } from '../features/packageVersion/packageVersionGitService';
 
@@ -48,7 +49,12 @@ suite('Package Version Git', () => {
         await git(root, ['remote', 'add', 'origin', remote]);
     }
 
-    async function runWorkflow(cancelAt: string, commit = true, keepNotificationsOpen = false): Promise<string[]> {
+    async function runWorkflow(
+        cancelAt: string,
+        commit = true,
+        keepNotificationsOpen = false,
+        tag = false,
+    ): Promise<string[]> {
         const commandFile = path.join(__dirname, '../features/packageVersion/packageVersionCommand.js');
         const localRequire = createRequire(commandFile);
         const messages: string[] = [];
@@ -77,7 +83,7 @@ suite('Package Version Git', () => {
                                   if ((step === 1 && cancelAt === 'version') || (step === 2 && cancelAt === 'action')) {
                                       return undefined;
                                   }
-                                  return step === 1 ? { increment: 'patch' } : { commit };
+                                  return step === 1 ? { increment: 'patch' } : { commit, tag };
                               },
                               showWarningMessage: async () =>
                                   cancelAt === 'confirmation' ? undefined : 'Commit Locally',
@@ -126,6 +132,15 @@ suite('Package Version Git', () => {
         assert.strictEqual(await git(root, ['log', '-1', '--format=%s']), 'chore: bump version to 1.0.2');
         assert.strictEqual(await git(root, ['show', 'HEAD:package.json']), '{"version":"1.0.2"}');
         assert.strictEqual(await git(root, ['status', '--porcelain']), '');
+    });
+
+    test('the command can commit, push, and create the matching version tag', async () => {
+        await addRemote();
+        const messages = await runWorkflow('', true, false, true);
+        assert.ok(messages[0]?.includes('tagged v1.0.1'));
+        const commit = await git(root, ['rev-parse', 'HEAD']);
+        assert.strictEqual(await git(remote, ['rev-parse', 'refs/heads/main']), commit);
+        assert.strictEqual(await git(remote, ['rev-parse', 'refs/tags/v1.0.1']), commit);
     });
 
     for (const mode of ['version only', 'local commit', 'push', 'error']) {
@@ -204,6 +219,32 @@ suite('Package Version Git', () => {
         const commit = await commitVersionChanges(root, 'version');
         await pushVersionCommit(root, state.branch, commit, target);
         assert.strictEqual(await git(remote, ['rev-parse', 'refs/heads/releases']), commit);
+    });
+
+    test('pushes the version tag after the version commit is pushed', async () => {
+        await addRemote();
+        const state = await inspectVersionRepository(root);
+        const target = await resolveVersionPushTarget(state, 'origin');
+        const commit = await commitVersionChanges(root, 'chore: bump version to 1.0.0');
+        await pushVersionCommit(root, state.branch, commit, target);
+        await pushVersionTag(root, state.branch, commit, target, 'v1.0.0');
+        assert.strictEqual(await git(root, ['rev-parse', 'v1.0.0']), commit);
+        assert.strictEqual(await git(remote, ['rev-parse', 'refs/heads/main']), commit);
+        assert.strictEqual(await git(remote, ['rev-parse', 'refs/tags/v1.0.0']), commit);
+    });
+
+    test('does not overwrite a version tag that points at another local commit', async () => {
+        await addRemote();
+        const state = await inspectVersionRepository(root);
+        const target = await resolveVersionPushTarget(state, 'origin');
+        const commit = await commitVersionChanges(root, 'version');
+        await git(root, ['commit', '--allow-empty', '-m', 'other']);
+        await git(root, ['tag', 'v1.0.0']);
+        await git(root, ['reset', '--hard', commit]);
+        await assert.rejects(
+            pushVersionTag(root, state.branch, commit, target, 'v1.0.0'),
+            /already exists locally and points to a different commit/,
+        );
     });
 
     test('leaves multiple remotes without an upstream for user selection', async () => {
