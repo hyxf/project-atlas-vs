@@ -141,5 +141,58 @@ async function requestNpmPackage(name: string): Promise<{ version: string; descr
 
 function searchHtml(): string {
     const nonce = randomUUID();
-    return `<!DOCTYPE html><html><head><meta charset="UTF-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; connect-src https://registry.npmjs.org; style-src 'unsafe-inline'; script-src 'nonce-${nonce}'"><style>body{max-width:920px;margin:auto;padding:20px;font-family:var(--vscode-font-family);color:var(--vscode-foreground);background:var(--vscode-editor-background)}form,.actions,nav{display:flex;gap:8px}input{flex:1}.card{display:flex;justify-content:space-between;gap:12px;margin:8px 0;padding:12px;border:1px solid var(--vscode-panel-border)}.description,#status{color:var(--vscode-descriptionForeground)}button,input{padding:7px;font:inherit}</style></head><body><h1>Search npm Packages</h1><form id="search"><input id="query" autofocus placeholder="Search packages, for example react"><button>Search</button></form><p id="status">Enter a package name and select Search.</p><main id="results"></main><nav id="pages"></nav><script nonce="${nonce}">const vscode=acquireVsCodeApi(),q=document.getElementById('query'),status=document.getElementById('status'),results=document.getElementById('results'),pages=document.getElementById('pages');let query='',from=0,total=0;document.getElementById('search').onsubmit=e=>{e.preventDefault();query=q.value;search(0)};function search(page){query=query.trim();if(!query){status.textContent='Enter a package name first.';return}from=page;status.textContent='Searching npm…';vscode.postMessage({action:'search',text:query,from})}function button(label,action,entry){const b=document.createElement('button');b.textContent=label;b.onclick=()=>vscode.postMessage({action,entry});return b}function show(m){if(m.type==='error'){status.textContent=m.message;return}if(m.type==='done'){status.textContent=m.name+' updated.';return}if(m.type!=='results')return;from=m.from;total=m.total;status.textContent=total?total+' packages found.':'No packages found.';results.replaceChildren(...m.results.map(x=>{const c=document.createElement('article');c.className='card';const d=document.createElement('div');d.innerHTML='<strong></strong><div class="description"></div>';d.children[0].textContent=x.name+'@'+x.version;d.children[1].textContent=x.description||'No description provided.';const a=document.createElement('div');a.className='actions';a.append(button('Favorite','favorite',x),button('Add','install',x),button('Add dev','installDev',x));c.append(d,a);return c}));pages.replaceChildren();if(from>0)pages.append(button('Previous','page',{page:from-20}));if(from+20<total)pages.append(button('Next','page',{page:from+20}));pages.querySelectorAll('button').forEach(b=>{if(b.textContent==='Previous')b.onclick=()=>search(Math.max(0,from-20));if(b.textContent==='Next')b.onclick=()=>search(from+20)})}window.addEventListener('message',e=>show(e.data));</script></body></html>`;
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'nonce-${nonce}'">
+  <style>
+    :root { color-scheme: var(--vscode-color-scheme); }
+    * { box-sizing: border-box; }
+    body { max-width: 980px; margin: 0 auto; padding: 32px 28px 48px; color: var(--vscode-foreground); background: var(--vscode-editor-background); font: 13px/1.45 var(--vscode-font-family); }
+    .hero { padding: 24px; border: 1px solid var(--vscode-panel-border); border-radius: 12px; background: linear-gradient(135deg, var(--vscode-sideBar-background), var(--vscode-editorWidget-background)); }
+    .eyebrow { margin: 0 0 4px; color: var(--vscode-textLink-foreground); font-size: 11px; font-weight: 700; letter-spacing: .09em; text-transform: uppercase; }
+    h1 { margin: 0; font-size: 24px; line-height: 1.25; }
+    .subtitle { margin: 6px 0 20px; color: var(--vscode-descriptionForeground); }
+    form { display: flex; gap: 8px; }
+    input { min-width: 0; flex: 1; height: 38px; padding: 0 12px; border: 1px solid var(--vscode-input-border); border-radius: 7px; outline: none; color: var(--vscode-input-foreground); background: var(--vscode-input-background); font: inherit; }
+    input:focus { border-color: var(--vscode-focusBorder); box-shadow: 0 0 0 1px var(--vscode-focusBorder); }
+    button { height: 34px; padding: 0 12px; border: 0; border-radius: 6px; color: var(--vscode-button-foreground); background: var(--vscode-button-background); font: 600 12px var(--vscode-font-family); cursor: pointer; }
+    button:hover { background: var(--vscode-button-hoverBackground); }
+    button.secondary { color: var(--vscode-foreground); background: var(--vscode-button-secondaryBackground); }
+    button.secondary:hover { background: var(--vscode-button-secondaryHoverBackground); }
+    #status { min-height: 20px; margin: 20px 2px 10px; color: var(--vscode-descriptionForeground); }
+    #results { display: grid; gap: 8px; }
+    .card { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 18px; align-items: center; padding: 15px 16px; border: 1px solid var(--vscode-panel-border); border-radius: 9px; background: var(--vscode-sideBar-background); }
+    .card:hover { border-color: var(--vscode-focusBorder); background: var(--vscode-list-hoverBackground); }
+    .name { overflow: hidden; font-size: 14px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+    .version { margin-left: 7px; color: var(--vscode-textLink-foreground); font-size: 12px; font-weight: 400; }
+    .description { display: -webkit-box; overflow: hidden; margin-top: 3px; color: var(--vscode-descriptionForeground); -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+    .actions, nav { display: flex; gap: 6px; }
+    .actions button { height: 30px; padding: 0 9px; }
+    nav { justify-content: center; margin-top: 16px; }
+    @media (max-width: 620px) { body { padding: 16px; } .hero { padding: 18px; } form, .card { grid-template-columns: 1fr; flex-direction: column; } form button { width: 100%; } .actions { justify-content: flex-start; } }
+  </style>
+</head>
+<body>
+  <section class="hero">
+    <p class="eyebrow">npm registry</p>
+    <h1>Discover packages</h1>
+    <p class="subtitle">Search the public registry, then add a package or save it to Favorites.</p>
+    <form id="search"><input id="query" autofocus placeholder="Search packages, for example react" aria-label="Search npm packages"><button>Search</button></form>
+  </section>
+  <p id="status">Enter a package name to start searching.</p>
+  <main id="results" aria-live="polite"></main>
+  <nav id="pages" aria-label="Search result pages"></nav>
+  <script nonce="${nonce}">
+    const vscode=acquireVsCodeApi(),queryInput=document.getElementById('query'),status=document.getElementById('status'),results=document.getElementById('results'),pages=document.getElementById('pages');let query='',from=0,total=0;
+    document.getElementById('search').onsubmit=event=>{event.preventDefault();query=queryInput.value;search(0)};
+    function search(page){query=query.trim();if(!query){status.textContent='Enter a package name first.';return}from=page;status.textContent='Searching npm…';vscode.postMessage({action:'search',text:query,from})}
+    function button(label,action,entry,secondary=false){const element=document.createElement('button');element.textContent=label;element.className=secondary?'secondary':'';element.onclick=()=>vscode.postMessage({action,entry});return element}
+    function show(message){if(message.type==='error'){status.textContent=message.message;return}if(message.type==='done'){status.textContent=message.name+' updated.';return}if(message.type!=='results')return;from=message.from;total=message.total;status.textContent=total?'Showing '+(from+1)+'–'+Math.min(from+20,total)+' of '+total+' packages.':'No packages found.';results.replaceChildren(...message.results.map(item=>{const card=document.createElement('article');card.className='card';const detail=document.createElement('div');const name=document.createElement('div');name.className='name';name.textContent=item.name;const version=document.createElement('span');version.className='version';version.textContent='v'+item.version;name.append(version);const description=document.createElement('div');description.className='description';description.textContent=item.description||'No description provided.';detail.append(name,description);const actions=document.createElement('div');actions.className='actions';actions.append(button('Favorite','favorite',item,true),button('Add','install',item),button('Add dev','installDev',item));card.append(detail,actions);return card}));pages.replaceChildren();if(from>0){const previous=button('← Previous','',null,true);previous.onclick=()=>search(Math.max(0,from-20));pages.append(previous)}if(from+20<total){const next=button('Next →','',null);next.onclick=()=>search(from+20);pages.append(next)}}
+    window.addEventListener('message',event=>show(event.data));
+  </script>
+</body>
+</html>`;
 }
