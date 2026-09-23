@@ -418,7 +418,9 @@ suite('Template views', () => {
             assert.deepStrictEqual(await provider.getChildren(), []);
             await fs.writeFile(file, JSON.stringify({ commands: [{ command: 'git status' }] }));
             provider.refresh();
-            assert.strictEqual((await provider.getChildren())[0]?.label, 'git status');
+            const groups = await provider.getChildren();
+            assert.strictEqual(groups[0]?.label, 'Untagged');
+            assert.strictEqual((await provider.getChildren(groups[0]))[0]?.label, 'git status');
         } finally {
             listener.dispose();
             provider.dispose();
