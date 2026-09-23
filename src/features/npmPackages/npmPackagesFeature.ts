@@ -256,9 +256,9 @@ async function readFavorites(): Promise<PackageEntry[]> {
         const items = Array.isArray(source) ? source : (source as { favorites?: unknown }).favorites;
         return Array.isArray(items)
             ? items
-                  .filter((item): item is PackageEntry => Boolean(item) && typeof item.name === 'string')
-                  .map(({ name, version }) => ({ name, version }))
-                  .sort((left, right) => left.name.localeCompare(right.name))
+                .filter((item): item is PackageEntry => Boolean(item) && typeof item.name === 'string')
+                .map(({ name, version }) => ({ name, version }))
+                .sort((left, right) => left.name.localeCompare(right.name))
             : [];
     } catch (error) {
         if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
@@ -321,19 +321,6 @@ async function removeFavorite(name: string): Promise<void> {
 async function isInstalled(name: string): Promise<boolean> {
     const installed = await readInstalled();
     return [...installed.dependencies, ...installed.devDependencies].some((entry) => entry.name === name);
-}
-
-async function chooseAndInstall(entry: PackageEntry): Promise<void> {
-    const choice = await vscode.window.showQuickPick<{ label: string; target: DependencyKind }>(
-        [
-            { label: 'Dependencies', target: 'dependencies' as const },
-            { label: 'Dev Dependencies', target: 'devDependencies' as const },
-        ],
-        { placeHolder: `Add ${entry.name} to` },
-    );
-    if (choice) {
-        await updateDependencies(entry.name, choice.target, true, entry.version || 'latest');
-    }
 }
 
 async function updateDependencies(name: string, kind: DependencyKind, add: boolean, version?: string): Promise<void> {
@@ -420,11 +407,19 @@ function openSearchPanel(provider: NpmPackagesTree): void {
                     type: 'results',
                     ...(await searchNpm(value.text, Number(value.from) || 0)),
                 });
-            } else if ((value.action === 'favorite' || value.action === 'install') && isEntry(value.entry)) {
+            } else if (
+                (value.action === 'favorite' || value.action === 'install' || value.action === 'installDev') &&
+                isEntry(value.entry)
+            ) {
                 if (value.action === 'favorite') {
                     await saveFavorite(value.entry);
                 } else {
-                    await chooseAndInstall(value.entry);
+                    await updateDependencies(
+                        value.entry.name,
+                        value.action === 'installDev' ? 'devDependencies' : 'dependencies',
+                        true,
+                        value.entry.version,
+                    );
                 }
                 await provider.refresh();
                 await panel.webview.postMessage({ type: 'done', action: value.action, name: value.entry.name });
@@ -479,10 +474,10 @@ function requestNpmSearch(
             {
                 ...(proxyUrl
                     ? {
-                          agent: proxyUrl.toLowerCase().startsWith('socks')
-                              ? new SocksProxyAgent(proxyUrl)
-                              : new HttpsProxyAgent(proxyUrl),
-                      }
+                        agent: proxyUrl.toLowerCase().startsWith('socks')
+                            ? new SocksProxyAgent(proxyUrl)
+                            : new HttpsProxyAgent(proxyUrl),
+                    }
                     : {}),
                 headers: { Accept: 'application/json', 'User-Agent': 'project-atlas-vs' },
             },
@@ -543,7 +538,7 @@ function searchHtml(): string {
 <html><head><meta charset="UTF-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; connect-src https://registry.npmjs.org; style-src 'unsafe-inline'; script-src 'nonce-${nonce}';">
 <style>
 :root{color-scheme:var(--vscode-color-scheme)}*{box-sizing:border-box}body{max-width:920px;margin:0 auto;padding:18px 20px 32px;font-family:var(--vscode-font-family);font-size:13px;color:var(--vscode-foreground);background:var(--vscode-editor-background)}.hero{position:relative;padding:18px 20px 16px;border:1px solid var(--vscode-panel-border);border-radius:10px;background:linear-gradient(115deg,var(--vscode-sideBar-background),var(--vscode-editorWidget-background));box-shadow:0 6px 20px rgba(0,0,0,.1)}.hero:before{position:absolute;top:0;left:0;width:4px;height:100%;border-radius:10px 0 0 10px;background:var(--vscode-textLink-foreground);content:''}.eyebrow{color:var(--vscode-textLink-foreground);font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase}.hero h1{margin:4px 0 3px;font-size:20px;line-height:1.25}.hero p{margin:0 0 14px;color:var(--vscode-descriptionForeground)}form{display:flex;gap:8px}input{min-width:0;flex:1;height:34px;border:1px solid var(--vscode-input-border);border-radius:6px;padding:0 10px;color:var(--vscode-input-foreground);background:var(--vscode-input-background);font:inherit}input:focus{outline:1px solid var(--vscode-focusBorder);outline-offset:-1px}button{height:32px;border:0;border-radius:6px;padding:0 11px;color:var(--vscode-button-foreground);background:var(--vscode-button-background);font:inherit;font-size:12px;font-weight:600;cursor:pointer}button:hover{background:var(--vscode-button-hoverBackground)}.secondary{color:var(--vscode-foreground);background:var(--vscode-button-secondaryBackground)}.secondary:hover{background:var(--vscode-button-secondaryHoverBackground)}#status{min-height:18px;margin:14px 2px 8px;color:var(--vscode-descriptionForeground);font-size:12px}#results{display:grid;gap:7px}.card{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:12px;align-items:center;padding:11px 13px;border:1px solid transparent;border-radius:8px;background:var(--vscode-sideBar-background);box-shadow:inset 0 0 0 1px var(--vscode-panel-border);transition:border-color .12s,background .12s}.card:hover{border-color:var(--vscode-focusBorder);background:var(--vscode-list-hoverBackground)}.name{overflow:hidden;font-size:14px;font-weight:700;text-overflow:ellipsis;white-space:nowrap}.version{display:inline-block;margin-left:6px;padding:1px 5px;border-radius:4px;color:var(--vscode-textLink-foreground);background:var(--vscode-textCodeBlock-background);font-size:11px;font-weight:500}.description{display:-webkit-box;overflow:hidden;margin-top:4px;color:var(--vscode-descriptionForeground);line-height:1.35;-webkit-box-orient:vertical;-webkit-line-clamp:2}.actions{display:flex;gap:6px;white-space:nowrap}.actions button{height:28px;padding:0 9px}.actions .secondary{border:1px solid var(--vscode-panel-border)}nav{display:flex;justify-content:center;gap:8px;margin-top:14px}@media(max-width:560px){body{padding:12px}.hero{padding:15px}.card{grid-template-columns:1fr}.actions{justify-content:flex-start}form{flex-direction:column}form button{width:100%}}
-</style></head><body><section class="hero"><div class="eyebrow">npm registry</div><h1>Discover packages</h1><p>Search the public npm registry, then add a package to Install or save it for later.</p><form id="search"><input id="query" autofocus placeholder="Search packages, for example react"><button id="search-button" type="button">Search npm</button></form></section><p id="status">Enter a package name and select Search npm.</p><main id="results"></main><nav id="pages"></nav><script nonce="${nonce}">
-const vscode=acquireVsCodeApi(),q=document.getElementById('query'),status=document.getElementById('status'),results=document.getElementById('results'),pages=document.getElementById('pages');let query='',from=0,total=0;document.getElementById('search').addEventListener('submit',e=>e.preventDefault());document.getElementById('search-button').addEventListener('click',()=>{query=q.value;search(0)});async function search(page){query=query.trim();if(!query){status.textContent='Enter a package name first.';return}from=page;status.textContent='Searching npm…';try{const response=await fetch('https://registry.npmjs.org/-/v1/search?text='+encodeURIComponent(query)+'&size=20&from='+from);if(!response.ok)throw new Error('npm search failed with status '+response.status+'.');const data=await response.json();show({type:'results',results:(data.objects||[]).map(x=>x.package).filter(x=>x&&x.name&&x.version),total:typeof data.total==='number'?data.total:0,from})}catch(error){status.textContent=error instanceof Error?error.message:'Could not connect to the npm registry.'}}function button(label,action,secondary,entry){const b=document.createElement('button');b.textContent=label;if(secondary)b.className='secondary';b.onclick=()=>vscode.postMessage({action,entry});return b}function show(m){if(m.type==='error'){status.textContent=m.message;return}if(m.type==='done'){status.textContent=m.name+(m.action==='favorite'?' saved to Favorites.':' added to Install.');return}if(m.type!=='results')return;from=m.from;total=m.total;status.textContent=total?total+' packages found · showing '+(from+1)+'–'+Math.min(from+20,total):'No packages found.';results.replaceChildren(...m.results.map(x=>{const card=document.createElement('article');card.className='card';const detail=document.createElement('div');const name=document.createElement('div');name.className='name';name.textContent=x.name;const version=document.createElement('span');version.className='version';version.textContent='v'+x.version;name.append(version);const description=document.createElement('div');description.className='description';description.textContent=x.description||'No description provided.';detail.append(name,description);const actions=document.createElement('div');actions.className='actions';actions.append(button('☆ Favorite','favorite',true,x),button('+ Install','install',false,x));card.append(detail,actions);return card}));pages.replaceChildren();if(from>0){const b=document.createElement('button');b.className='secondary';b.textContent='← Previous';b.onclick=()=>search(Math.max(0,from-20));pages.append(b)}if(from+20<total){const b=document.createElement('button');b.textContent='Next →';b.onclick=()=>search(from+20);pages.append(b)}}window.addEventListener('message',e=>show(e.data));
+</style></head><body><section class="hero"><div class="eyebrow">npm registry</div><h1>Discover packages</h1><p>Search the public npm registry, then add a package to dependencies, dev dependencies, or Favorites.</p><form id="search"><input id="query" autofocus placeholder="Search packages, for example react"><button id="search-button" type="button">Search</button></form></section><p id="status">Enter a package name and select Search npm.</p><main id="results"></main><nav id="pages"></nav><script nonce="${nonce}">
+const vscode=acquireVsCodeApi(),q=document.getElementById('query'),status=document.getElementById('status'),results=document.getElementById('results'),pages=document.getElementById('pages');let query='',from=0,total=0;document.getElementById('search').addEventListener('submit',e=>e.preventDefault());document.getElementById('search-button').addEventListener('click',()=>{query=q.value;search(0)});async function search(page){query=query.trim();if(!query){status.textContent='Enter a package name first.';return}from=page;status.textContent='Searching npm…';try{const response=await fetch('https://registry.npmjs.org/-/v1/search?text='+encodeURIComponent(query)+'&size=20&from='+from);if(!response.ok)throw new Error('npm search failed with status '+response.status+'.');const data=await response.json();show({type:'results',results:(data.objects||[]).map(x=>x.package).filter(x=>x&&x.name&&x.version),total:typeof data.total==='number'?data.total:0,from})}catch(error){status.textContent=error instanceof Error?error.message:'Could not connect to the npm registry.'}}function button(label,action,secondary,entry,title){const b=document.createElement('button');b.textContent=label;b.title=title;b.setAttribute('aria-label',title);if(secondary)b.className='secondary';b.onclick=()=>vscode.postMessage({action,entry});return b}function show(m){if(m.type==='error'){status.textContent=m.message;return}if(m.type==='done'){status.textContent=m.name+(m.action==='favorite'?' saved to Favorites.':m.action==='installDev'?' added to Dev Dependencies.':' added to Dependencies.');return}if(m.type!=='results')return;from=m.from;total=m.total;status.textContent=total?total+' packages found · showing '+(from+1)+'–'+Math.min(from+20,total):'No packages found.';results.replaceChildren(...m.results.map(x=>{const card=document.createElement('article');card.className='card';const detail=document.createElement('div');const name=document.createElement('div');name.className='name';name.textContent=x.name;const version=document.createElement('span');version.className='version';version.textContent='v'+x.version;name.append(version);const description=document.createElement('div');description.className='description';description.textContent=x.description||'No description provided.';detail.append(name,description);const actions=document.createElement('div');actions.className='actions';actions.append(button('☆','favorite',true,x,'Add to Favorites'),button('+','install',false,x,'Add to Dependencies'),button('+dev','installDev',false,x,'Add to Dev Dependencies'));card.append(detail,actions);return card}));pages.replaceChildren();if(from>0){const b=document.createElement('button');b.className='secondary';b.textContent='← Previous';b.onclick=()=>search(Math.max(0,from-20));pages.append(b)}if(from+20<total){const b=document.createElement('button');b.textContent='Next →';b.onclick=()=>search(from+20);pages.append(b)}}window.addEventListener('message',e=>show(e.data));
 </script></body></html>`;
 }
