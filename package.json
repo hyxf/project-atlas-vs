@@ -1241,12 +1241,12 @@
           "group": "navigation@1"
         },
         {
-          "command": "project-atlas.refreshNpmPackages",
+          "command": "project-atlas.editNpmFavoritesFile",
           "when": "view == projectAtlas.npmPackages",
           "group": "navigation@2"
         },
         {
-          "command": "project-atlas.editNpmFavoritesFile",
+          "command": "project-atlas.refreshNpmPackages",
           "when": "view == projectAtlas.npmPackages",
           "group": "navigation@3"
         },
