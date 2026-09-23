@@ -22,7 +22,6 @@ import { RepositoryStore } from '../features/repositoryManagement/store';
 import { cleanRepositoryTags } from '../features/repositoryManagement/tagPicker';
 import {
     RepositoriesTree,
-    RepositoryDescriptionNode,
     RepositoryGroupNode,
     RepositoryHostNode,
     RepositoryTagNode,
@@ -329,7 +328,7 @@ suite('Repository Management', () => {
         assert.strictEqual((await tree.getChildren(groups[2])).length, 1);
     });
 
-    test('shows a repository description as a child only when it has text', async () => {
+    test('shows a repository description beside its title only when it has text', async () => {
         await store.addIfMissing({
             group: 'userA',
             name: 'documented',
@@ -350,22 +349,12 @@ suite('Repository Management', () => {
         const documented = repositories.find((node) => node.label === 'userA/documented')!;
         const undocumented = repositories.find((node) => node.label === 'userB/undocumented')!;
 
-        assert.strictEqual(documented.description, undefined);
-        assert.strictEqual(documented.collapsibleState, vscode.TreeItemCollapsibleState.Collapsed);
-        const descriptionNodes = await tree.getChildren(documented);
-        assert.strictEqual(descriptionNodes.length, 1);
-        assert.ok(descriptionNodes[0] instanceof RepositoryDescriptionNode);
-        assert.strictEqual(descriptionNodes[0].label, 'Main application repository');
-        assert.strictEqual(await tree.getParent(descriptionNodes[0]), documented);
+        assert.strictEqual(documented.description, '· Main application repository');
+        assert.strictEqual(documented.collapsibleState, vscode.TreeItemCollapsibleState.None);
+        assert.deepStrictEqual(await tree.getChildren(documented), []);
         assert.strictEqual(undocumented.collapsibleState, vscode.TreeItemCollapsibleState.None);
+        assert.strictEqual(undocumented.description, '');
         assert.deepStrictEqual(await tree.getChildren(undocumented), []);
-
-        tree.expandAll();
-        const expandedDocumented = (await tree.getChildren(tag)).find((node) => node.label === 'userA/documented')!;
-        assert.strictEqual(expandedDocumented.collapsibleState, vscode.TreeItemCollapsibleState.Expanded);
-        tree.collapseAll();
-        const collapsedDocumented = (await tree.getChildren(tag)).find((node) => node.label === 'userA/documented')!;
-        assert.strictEqual(collapsedDocumented.collapsibleState, vscode.TreeItemCollapsibleState.Collapsed);
     });
 
     test('switches between tag, group, and domain trees with expanded group nodes', async () => {

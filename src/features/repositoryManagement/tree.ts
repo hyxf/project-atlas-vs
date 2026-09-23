@@ -20,28 +20,13 @@ export class RepositoryNode extends vscode.TreeItem {
         tag: string | undefined,
         nameOnly = false,
     ) {
-        super(
-            nameOnly ? repository.name : `${repository.group}/${repository.name}`,
-            repository.description?.trim()
-                ? vscode.TreeItemCollapsibleState.Collapsed
-                : vscode.TreeItemCollapsibleState.None,
-        );
+        super(nameOnly ? repository.name : `${repository.group}/${repository.name}`);
         this.id = `repository:${tag ?? '__untagged__'}:${repository.url}`;
+        const description = repository.description?.trim();
+        this.description = description ? `· ${description}` : '';
         this.tooltip = [repository.url, repository.description, ...repository.tags].filter(Boolean).join('\n');
         this.contextValue = 'repository';
         this.iconPath = new vscode.ThemeIcon('repo');
-    }
-}
-
-export class RepositoryDescriptionNode extends vscode.TreeItem {
-    constructor(
-        readonly repositoryNode: RepositoryNode,
-        description: string,
-    ) {
-        super(description, vscode.TreeItemCollapsibleState.None);
-        this.id = `repository-description:${repositoryNode.id}`;
-        this.contextValue = 'repositoryDescription';
-        this.iconPath = new vscode.ThemeIcon('info');
     }
 }
 
@@ -63,12 +48,10 @@ export class RepositoryHostNode extends vscode.TreeItem {
     }
 }
 
-type RepositoryTreeNode =
-    RepositoryTagNode | RepositoryGroupNode | RepositoryHostNode | RepositoryNode | RepositoryDescriptionNode;
+type RepositoryTreeNode = RepositoryTagNode | RepositoryGroupNode | RepositoryHostNode | RepositoryNode;
 
 export class RepositoriesTree implements vscode.TreeDataProvider<RepositoryTreeNode> {
     private readonly changed = new vscode.EventEmitter<RepositoryTreeNode | undefined>();
-    private repositoryExpansionState = vscode.TreeItemCollapsibleState.Collapsed;
     readonly onDidChangeTreeData = this.changed.event;
 
     constructor(
@@ -86,12 +69,10 @@ export class RepositoriesTree implements vscode.TreeDataProvider<RepositoryTreeN
     }
 
     collapseAll(): void {
-        this.repositoryExpansionState = vscode.TreeItemCollapsibleState.Collapsed;
         this.refresh();
     }
 
     expandAll(): void {
-        this.repositoryExpansionState = vscode.TreeItemCollapsibleState.Expanded;
         this.refresh();
     }
 
@@ -99,8 +80,8 @@ export class RepositoriesTree implements vscode.TreeDataProvider<RepositoryTreeN
         return element;
     }
 
-    getParent(element: RepositoryTreeNode): RepositoryNode | undefined {
-        return element instanceof RepositoryDescriptionNode ? element.repositoryNode : undefined;
+    getParent(_element: RepositoryTreeNode): RepositoryNode | undefined {
+        return undefined;
     }
 
     async getChildren(element?: RepositoryTreeNode): Promise<RepositoryTreeNode[]> {
@@ -126,10 +107,6 @@ export class RepositoriesTree implements vscode.TreeDataProvider<RepositoryTreeN
                 .map((repository) => this.repositoryNode(repository, `host:${element.host}`));
         }
         if (element instanceof RepositoryNode) {
-            const description = element.repository.description?.trim();
-            return description ? [new RepositoryDescriptionNode(element, description)] : [];
-        }
-        if (element instanceof RepositoryDescriptionNode) {
             return [];
         }
         if (this.mode === 'GROUPS') {
@@ -150,11 +127,7 @@ export class RepositoriesTree implements vscode.TreeDataProvider<RepositoryTreeN
     }
 
     private repositoryNode(repository: RepositoryItem, tag: string | undefined, nameOnly = false): RepositoryNode {
-        const node = new RepositoryNode(repository, tag, nameOnly);
-        if (repository.description?.trim()) {
-            node.collapsibleState = this.repositoryExpansionState;
-        }
-        return node;
+        return new RepositoryNode(repository, tag, nameOnly);
     }
 }
 

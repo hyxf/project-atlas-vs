@@ -13,7 +13,6 @@ import { RepositoryStore } from '../features/repositoryManagement/store';
 import {
     GitHubLanguageNode,
     GitHubRepositoriesTree,
-    GitHubRepositoryDescriptionNode,
     GitHubRepositoryNode,
     GitHubVisibilityNode,
 } from '../features/githubRepositories/tree';
@@ -333,8 +332,8 @@ suite('GitHub Repositories', () => {
         assert.ok(repositoryNodes[0] instanceof GitHubRepositoryNode);
         assert.strictEqual(repositoryNodes[0].label, 'octocat/private-python');
         assert.strictEqual(repositoryNodes[0].contextValue, 'githubRepositorySaved');
-        assert.strictEqual(repositoryNodes[0].description, undefined);
-        assert.strictEqual(repositoryNodes[0].collapsibleState, vscode.TreeItemCollapsibleState.Collapsed);
+        assert.strictEqual(repositoryNodes[0].description, '· private-python description');
+        assert.strictEqual(repositoryNodes[0].collapsibleState, vscode.TreeItemCollapsibleState.None);
         assert.strictEqual((repositoryNodes[0].iconPath as { id: string }).id, 'repo');
         assert.ok(!String(repositoryNodes[0].tooltip).includes('Private'));
         assert.ok(!String(repositoryNodes[0].tooltip).includes('Python'));
@@ -346,13 +345,7 @@ suite('GitHub Repositories', () => {
         const repositoryParent = await tree.getParent(repositoryNodes[0]);
         assert.ok(repositoryParent instanceof GitHubLanguageNode);
         assert.strictEqual(repositoryParent.label, 'Python');
-        const descriptionNodes = await tree.getChildren(repositoryNodes[0]);
-        assert.strictEqual(descriptionNodes.length, 1);
-        assert.ok(descriptionNodes[0] instanceof GitHubRepositoryDescriptionNode);
-        assert.strictEqual(descriptionNodes[0].label, 'private-python description');
-        assert.strictEqual(descriptionNodes[0].contextValue, 'githubRepositoryDescription');
-        assert.strictEqual((descriptionNodes[0].iconPath as { id: string }).id, 'info');
-        assert.strictEqual(await tree.getParent(descriptionNodes[0]), repositoryNodes[0]);
+        assert.deepStrictEqual(await tree.getChildren(repositoryNodes[0]), []);
 
         await fs.writeFile(
             file,
@@ -399,7 +392,7 @@ suite('GitHub Repositories', () => {
         );
         const collapsedRepositoryNode = (await tree.getChildren(collapsedLanguageNodes[0]!))[0];
         assert.ok(collapsedRepositoryNode instanceof GitHubRepositoryNode);
-        assert.strictEqual(collapsedRepositoryNode.collapsibleState, vscode.TreeItemCollapsibleState.Collapsed);
+        assert.strictEqual(collapsedRepositoryNode.collapsibleState, vscode.TreeItemCollapsibleState.None);
 
         tree.expandAll();
         const expandedPrivateNode = (await tree.getChildren())[1];
@@ -410,10 +403,10 @@ suite('GitHub Repositories', () => {
         );
         const expandedRepositoryNode = (await tree.getChildren(expandedLanguageNodes[0]!))[0];
         assert.ok(expandedRepositoryNode instanceof GitHubRepositoryNode);
-        assert.strictEqual(expandedRepositoryNode.collapsibleState, vscode.TreeItemCollapsibleState.Expanded);
+        assert.strictEqual(expandedRepositoryNode.collapsibleState, vscode.TreeItemCollapsibleState.None);
     });
 
-    test('shows a description child only when a GitHub repository has one', async () => {
+    test('omits the title separator when a GitHub repository has no description', async () => {
         const withoutDescription = storedRepository(1, 'octocat', 'without-description', false, 'TypeScript');
         delete withoutDescription.description;
         await fs.mkdir(path.dirname(file), { recursive: true });
@@ -436,6 +429,7 @@ suite('GitHub Repositories', () => {
         const repositoryNode = (await tree.getChildren(languageNode))[0];
         assert.ok(repositoryNode instanceof GitHubRepositoryNode);
         assert.strictEqual(repositoryNode.collapsibleState, vscode.TreeItemCollapsibleState.None);
+        assert.strictEqual(repositoryNode.description, '');
         assert.deepStrictEqual(await tree.getChildren(repositoryNode), []);
     });
 
