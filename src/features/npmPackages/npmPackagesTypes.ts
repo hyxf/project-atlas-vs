@@ -7,6 +7,10 @@ export interface PackageEntry {
     description?: string | undefined;
 }
 
+export interface TrashedPackageEntry extends PackageEntry {
+    kind: DependencyKind;
+}
+
 export interface NpmSearchResult {
     name: string;
     version: string;

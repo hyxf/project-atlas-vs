@@ -2,15 +2,23 @@ import * as vscode from 'vscode';
 import {
     isInstalled,
     openFavoritesFile,
+    removeFromTrash,
     removeFavorite,
     saveFavorite,
+    saveToTrash,
     updateDependencies,
     workspacePackageUri,
 } from './npmPackagesStore';
 import { openSearchPanel, refreshFavoritePackageDescriptions } from './npmPackagesSearch';
 import { NpmPackageNode, NpmPackagesTree } from './npmPackagesTree';
 
-export { npmPackageTooltip, parseFavoritesDocument, serializeFavoritesDocument } from './npmPackagesStore';
+export {
+    npmPackageTooltip,
+    parseFavoritesDocument,
+    parseTrashDocument,
+    serializeFavoritesDocument,
+    serializeTrashDocument,
+} from './npmPackagesStore';
 
 /** Registers npm package commands and connects the tree view to workspace changes. */
 export function activateNpmPackages(context: vscode.ExtensionContext): void {
@@ -59,7 +67,37 @@ export function activateNpmPackages(context: vscode.ExtensionContext): void {
         ) {
             return;
         }
-        await updateDependencies(item.entry.name, item.entry.kind, false);
+        await saveToTrash({ ...item.entry, kind: item.entry.kind });
+        try {
+            await updateDependencies(item.entry.name, item.entry.kind, false);
+        } catch (error) {
+            await removeFromTrash(item.entry.name);
+            throw error;
+        }
+        await refresh();
+    });
+    register('restoreNpmPackage', async (item: NpmPackageNode) => {
+        if (!item || item.parent.kind !== 'trash' || !item.entry.kind) {
+            return;
+        }
+        await updateDependencies(item.entry.name, item.entry.kind, true, item.entry.version || 'latest');
+        await removeFromTrash(item.entry.name);
+        await refresh();
+    });
+    register('deleteNpmPackageFromTrash', async (item: NpmPackageNode) => {
+        if (!item || item.parent.kind !== 'trash') {
+            return;
+        }
+        if (
+            (await vscode.window.showWarningMessage(
+                `Delete ${item.entry.name} permanently from the npm package trash?`,
+                { modal: true },
+                'Delete',
+            )) !== 'Delete'
+        ) {
+            return;
+        }
+        await removeFromTrash(item.entry.name);
         await refresh();
     });
     register('addFavoriteNpmPackageToDependencies', async (item: NpmPackageNode) =>

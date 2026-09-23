@@ -428,6 +428,18 @@
         "icon": "$(trash)"
       },
       {
+        "command": "project-atlas.restoreNpmPackage",
+        "title": "Restore to package.json",
+        "category": "Project Atlas",
+        "icon": "$(history)"
+      },
+      {
+        "command": "project-atlas.deleteNpmPackageFromTrash",
+        "title": "Delete Permanently",
+        "category": "Project Atlas",
+        "icon": "$(trash)"
+      },
+      {
         "command": "project-atlas.openNpmPackageHomepage",
         "title": "Open npm Package in Browser",
         "category": "Project Atlas",
@@ -1469,6 +1481,14 @@
           "when": "false"
         },
         {
+          "command": "project-atlas.restoreNpmPackage",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.deleteNpmPackageFromTrash",
+          "when": "false"
+        },
+        {
           "command": "project-atlas.refreshNpmFavoriteDescriptions",
           "when": "false"
         },
@@ -2170,6 +2190,16 @@
         {
           "command": "project-atlas.removeNpmPackage",
           "when": "view == projectAtlas.npmPackages && (viewItem == npmInstalledPackage || viewItem == npmInstalledPackageFavorite)",
+          "group": "inline@2"
+        },
+        {
+          "command": "project-atlas.restoreNpmPackage",
+          "when": "view == projectAtlas.npmPackages && viewItem == npmTrashedPackage",
+          "group": "inline@1"
+        },
+        {
+          "command": "project-atlas.deleteNpmPackageFromTrash",
+          "when": "view == projectAtlas.npmPackages && viewItem == npmTrashedPackage",
           "group": "inline@2"
         },
         {

@@ -5,9 +5,10 @@ import * as path from 'path';
 import { applyEdits, modify } from 'jsonc-parser';
 import * as vscode from 'vscode';
 import { ensureDocumentSaved, ensureSourceUnchanged } from '../packageVersion/packageVersionService';
-import { DependencyKind, PackageEntry } from './npmPackagesTypes';
+import { DependencyKind, PackageEntry, TrashedPackageEntry } from './npmPackagesTypes';
 
 const favoritesFile = path.join(os.homedir(), '.project-atlas', 'npmfav.json');
+const trashFile = path.join(os.homedir(), '.project-atlas', 'npmtrash.json');
 
 export function workspacePackageUri(): vscode.Uri | undefined {
     const folders = vscode.workspace.workspaceFolders;
@@ -76,6 +77,49 @@ export async function removeFavorite(name: string): Promise<void> {
             document.items.filter((entry) => entry.name !== name),
         );
     }
+}
+
+export async function readTrash(): Promise<TrashedPackageEntry[]> {
+    const workspace = workspacePackageUri()?.toString();
+    if (!workspace) {
+        return [];
+    }
+    const document = await readTrashDocument();
+    return (document.items[workspace] ?? []).sort((left, right) => left.name.localeCompare(right.name));
+}
+
+export async function saveToTrash(entry: TrashedPackageEntry): Promise<void> {
+    const workspace = workspacePackageUri()?.toString();
+    if (!workspace) {
+        throw new Error('Open exactly one workspace folder with a root package.json.');
+    }
+    const document = await readTrashDocument();
+    const existing = document.items[workspace] ?? [];
+    const items = existing.filter((item) => item.name !== entry.name);
+    await writeTrash(document.root, {
+        ...document.items,
+        [workspace]: [...items, entry],
+    });
+}
+
+export async function removeFromTrash(name: string): Promise<void> {
+    const workspace = workspacePackageUri()?.toString();
+    if (!workspace) {
+        return;
+    }
+    const document = await readTrashDocument();
+    const existing = document.items[workspace] ?? [];
+    if (!existing.some((item) => item.name === name)) {
+        return;
+    }
+    const items = existing.filter((item) => item.name !== name);
+    const updated = { ...document.items };
+    if (items.length) {
+        updated[workspace] = items;
+    } else {
+        delete updated[workspace];
+    }
+    await writeTrash(document.root, updated);
 }
 
 export async function updateFavoriteDescriptions(
@@ -189,6 +233,70 @@ async function writeFavorites(root: Record<string, unknown>, favorites: PackageE
     } finally {
         await fs.unlink(temporary).catch(() => undefined);
     }
+}
+
+export function parseTrashDocument(source: unknown): {
+    root: Record<string, unknown>;
+    items: Record<string, TrashedPackageEntry[]>;
+} {
+    if (!source || typeof source !== 'object' || Array.isArray(source)) {
+        return { root: { trash: {} }, items: {} };
+    }
+    const root = source as Record<string, unknown>;
+    const trash = root.trash;
+    if (!trash || typeof trash !== 'object' || Array.isArray(trash)) {
+        return { root, items: {} };
+    }
+    return {
+        root,
+        items: Object.fromEntries(
+            Object.entries(trash).map(([workspace, entries]) => [
+                workspace,
+                (Array.isArray(entries) ? entries : []).filter(
+                    (entry): entry is TrashedPackageEntry =>
+                        Boolean(entry) &&
+                        typeof entry === 'object' &&
+                        typeof entry.name === 'string' &&
+                        (entry.kind === 'dependencies' || entry.kind === 'devDependencies'),
+                ),
+            ]),
+        ),
+    };
+}
+
+async function readTrashDocument(): Promise<{
+    root: Record<string, unknown>;
+    items: Record<string, TrashedPackageEntry[]>;
+}> {
+    try {
+        return parseTrashDocument(JSON.parse(await fs.readFile(trashFile, 'utf8')));
+    } catch (error) {
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') {
+            return { root: { trash: {} }, items: {} };
+        }
+        throw new Error(`Could not read ${trashFile}. Fix the JSON and refresh.`);
+    }
+}
+
+async function writeTrash(root: Record<string, unknown>, trash: Record<string, TrashedPackageEntry[]>): Promise<void> {
+    await fs.mkdir(path.dirname(trashFile), { recursive: true });
+    const temporary = `${trashFile}.${randomUUID()}.tmp`;
+    try {
+        await fs.writeFile(temporary, serializeTrashDocument({ root, items: trash }), {
+            encoding: 'utf8',
+            flag: 'wx',
+        });
+        await fs.rename(temporary, trashFile);
+    } finally {
+        await fs.unlink(temporary).catch(() => undefined);
+    }
+}
+
+export function serializeTrashDocument(document: {
+    root: Record<string, unknown>;
+    items: Record<string, TrashedPackageEntry[]>;
+}): string {
+    return `${JSON.stringify({ ...document.root, trash: document.items }, null, 2)}\n`;
 }
 
 function updatePackageJsonText(

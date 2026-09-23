@@ -44,6 +44,32 @@ import { readGitMessageSnapshot, updateGitMessage, deleteGitMessage } from '../f
 import { ProjectService } from '../features/projectManagement/service';
 import { ProjectStore } from '../features/projectManagement/store';
 import { editProjectForm } from '../features/projectManagement/projectForm';
+import { parseTrashDocument, serializeTrashDocument } from '../features/npmPackages/npmPackagesStore';
+
+suite('npm package trash data safety', () => {
+    test('preserves unknown fields and ignores malformed trash entries', () => {
+        const document = parseTrashDocument({
+            metadata: { source: 'another-client' },
+            trash: {
+                'file:///workspace/package.json': [
+                    { name: 'valid', version: '^1.0.0', kind: 'dependencies' },
+                    { name: 'missing-kind' },
+                    { name: 'wrong-kind', kind: 'optionalDependencies' },
+                ],
+            },
+        });
+
+        assert.deepStrictEqual(document.items, {
+            'file:///workspace/package.json': [{ name: 'valid', version: '^1.0.0', kind: 'dependencies' }],
+        });
+        assert.deepStrictEqual(JSON.parse(serializeTrashDocument(document)), {
+            metadata: { source: 'another-client' },
+            trash: {
+                'file:///workspace/package.json': [{ name: 'valid', version: '^1.0.0', kind: 'dependencies' }],
+            },
+        });
+    });
+});
 
 suite('Project form data safety', () => {
     let temporary: string;
