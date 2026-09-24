@@ -22,6 +22,39 @@ export async function insertCommonCommand(item?: unknown): Promise<void> {
     terminal.sendText(command, false);
 }
 
+export async function runCommonCommand(item: unknown): Promise<void> {
+    if (!(item instanceof TemplateItem) || item.contextValue !== 'commonCommand') {
+        return;
+    }
+    const command = (item as TemplateItem<CommonCommand>).snapshot.entries[item.index]?.command;
+    if (!command) {
+        throw new Error('This command no longer exists. Refresh the view and try again.');
+    }
+
+    const workspaceFolder = vscode.window.activeTextEditor
+        ? vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri)
+        : vscode.workspace.workspaceFolders?.[0];
+    const execution = new vscode.ShellExecution(
+        command,
+        workspaceFolder ? { cwd: workspaceFolder.uri.fsPath } : undefined,
+    );
+    const task = new vscode.Task(
+        { type: 'project-atlas-common-command', command },
+        vscode.TaskScope.Workspace,
+        command,
+        'Project Atlas',
+        execution,
+    );
+    task.presentationOptions = {
+        reveal: vscode.TaskRevealKind.Always,
+        panel: vscode.TaskPanelKind.Shared,
+        clear: true,
+        focus: false,
+        showReuseMessage: false,
+    };
+    await vscode.tasks.executeTask(task);
+}
+
 async function pickCommonCommand(): Promise<string | undefined> {
     const commands = await readCommonCommands();
     if (!commands.length) {

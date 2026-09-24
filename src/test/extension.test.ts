@@ -589,6 +589,7 @@ suite('Extension', () => {
             'project-atlas.openSelectedFile',
             'project-atlas.copyRemoteUrl',
             'project-atlas.insertCommonCommand',
+            'project-atlas.runCommonCommand',
             'project-atlas.editCommonCommands',
             'project-atlas.collapseCommonCommands',
             'project-atlas.expandCommonCommands',
@@ -1019,6 +1020,14 @@ suite('Extension', () => {
                 command: 'project-atlas.deleteCommonCommand',
                 when: 'view == projectAtlas.commonCommands && viewItem == commonCommand',
                 group: 'danger@1',
+            },
+        );
+        assert.deepStrictEqual(
+            itemMenu.find(({ command }) => command === 'project-atlas.runCommonCommand'),
+            {
+                command: 'project-atlas.runCommonCommand',
+                when: 'view == projectAtlas.commonCommands && viewItem == commonCommand',
+                group: 'inline@1',
             },
         );
         assert.deepStrictEqual(

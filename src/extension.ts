@@ -4,6 +4,7 @@ import {
     addTerminalSelectionToCommonCommand,
     editCommonCommands,
     insertCommonCommand,
+    runCommonCommand,
 } from './features/commonCommands/commonCommandCommands';
 import { createReleaseTagCommand } from './features/gitTagRelease/createReleaseTagCommand';
 import { copyGitMessage, editGitMessages, selectGitMessage } from './features/gitMessages/gitMessageCommands';
@@ -38,6 +39,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     const handlers: Record<string, (...args: unknown[]) => unknown> = {
         createReleaseTag: createReleaseTagCommand,
         insertCommonCommand,
+        runCommonCommand,
         editCommonCommands,
         addTerminalSelectionToCommonCommand,
         selectGitMessage,
