@@ -39,7 +39,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     const handlers: Record<string, (...args: unknown[]) => unknown> = {
         createReleaseTag: createReleaseTagCommand,
         insertCommonCommand,
-        runCommonCommand,
+        runCommonCommand: (item) => runCommonCommand(item),
         editCommonCommands,
         addTerminalSelectionToCommonCommand,
         selectGitMessage,

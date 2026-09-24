@@ -12,7 +12,7 @@ export async function insertCommonCommand(item?: unknown): Promise<void> {
     const command =
         item instanceof TemplateItem && item.contextValue === 'commonCommand'
             ? (item as TemplateItem<CommonCommand>).snapshot.entries[item.index]?.command
-            : await pickCommonCommand();
+            : await pickCommonCommand('Insert Common Command', 'Choose a command to insert into the terminal');
     if (!command) {
         return;
     }
@@ -22,15 +22,27 @@ export async function insertCommonCommand(item?: unknown): Promise<void> {
     terminal.sendText(command, false);
 }
 
-export async function runCommonCommand(item: unknown): Promise<void> {
-    if (!(item instanceof TemplateItem) || item.contextValue !== 'commonCommand') {
+export async function runCommonCommand(
+    item?: unknown,
+    picker: () => Promise<string | undefined> = () =>
+        pickCommonCommand('Run Common Command', 'Choose a command to run'),
+    executor: (command: string) => Promise<void> = executeCommonCommand,
+): Promise<void> {
+    const isCommonCommandItem = item instanceof TemplateItem && item.contextValue === 'commonCommand';
+    const command = isCommonCommandItem
+        ? (item as TemplateItem<CommonCommand>).snapshot.entries[item.index]?.command
+        : await picker();
+    if (!command) {
+        if (isCommonCommandItem) {
+            throw new Error('This command no longer exists. Refresh the view and try again.');
+        }
         return;
     }
-    const command = (item as TemplateItem<CommonCommand>).snapshot.entries[item.index]?.command;
-    if (!command) {
-        throw new Error('This command no longer exists. Refresh the view and try again.');
-    }
 
+    await executor(command);
+}
+
+async function executeCommonCommand(command: string): Promise<void> {
     const workspaceFolder = vscode.window.activeTextEditor
         ? vscode.workspace.getWorkspaceFolder(vscode.window.activeTextEditor.document.uri)
         : vscode.workspace.workspaceFolders?.[0];
@@ -55,7 +67,7 @@ export async function runCommonCommand(item: unknown): Promise<void> {
     await vscode.tasks.executeTask(task);
 }
 
-async function pickCommonCommand(): Promise<string | undefined> {
+async function pickCommonCommand(title: string, placeHolder: string): Promise<string | undefined> {
     const commands = await readCommonCommands();
     if (!commands.length) {
         await vscode.window.showInformationMessage('Project Atlas: No common commands configured.');
@@ -68,8 +80,8 @@ async function pickCommonCommand(): Promise<string | undefined> {
             ...(item.description ? { detail: item.description } : {}),
         })),
         {
-            title: 'Insert Common Command',
-            placeHolder: 'Choose a command to insert into the terminal',
+            title,
+            placeHolder,
             matchOnDetail: true,
         },
     );

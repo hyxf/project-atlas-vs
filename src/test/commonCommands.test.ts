@@ -9,6 +9,7 @@ import {
     readCommonCommandSnapshot,
     updateCommonCommand,
 } from '../features/commonCommands/commonCommandStore';
+import { runCommonCommand } from '../features/commonCommands/commonCommandCommands';
 
 suite('Common Commands', () => {
     let temporary: string;
@@ -32,6 +33,24 @@ suite('Common Commands', () => {
         await assert.rejects(() => readCommonCommands(file), /non-empty command/);
         await fs.writeFile(file, JSON.stringify({ commands: [{ command: 'git status', tags: 'Git' }] }));
         await assert.rejects(() => readCommonCommands(file), /invalid tags/);
+    });
+
+    test('selects and runs a command when invoked without a tree item', async () => {
+        let pickerCalls = 0;
+        let executed: string | undefined;
+        await runCommonCommand(
+            undefined,
+            async () => {
+                pickerCalls += 1;
+                return 'git status';
+            },
+            async (command) => {
+                executed = command;
+            },
+        );
+
+        assert.strictEqual(pickerCalls, 1);
+        assert.strictEqual(executed, 'git status');
     });
 
     test('initializes a missing commands file', async () => {
