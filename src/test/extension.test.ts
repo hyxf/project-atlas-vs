@@ -623,7 +623,10 @@ suite('Extension', () => {
         const manifest = extension.packageJSON as {
             contributes: {
                 commands: Array<{ command: string; category?: string; enablement?: string }>;
-                menus: { commandPalette: Array<{ command: string; when?: string }> };
+                menus: {
+                    commandPalette: Array<{ command: string; when?: string }>;
+                    'view/item/context': Array<{ command: string; when?: string; group?: string }>;
+                };
             };
         };
         const hiddenCommands = new Set(
@@ -698,6 +701,16 @@ suite('Extension', () => {
                 enablement,
             );
         }
+        assert.deepStrictEqual(
+            manifest.contributes.menus['view/item/context'].find(
+                ({ command }) => command === 'project-atlas.editTemplateBackupFile',
+            ),
+            {
+                command: 'project-atlas.editTemplateBackupFile',
+                when: 'view == projectAtlas.templateBackup && viewItem == templateBackupFile',
+                group: 'inline@0',
+            },
+        );
     });
 
     test('shows the package version command for a single workspace folder', () => {

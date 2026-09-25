@@ -4,7 +4,7 @@ import {
     getTemplateRefreshCommands,
     TemplateBackupService,
 } from './templateBackupService';
-import { TemplateBackupItem, TemplateBackupSignInItem } from './templateBackupView';
+import { TemplateBackupFileItem, TemplateBackupItem, TemplateBackupSignInItem } from './templateBackupView';
 
 export { getConfiguredTemplateBackupFiles, TemplateBackupService } from './templateBackupService';
 export { templateBackupKey } from './templateBackupTypes';
@@ -147,6 +147,14 @@ export function activateTemplateBackup(context: vscode.ExtensionContext): void {
         await Promise.resolve();
     });
     context.subscriptions.push(
+        vscode.commands.registerCommand('project-atlas.editTemplateBackupFile', async (item: unknown) => {
+            if (!(item instanceof TemplateBackupFileItem)) {
+                return;
+            }
+            await vscode.window.showTextDocument(
+                await vscode.workspace.openTextDocument(vscode.Uri.file(item.file.file)),
+            );
+        }),
         status,
         vscode.commands.registerCommand('project-atlas.signInForTemplateBackup', () => {
             if (busy) {

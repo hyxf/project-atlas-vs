@@ -11,14 +11,21 @@ export class TemplateBackupItem extends vscode.TreeItem {
         this.iconPath = new vscode.ThemeIcon('cloud');
         this.tooltip = 'Back up or restore the configured files using VS Code Settings Sync.';
         this.description = backup ? `Backup: ${new Date(backup.createdAt).toLocaleString()}` : 'No backup yet';
-        this.children = files.map(({ key, name, file }) => {
-            const item = new vscode.TreeItem(name);
-            const contents = backup && getBackupDocument(backup, { key, name, file })?.contents;
-            item.description =
-                contents === undefined ? 'Not backed up' : formatSize(Buffer.byteLength(contents, 'utf8'));
-            item.iconPath = new vscode.ThemeIcon(contents === undefined ? 'circle-outline' : 'check');
-            return item;
-        });
+        this.children = files.map((file) => new TemplateBackupFileItem(file, backup));
+    }
+}
+
+export class TemplateBackupFileItem extends vscode.TreeItem {
+    constructor(
+        readonly file: TemplateBackupFile,
+        backup: TemplateBackup | undefined,
+    ) {
+        super(file.name);
+        const contents = backup && getBackupDocument(backup, file)?.contents;
+        this.contextValue = 'templateBackupFile';
+        this.description = contents === undefined ? 'Not backed up' : formatSize(Buffer.byteLength(contents, 'utf8'));
+        this.iconPath = new vscode.ThemeIcon(contents === undefined ? 'circle-outline' : 'check');
+        this.tooltip = file.file;
     }
 }
 
