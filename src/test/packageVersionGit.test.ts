@@ -58,6 +58,8 @@ suite('Package Version Git', () => {
         const commandFile = path.join(__dirname, '../features/packageVersion/packageVersionCommand.js');
         const localRequire = createRequire(commandFile);
         const messages: string[] = [];
+        const informationActions: string[][] = [];
+        const executedCommands: unknown[][] = [];
         let step = 0;
         const exports: { updatePackageVersion?: () => Promise<void> } = {};
         runInNewContext(await fs.readFile(commandFile, 'utf8'), {
@@ -74,6 +76,12 @@ suite('Package Version Git', () => {
                               workspaceFolders: [{ uri: vscode.Uri.file(root) }],
                               textDocuments: [],
                           },
+                          commands: {
+                              ...vscode.commands,
+                              executeCommand: async (...args: unknown[]) => {
+                                  executedCommands.push(args);
+                              },
+                          },
                           window: {
                               showQuickPick: async () => {
                                   if (cancelAt === 'error') {
@@ -87,11 +95,13 @@ suite('Package Version Git', () => {
                               },
                               showWarningMessage: async () =>
                                   cancelAt === 'confirmation' ? undefined : 'Commit Locally',
-                              showInformationMessage: async (message: string) => {
+                              showInformationMessage: async (message: string, ...actions: string[]) => {
                                   messages.push(message);
+                                  informationActions.push(actions);
                                   if (keepNotificationsOpen) {
                                       await new Promise<void>(() => {});
                                   }
+                                  return actions[0];
                               },
                               showErrorMessage: async (message: string) => {
                                   if (keepNotificationsOpen) {
@@ -107,6 +117,15 @@ suite('Package Version Git', () => {
                     : localRequire(id),
         });
         await exports.updatePackageVersion!();
+        await Promise.resolve();
+        assert.ok(
+            informationActions.every((actions) => actions.length === 0 || actions.includes('Open Repository Home')),
+        );
+        if (tag) {
+            assert.strictEqual(executedCommands.length, 1);
+            assert.strictEqual(executedCommands[0]?.[0], 'project-atlas.openRepositoryHome');
+            assert.strictEqual((executedCommands[0]?.[1] as vscode.Uri).fsPath, await fs.realpath(root));
+        }
         if (keepNotificationsOpen) {
             step = 0;
             await exports.updatePackageVersion!();

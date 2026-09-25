@@ -228,10 +228,11 @@ async function pushWithRetry(
                     () => pushVersionTag(state.root, state.branch, commit, target, `v${version}`),
                 );
             }
-            void vscode.window.showInformationMessage(
+            showPushedPackageVersionMessage(
                 createTag
                     ? `Package version ${version} committed (${commit.slice(0, 8)}), pushed to ${target.remote}/${target.branch}, and tagged v${version}.`
                     : `Package version ${version} committed (${commit.slice(0, 8)}) and pushed to ${target.remote}/${target.branch}.`,
+                state.root,
             );
             return;
         } catch (error) {
@@ -244,6 +245,15 @@ async function pushWithRetry(
             }
         }
     }
+}
+
+function showPushedPackageVersionMessage(message: string, repositoryRoot: string): void {
+    void (async () => {
+        const selected = await vscode.window.showInformationMessage(message, 'Open Repository Home');
+        if (selected === 'Open Repository Home') {
+            await vscode.commands.executeCommand('project-atlas.openRepositoryHome', vscode.Uri.file(repositoryRoot));
+        }
+    })().catch((error: unknown) => console.error('Failed to open repository home', error));
 }
 
 async function ensurePackageJsonExists(packageJsonUri: vscode.Uri): Promise<void> {
