@@ -80,11 +80,9 @@ export class NpmPackageNode extends vscode.TreeItem {
             | 'npmTrashedPackage',
         readonly parent: NpmPackageGroupNode | NpmFavoriteTagNode,
     ) {
-        super(entry.name, vscode.TreeItemCollapsibleState.None);
+        super(entry.version ? `${entry.name} · ${entry.version}` : entry.name, vscode.TreeItemCollapsibleState.None);
         this.id = `${parent.id}:${entry.name}`;
-        if (entry.version) {
-            this.description = contextValue === 'npmFavoritePackage' ? `${entry.version} · ✓` : entry.version;
-        } else if (contextValue === 'npmFavoritePackage') {
+        if (contextValue === 'npmFavoritePackage') {
             this.description = '✓';
         }
         this.tooltip = npmPackageTooltip(entry.name, entry.version, entry.description);
