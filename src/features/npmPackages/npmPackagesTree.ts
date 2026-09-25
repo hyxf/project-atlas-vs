@@ -83,7 +83,7 @@ export class NpmPackageNode extends vscode.TreeItem {
         super(entry.version ? `${entry.name} · ${entry.version}` : entry.name, vscode.TreeItemCollapsibleState.None);
         this.id = `${parent.id}:${entry.name}`;
         if (contextValue === 'npmFavoritePackage') {
-            this.description = '✓';
+            this.description = '· ✓';
         }
         this.tooltip = npmPackageTooltip(entry.name, entry.version, entry.description);
         this.contextValue = contextValue;
@@ -110,18 +110,18 @@ class NpmPackageGroupNode extends vscode.TreeItem {
             kind === 'dependencies'
                 ? 'Dependencies'
                 : kind === 'devDependencies'
-                  ? 'Dev Dependencies'
-                  : kind === 'favorites'
-                    ? 'Favorites'
-                    : 'Trash';
+                    ? 'Dev Dependencies'
+                    : kind === 'favorites'
+                        ? 'Favorites'
+                        : 'Trash';
         super(label, vscode.TreeItemCollapsibleState.Expanded);
         this.id = parent ? `${parent.id}:${kind}` : `npm-group:${kind}`;
         this.contextValue =
             kind === 'favorites'
                 ? 'npmFavoritePackageGroup'
                 : kind === 'trash'
-                  ? 'npmTrashPackageGroup'
-                  : 'npmPackageGroup';
+                    ? 'npmTrashPackageGroup'
+                    : 'npmPackageGroup';
         this.description = String(entries.length);
         this.iconPath = new vscode.ThemeIcon(
             kind === 'favorites' ? 'star-full' : kind === 'trash' ? 'trash' : 'library',
