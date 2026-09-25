@@ -20,6 +20,7 @@ import {
     TemplatesTreeProvider,
 } from '../features/templates/templatesFeature';
 import {
+    getConfiguredTemplateBackupFiles,
     TemplateBackupService,
     TemplateBackupStorage,
     templateBackupKey,
@@ -134,29 +135,53 @@ suite('Template views', () => {
     });
     teardown(async () => fs.rm(temporary, { recursive: true, force: true }));
 
-    test('backs up and restores all template files through one synced global state key', async () => {
+    test('backs up and restores configured files through one synced global state key', async () => {
         const files = [
-            { name: 'aiprompts.json' as const, file: path.join(temporary, 'aiprompts.json') },
-            { name: 'commoncmd.json' as const, file: path.join(temporary, 'commoncmd.json') },
-            { name: 'gitmessage.json' as const, file: path.join(temporary, 'gitmessage.json') },
+            { key: 'aiprompts.json', name: 'aiprompts.json', file: path.join(temporary, 'aiprompts.json') },
+            { key: 'commoncmd.json', name: 'commoncmd.json', file: path.join(temporary, 'commoncmd.json') },
+            { key: 'gitmessage.json', name: 'gitmessage.json', file: path.join(temporary, 'gitmessage.json') },
+            { key: 'custom.json', name: 'custom.json', file: path.join(temporary, 'custom.json') },
         ];
-        const originals = ['{\n  "prompts": []\n}\n', '{"commands":[]}\n', '{"messages":[]}\n'];
+        const originals = ['{\n  "prompts": []\n}\n', '{"commands":[]}\n', '{"messages":[]}\n', '{"custom":true}\n'];
         await Promise.all(files.map(({ file }, index) => fs.writeFile(file, originals[index]!)));
         const storage = new TestBackupStorage();
-        const service = new TemplateBackupService(storage, files, async () => {});
+        const service = new TemplateBackupService(storage, files);
 
         service.enableSync();
         const backup = await service.backup();
         assert.deepStrictEqual(storage.syncedKeys, [templateBackupKey]);
-        assert.strictEqual(backup.documents['aiprompts.json'].contents, originals[0]);
-        assert.strictEqual(backup.documents['commoncmd.json'].contents, originals[1]);
-        assert.strictEqual(backup.documents['gitmessage.json'].contents, originals[2]);
+        assert.strictEqual(backup.documents['aiprompts.json']!.contents, originals[0]!);
+        assert.strictEqual(backup.documents['commoncmd.json']!.contents, originals[1]!);
+        assert.strictEqual(backup.documents['gitmessage.json']!.contents, originals[2]!);
+        assert.strictEqual(backup.documents['custom.json']!.contents, originals[3]!);
 
         await Promise.all(files.map(({ file }) => fs.writeFile(file, '{"changed":true}\n')));
         await service.restore();
         assert.deepStrictEqual(await Promise.all(files.map(({ file }) => fs.readFile(file, 'utf8'))), originals);
         await service.deleteBackup();
         assert.strictEqual(service.getBackup(), undefined);
+    });
+
+    test('resolves configured backup paths and rejects duplicate paths', () => {
+        const file = path.join(temporary, 'custom.json');
+        assert.deepStrictEqual(getConfiguredTemplateBackupFiles([file]), [{ key: file, name: 'custom.json', file }]);
+        assert.throws(() => getConfiguredTemplateBackupFiles([file, file]), /duplicate paths/);
+        assert.throws(() => getConfiguredTemplateBackupFiles(['custom.json']), /must be absolute/);
+    });
+
+    test('does not restore a legacy file-name backup into a custom path with the same name', async () => {
+        const file = path.join(temporary, 'custom.json');
+        await fs.writeFile(file, '{"current":true}\n');
+        const storage = new TestBackupStorage();
+        storage.value = {
+            schemaVersion: 1,
+            createdAt: new Date().toISOString(),
+            documents: { 'custom.json': { contents: '{"legacy":true}\n' } },
+        };
+        const service = new TemplateBackupService(storage, [{ key: file, name: 'custom.json', file }]);
+
+        await assert.rejects(() => service.restore(), /does not contain any files/);
+        assert.strictEqual(await fs.readFile(file, 'utf8'), '{"current":true}\n');
     });
 
     test('adding uses blank edit forms and only persists on Save', async () => {

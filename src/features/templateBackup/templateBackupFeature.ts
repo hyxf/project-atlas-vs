@@ -1,21 +1,33 @@
 import { randomUUID } from 'crypto';
 import { promises as fs } from 'fs';
+import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
-import { aiPromptsFile, ensureAiPromptsFile } from '../aiPrompts/aiPromptStore';
-import { commonCommandsFile, ensureCommonCommandsFile } from '../commonCommands/commonCommandStore';
-import { gitMessagesFile, ensureGitMessagesFile } from '../gitMessages/gitMessageStore';
+import { aiPromptsFile } from '../aiPrompts/aiPromptStore';
+import { commonCommandsFile } from '../commonCommands/commonCommandStore';
+import { gitMessagesFile } from '../gitMessages/gitMessageStore';
 
 export const templateBackupKey = 'projectAtlas.templateBackup.v1';
 const templateBackupBusyContext = 'projectAtlas.templateBackupBusy';
 const templateBackupSignedInContext = 'projectAtlas.templateBackupSignedIn';
 const templateBackupAvailableContext = 'projectAtlas.templateBackupAvailable';
 
-const templateBackupFiles = [
-    { name: 'aiprompts.json', file: aiPromptsFile },
-    { name: 'commoncmd.json', file: commonCommandsFile },
-    { name: 'gitmessage.json', file: gitMessagesFile },
+const defaultTemplateBackupPaths = [
+    '${userHome}/.project-atlas/aiprompts.json',
+    '${userHome}/.project-atlas/commoncmd.json',
+    '${userHome}/.project-atlas/gitmessage.json',
 ] as const;
+const legacyTemplateBackupNames = new Map<string, string>([
+    [path.resolve(aiPromptsFile), 'aiprompts.json'],
+    [path.resolve(commonCommandsFile), 'commoncmd.json'],
+    [path.resolve(gitMessagesFile), 'gitmessage.json'],
+]);
+
+export interface TemplateBackupFile {
+    key: string;
+    name: string;
+    file: string;
+}
 
 interface TemplateBackupDocument {
     contents: string;
@@ -24,7 +36,7 @@ interface TemplateBackupDocument {
 export interface TemplateBackup {
     schemaVersion: 1;
     createdAt: string;
-    documents: Record<(typeof templateBackupFiles)[number]['name'], TemplateBackupDocument>;
+    documents: Record<string, TemplateBackupDocument>;
 }
 
 export interface TemplateBackupStorage {
@@ -36,15 +48,15 @@ export interface TemplateBackupStorage {
 export class TemplateBackupItem extends vscode.TreeItem {
     readonly children: vscode.TreeItem[];
 
-    constructor(backup: TemplateBackup | undefined) {
+    constructor(backup: TemplateBackup | undefined, files: readonly TemplateBackupFile[]) {
         super('VS Code Settings Sync', vscode.TreeItemCollapsibleState.Expanded);
         this.contextValue = 'templateBackup';
         this.iconPath = new vscode.ThemeIcon('cloud');
-        this.tooltip = 'Back up or restore AI Prompts, Common Commands, and Git Messages using VS Code Settings Sync.';
+        this.tooltip = 'Back up or restore the configured files using VS Code Settings Sync.';
         this.description = backup ? `Backup: ${new Date(backup.createdAt).toLocaleString()}` : 'No backup yet';
-        this.children = templateBackupFiles.map(({ name }) => {
+        this.children = files.map(({ key, name, file }) => {
             const item = new vscode.TreeItem(name);
-            const contents = backup?.documents[name].contents;
+            const contents = backup && getBackupDocument(backup, { key, name, file })?.contents;
             item.description =
                 contents === undefined ? 'Not backed up' : formatSize(Buffer.byteLength(contents, 'utf8'));
             item.iconPath = new vscode.ThemeIcon(contents === undefined ? 'circle-outline' : 'check');
@@ -66,11 +78,7 @@ class TemplateBackupSignInItem extends vscode.TreeItem {
 export class TemplateBackupService {
     constructor(
         private readonly storage: TemplateBackupStorage,
-        private readonly files: readonly {
-            name: (typeof templateBackupFiles)[number]['name'];
-            file: string;
-        }[] = templateBackupFiles,
-        private readonly ensureFiles: () => Promise<void> = ensureTemplateFiles,
+        private readonly files: readonly TemplateBackupFile[] = getConfiguredTemplateBackupFiles(),
     ) {}
 
     enableSync(): void {
@@ -83,11 +91,10 @@ export class TemplateBackupService {
     }
 
     async backup(): Promise<TemplateBackup> {
-        await this.ensureFiles();
         assertFilesSaved(this.files.map(({ file }) => file));
-        const documents = {} as TemplateBackup['documents'];
-        for (const { name, file } of this.files) {
-            documents[name] = { contents: await fs.readFile(file, 'utf8') };
+        const documents: TemplateBackup['documents'] = {};
+        for (const { key, file } of this.files) {
+            documents[key] = { contents: await fs.readFile(file, 'utf8') };
         }
         const backup: TemplateBackup = { schemaVersion: 1, createdAt: new Date().toISOString(), documents };
         await this.storage.update(templateBackupKey, backup);
@@ -95,13 +102,20 @@ export class TemplateBackupService {
     }
 
     async restore(): Promise<TemplateBackup> {
-        assertFilesSaved(this.files.map(({ file }) => file));
         const backup = this.getBackup();
         if (!backup) {
             throw new Error('No valid template backup is available in VS Code Settings Sync.');
         }
-        for (const { name, file } of this.files) {
-            await writeFileAtomically(file, backup.documents[name].contents);
+        const documents = this.files.flatMap((entry) => {
+            const document = getBackupDocument(backup, entry);
+            return document ? [{ file: entry.file, contents: document.contents }] : [];
+        });
+        if (!documents.length) {
+            throw new Error('The backup does not contain any files from the current template backup configuration.');
+        }
+        assertFilesSaved(documents.map(({ file }) => file));
+        for (const { file, contents } of documents) {
+            await writeFileAtomically(file, contents);
         }
         return backup;
     }
@@ -112,7 +126,8 @@ export class TemplateBackupService {
 }
 
 export function activateTemplateBackup(context: vscode.ExtensionContext): void {
-    const service = new TemplateBackupService(context.globalState);
+    let files = getConfiguredTemplateBackupFiles();
+    let service = new TemplateBackupService(context.globalState, files);
     service.enableSync();
     const changed = new vscode.EventEmitter<void>();
     const provider: vscode.TreeDataProvider<vscode.TreeItem> = {
@@ -126,10 +141,23 @@ export function activateTemplateBackup(context: vscode.ExtensionContext): void {
                 return [new TemplateBackupSignInItem()];
             }
             await updateBackupState();
-            return [new TemplateBackupItem(service.getBackup())];
+            return [new TemplateBackupItem(service.getBackup(), files)];
         },
     };
     const refresh = () => changed.fire();
+    const reloadConfiguredFiles = () => {
+        try {
+            files = getConfiguredTemplateBackupFiles();
+            service = new TemplateBackupService(context.globalState, files);
+            service.enableSync();
+            void updateBackupState();
+            refresh();
+        } catch (error) {
+            void vscode.window.showErrorMessage(
+                `Project Atlas: ${error instanceof Error ? error.message : String(error)}`,
+            );
+        }
+    };
     const setSignedIn = (value: boolean) =>
         vscode.commands.executeCommand('setContext', templateBackupSignedInContext, value);
     const updateSignedInState = async (): Promise<boolean> => {
@@ -194,7 +222,7 @@ export function activateTemplateBackup(context: vscode.ExtensionContext): void {
             throw new Error('No valid template backup is available in VS Code Settings Sync.');
         }
         const confirmed = await vscode.window.showWarningMessage(
-            'Restore AI Prompts, Common Commands, and Git Messages from the VS Code Settings Sync backup?',
+            'Restore the configured files from the VS Code Settings Sync backup?',
             {
                 modal: true,
                 detail: `The local files will be replaced with the backup from ${new Date(backup.createdAt).toLocaleString()}.`,
@@ -205,11 +233,7 @@ export function activateTemplateBackup(context: vscode.ExtensionContext): void {
             return;
         }
         await service.restore();
-        for (const command of [
-            'project-atlas.refreshAiPrompts',
-            'project-atlas.refreshCommonCommands',
-            'project-atlas.refreshGitMessages',
-        ]) {
+        for (const command of getTemplateRefreshCommands(files)) {
             await vscode.commands.executeCommand(command);
         }
     });
@@ -272,6 +296,11 @@ export function activateTemplateBackup(context: vscode.ExtensionContext): void {
             })();
         }),
         vscode.authentication.onDidChangeSessions(() => refresh()),
+        vscode.workspace.onDidChangeConfiguration((event) => {
+            if (event.affectsConfiguration('projectAtlas.templateBackup.files')) {
+                reloadConfiguredFiles();
+            }
+        }),
     );
     void setBusy(false);
     void updateSignedInState();
@@ -295,8 +324,35 @@ async function hasSettingsSyncAccount(): Promise<boolean> {
     return accounts.some((providerAccounts) => providerAccounts.length > 0);
 }
 
-async function ensureTemplateFiles(): Promise<void> {
-    await Promise.all([ensureAiPromptsFile(), ensureCommonCommandsFile(), ensureGitMessagesFile()]);
+export function getConfiguredTemplateBackupFiles(
+    configuredPaths = vscode.workspace
+        .getConfiguration('projectAtlas.templateBackup')
+        .get<readonly string[]>('files', defaultTemplateBackupPaths),
+): TemplateBackupFile[] {
+    if (!configuredPaths.length) {
+        throw new Error('Configure at least one file in projectAtlas.templateBackup.files.');
+    }
+    const files = configuredPaths.map((configuredPath) => {
+        const key = configuredPath.trim();
+        if (!key) {
+            throw new Error('projectAtlas.templateBackup.files cannot contain an empty path.');
+        }
+        const file = resolveTemplateBackupPath(key);
+        return { key, name: path.basename(file), file };
+    });
+    if (new Set(files.map(({ file }) => file)).size !== files.length) {
+        throw new Error('projectAtlas.templateBackup.files cannot contain duplicate paths.');
+    }
+    return files;
+}
+
+function resolveTemplateBackupPath(configuredPath: string): string {
+    const userHome = os.homedir();
+    const expandedPath = configuredPath.replace(/^~(?=$|[/\\])/, userHome).replaceAll('${userHome}', userHome);
+    if (!path.isAbsolute(expandedPath)) {
+        throw new Error(`Template backup paths must be absolute: ${configuredPath}`);
+    }
+    return path.resolve(expandedPath);
 }
 
 function assertFilesSaved(files: readonly string[]): void {
@@ -319,8 +375,35 @@ function isTemplateBackup(value: unknown): value is TemplateBackup {
         typeof backup.createdAt === 'string' &&
         !!backup.documents &&
         typeof backup.documents === 'object' &&
-        templateBackupFiles.every(({ name }) => typeof backup.documents?.[name]?.contents === 'string')
+        !Array.isArray(backup.documents) &&
+        Object.values(backup.documents).every(
+            (document) =>
+                !!document &&
+                typeof document === 'object' &&
+                typeof (document as TemplateBackupDocument).contents === 'string',
+        )
     );
+}
+
+function getBackupDocument(backup: TemplateBackup, file: TemplateBackupFile): TemplateBackupDocument | undefined {
+    return backup.documents[file.key] ?? getLegacyBackupDocument(backup, file);
+}
+
+function getLegacyBackupDocument(backup: TemplateBackup, file: TemplateBackupFile): TemplateBackupDocument | undefined {
+    const legacyName = legacyTemplateBackupNames.get(path.resolve(file.file));
+    return legacyName ? backup.documents[legacyName] : undefined;
+}
+
+function getTemplateRefreshCommands(files: readonly TemplateBackupFile[]): string[] {
+    const refreshCommands = new Map<string, string>([
+        [path.resolve(aiPromptsFile), 'project-atlas.refreshAiPrompts'],
+        [path.resolve(commonCommandsFile), 'project-atlas.refreshCommonCommands'],
+        [path.resolve(gitMessagesFile), 'project-atlas.refreshGitMessages'],
+    ]);
+    return files.flatMap(({ file }) => {
+        const command = refreshCommands.get(path.resolve(file));
+        return command ? [command] : [];
+    });
 }
 
 async function writeFileAtomically(file: string, contents: string): Promise<void> {

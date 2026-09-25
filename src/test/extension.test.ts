@@ -770,6 +770,20 @@ suite('Extension', () => {
                     description: 'GitHub username that owns the configured personal access token.',
                     order: 7,
                 },
+                'projectAtlas.templateBackup.files': {
+                    type: 'array',
+                    default: [
+                        '${userHome}/.project-atlas/aiprompts.json',
+                        '${userHome}/.project-atlas/commoncmd.json',
+                        '${userHome}/.project-atlas/gitmessage.json',
+                    ],
+                    items: { type: 'string', minLength: 1 },
+                    minItems: 1,
+                    uniqueItems: true,
+                    description:
+                        'Absolute file paths backed up through VS Code Settings Sync. Supports ${userHome} and a leading ~.',
+                    order: 8,
+                },
             },
         });
     });
