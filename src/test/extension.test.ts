@@ -786,6 +786,8 @@ suite('Extension', () => {
                 'projectAtlas.templateBackup.files': {
                     type: 'array',
                     default: [
+                        '${userHome}/.project-atlas/npmfav.json',
+                        '${userHome}/.project-atlas/repos.json',
                         '${userHome}/.project-atlas/aiprompts.json',
                         '${userHome}/.project-atlas/commoncmd.json',
                         '${userHome}/.project-atlas/gitmessage.json',
