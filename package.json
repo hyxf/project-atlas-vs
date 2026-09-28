@@ -38,6 +38,12 @@
         "icon": "$(plug)"
       },
       {
+        "command": "project-atlas.toggleGlobalProxy",
+        "title": "Select Global Proxy",
+        "category": "Project Atlas",
+        "icon": "$(plug)"
+      },
+      {
         "command": "project-atlas.configureGlobalProxy",
         "title": "Edit Global Proxy List",
         "category": "Project Atlas",

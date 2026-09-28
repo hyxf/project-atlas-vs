@@ -19,7 +19,7 @@ export interface ProxyOption {
 }
 
 export class ProxyConfigurationStore {
-    public constructor(readonly file = globalProxyFile) { }
+    public constructor(readonly file = globalProxyFile) {}
 
     public async proxies(): Promise<ProxyOption[]> {
         const source = await this.read();
@@ -140,12 +140,12 @@ export function activateProxyStatusBar(context: vscode.ExtensionContext): void {
                 ...(existing === undefined || proxies.some(({ url }) => url === existing)
                     ? []
                     : [
-                        {
-                            label: 'system',
-                            description: `${existing} · $(check)`,
-                            target: existing,
-                        },
-                    ]),
+                          {
+                              label: 'system',
+                              description: `${existing} · $(check)`,
+                              target: existing,
+                          },
+                      ]),
                 ...proxies.map(({ name, url }) => ({
                     label: name,
                     description: url === existing ? `${url} · $(check)` : url,

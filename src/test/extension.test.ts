@@ -551,6 +551,7 @@ suite('Extension', () => {
         for (const command of [
             'project-atlas.checkForUpdates',
             'project-atlas.checkGlobalProxy',
+            'project-atlas.toggleGlobalProxy',
             'project-atlas.configureGlobalProxy',
             'aicode.selectGroup',
             'aicode.createGroup',
@@ -642,6 +643,7 @@ suite('Extension', () => {
             [
                 'project-atlas.checkForUpdates',
                 'project-atlas.checkGlobalProxy',
+                'project-atlas.toggleGlobalProxy',
                 'project-atlas.configureGlobalProxy',
                 'aicode.selectGroup',
                 'aicode.createGroup',
@@ -681,7 +683,8 @@ suite('Extension', () => {
         assert.strictEqual(paletteCommands[0]?.category, 'Project Atlas');
         assert.strictEqual(paletteCommands[1]?.category, 'Project Atlas');
         assert.strictEqual(paletteCommands[2]?.category, 'Project Atlas');
-        assert.strictEqual(paletteCommands[3]?.category, 'AICode');
+        assert.strictEqual(paletteCommands[3]?.category, 'Project Atlas');
+        assert.strictEqual(paletteCommands[4]?.category, 'AICode');
         for (const [command, enablement] of [
             [
                 'project-atlas.backupTemplateData',
