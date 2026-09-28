@@ -551,6 +551,7 @@ suite('Extension', () => {
         for (const command of [
             'project-atlas.checkForUpdates',
             'project-atlas.checkGlobalProxy',
+            'project-atlas.configureGlobalProxy',
             'aicode.selectGroup',
             'aicode.createGroup',
             'aicode.renameGroup',
@@ -641,6 +642,7 @@ suite('Extension', () => {
             [
                 'project-atlas.checkForUpdates',
                 'project-atlas.checkGlobalProxy',
+                'project-atlas.configureGlobalProxy',
                 'aicode.selectGroup',
                 'aicode.createGroup',
                 'aicode.openConfig',

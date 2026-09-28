@@ -52,7 +52,7 @@ Project Atlas 是一款用于管理本地项目、Git 仓库和开发素材的 V
 
 ### VS Code 全局代理
 
-状态栏中的 `Direct` / `Proxy` 按钮都会打开列表，用于选择直连或命名代理。若 VS Code 已手动设置代理，列表会以 `system` 名称显示它。相邻的齿轮按钮会直接打开 `~/.project-atlas/proxy.json`，手动维护列表。例如：
+状态栏中的 `Direct` / `Proxy` 按钮都会打开列表，用于选择直连或命名代理。若 VS Code 已手动设置代理，列表会以 `system` 名称显示它。命令面板的 **Project Atlas: Edit Global Proxy List** 会直接打开 `~/.project-atlas/proxy.json`，手动维护列表。例如：
 
 ```json
 {

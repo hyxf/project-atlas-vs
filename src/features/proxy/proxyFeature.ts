@@ -111,7 +111,6 @@ function legacyProxyOption(value: string, source: string): ProxyOption {
 export function activateProxyStatusBar(context: vscode.ExtensionContext): void {
     const store = new ProxyConfigurationStore();
     const toggle = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 101);
-    const settings = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
     const refresh = () => {
         const proxy = currentProxy();
         toggle.text = proxy === undefined ? 'Direct' : 'Proxy';
@@ -120,16 +119,11 @@ export function activateProxyStatusBar(context: vscode.ExtensionContext): void {
     };
 
     toggle.command = 'project-atlas.toggleGlobalProxy';
-    settings.text = '$(gear)';
-    settings.tooltip = 'Configure global VS Code proxy';
-    settings.command = 'project-atlas.configureGlobalProxy';
     refresh();
     toggle.show();
-    settings.show();
 
     context.subscriptions.push(
         toggle,
-        settings,
         vscode.commands.registerCommand('project-atlas.toggleGlobalProxy', async () => {
             const existing = currentProxy();
             await store.ensureFile();
