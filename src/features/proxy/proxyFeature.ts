@@ -134,11 +134,18 @@ export function activateProxyStatusBar(context: vscode.ExtensionContext): void {
                     ? []
                     : [{ label: 'system', description: existing, target: existing }]),
                 ...proxies.map(({ name, url }) => ({ label: name, description: url, target: url })),
+                {
+                    label: '$(gear) Edit Proxy Configuration File',
+                    description: path.basename(store.file),
+                    target: null,
+                },
             ];
             const selected = await vscode.window.showQuickPick(choices, {
                 placeHolder: 'Select a global VS Code proxy mode',
             });
-            if (selected !== undefined) {
+            if (selected?.target === null) {
+                await vscode.commands.executeCommand('project-atlas.configureGlobalProxy');
+            } else if (selected !== undefined) {
                 await setGlobalProxy(selected.target);
             }
         }),
@@ -188,7 +195,7 @@ export function activateProxyStatusBar(context: vscode.ExtensionContext): void {
 }
 
 interface ProxyChoice extends vscode.QuickPickItem {
-    target: string | undefined;
+    target: string | undefined | null;
 }
 
 function currentProxy(): string | undefined {
