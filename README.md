@@ -60,6 +60,8 @@ Project Atlas 是一款用于管理本地项目、Git 仓库和开发素材的 V
 }
 ```
 
+在命令面板执行 **Project Atlas: Check Global Proxy** 可检测当前代理端口是否可连接；Direct 模式下会提示尚未配置代理。
+
 ### npm packages
 
 当打开的单一工作区根目录包含 `package.json` 时，**npm packages** 视图会显示 `dependencies`、`devDependencies`、收藏和回收站。移除已安装依赖后，原有版本和依赖类别会保存在当前工作区的回收站，可从条目操作中恢复，或直接永久删除该回收站记录。收藏按 tag 分组，默认 tag 为 `untagged`；可在收藏条目上修改为已有或新建 tag。收藏仅在尚未安装时可加入任一依赖类别。标题栏的搜索或新增操作会打开 npm Registry 搜索页，每页 10 条结果，可将结果收藏或添加到安装列表。收藏保存于 `~/.project-atlas/npmfav.json`，回收站保存于 `~/.project-atlas/npmtrash.json`。

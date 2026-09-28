@@ -550,6 +550,7 @@ suite('Extension', () => {
         const commands = new Set(await vscode.commands.getCommands(true));
         for (const command of [
             'project-atlas.checkForUpdates',
+            'project-atlas.checkGlobalProxy',
             'aicode.selectGroup',
             'aicode.createGroup',
             'aicode.renameGroup',
@@ -639,6 +640,7 @@ suite('Extension', () => {
             paletteCommands.map(({ command }) => command),
             [
                 'project-atlas.checkForUpdates',
+                'project-atlas.checkGlobalProxy',
                 'aicode.selectGroup',
                 'aicode.createGroup',
                 'aicode.openConfig',

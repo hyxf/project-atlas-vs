@@ -1,4 +1,5 @@
 import { promises as fs } from 'fs';
+import * as net from 'net';
 import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
@@ -150,6 +151,26 @@ export function activateProxyStatusBar(context: vscode.ExtensionContext): void {
             const document = await vscode.workspace.openTextDocument(vscode.Uri.file(store.file));
             await vscode.window.showTextDocument(document);
         }),
+        vscode.commands.registerCommand('project-atlas.checkGlobalProxy', async () => {
+            const proxy = currentProxy();
+            if (proxy === undefined) {
+                await vscode.window.showWarningMessage(
+                    'VS Code is using Direct mode; no proxy is configured to check.',
+                );
+                return;
+            }
+            try {
+                await vscode.window.withProgress(
+                    { location: vscode.ProgressLocation.Notification, title: 'Checking VS Code proxy' },
+                    () => verifyProxyEndpoint(proxy),
+                );
+                await vscode.window.showInformationMessage(`VS Code proxy is reachable: ${proxy}`);
+            } catch (error) {
+                await vscode.window.showErrorMessage(
+                    `VS Code proxy is unavailable: ${error instanceof Error ? error.message : String(error)}`,
+                );
+            }
+        }),
         vscode.workspace.onDidChangeConfiguration((event) => {
             if (event.affectsConfiguration('http.proxy')) {
                 refresh();
@@ -174,4 +195,22 @@ interface ProxyChoice extends vscode.QuickPickItem {
 function currentProxy(): string | undefined {
     const value = vscode.workspace.getConfiguration('http').get<unknown>('proxy');
     return typeof value === 'string' && value.trim() ? value.trim() : undefined;
+}
+
+function verifyProxyEndpoint(proxy: string): Promise<void> {
+    const url = new URL(proxy);
+    const port = url.port ? Number(url.port) : url.protocol === 'https:' ? 443 : 80;
+    return new Promise((resolve, reject) => {
+        const socket = net.createConnection({ host: url.hostname, port });
+        const fail = (error: Error) => {
+            socket.destroy();
+            reject(error);
+        };
+        socket.once('connect', () => {
+            socket.end();
+            resolve();
+        });
+        socket.once('error', fail);
+        socket.setTimeout(5_000, () => fail(new Error('Connection timed out.')));
+    });
 }

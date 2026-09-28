@@ -32,6 +32,12 @@
         "icon": "$(cloud-download)"
       },
       {
+        "command": "project-atlas.checkGlobalProxy",
+        "title": "Check Global Proxy",
+        "category": "Project Atlas",
+        "icon": "$(plug)"
+      },
+      {
         "command": "project-atlas.addCommonCommand",
         "title": "Add Common Command",
         "category": "Project Atlas",
