@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Project Atlas VS Code Proxy List",
+  "type": "object",
+  "properties": {
+    "proxies": {
+      "type": "array",
+      "default": [{ "name": "Local", "url": "http://127.0.0.1:1087" }],
+      "description": "Named HTTP or HTTPS proxies shown by the VS Code status bar.",
+      "items": {
+        "oneOf": [
+          {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Name shown in the proxy selection list."
+              },
+              "url": {
+                "type": "string",
+                "pattern": "^https?://",
+                "description": "HTTP or HTTPS proxy URL."
+              }
+            },
+            "required": ["name", "url"],
+            "additionalProperties": true
+          },
+          {
+            "type": "string",
+            "pattern": "^https?://",
+            "description": "Legacy proxy URL format. The URL is also used as its list name."
+          }
+        ]
+      }
+    },
+    "proxy": {
+      "type": "string",
+      "pattern": "^https?://",
+      "description": "Legacy single-proxy format."
+    }
+  },
+  "additionalProperties": true
+}

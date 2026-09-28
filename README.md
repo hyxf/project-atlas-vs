@@ -50,6 +50,16 @@ Project Atlas 是一款用于管理本地项目、Git 仓库和开发素材的 V
 
 私有仓库需要令牌具有相应权限：经典 token 通常需要 `repo` scope，fine-grained token 需获授权访问目标仓库。网络需要代理时，可在扩展设置配置 HTTP/HTTPS 代理、SOCKS 代理和启用状态；代理同时用于 GitHub 刷新与克隆。
 
+### VS Code 全局代理
+
+状态栏中的 `Direct` / `Proxy` 按钮都会打开列表，用于选择直连或命名代理。若 VS Code 已手动设置代理，列表会以 `system` 名称显示它。相邻的齿轮按钮会直接打开 `~/.project-atlas/proxy.json`，手动维护列表。例如：
+
+```json
+{
+    "proxies": [{ "name": "Local", "url": "http://127.0.0.1:1087" }]
+}
+```
+
 ### npm packages
 
 当打开的单一工作区根目录包含 `package.json` 时，**npm packages** 视图会显示 `dependencies`、`devDependencies`、收藏和回收站。移除已安装依赖后，原有版本和依赖类别会保存在当前工作区的回收站，可从条目操作中恢复，或直接永久删除该回收站记录。收藏按 tag 分组，默认 tag 为 `untagged`；可在收藏条目上修改为已有或新建 tag。收藏仅在尚未安装时可加入任一依赖类别。标题栏的搜索或新增操作会打开 npm Registry 搜索页，每页 10 条结果，可将结果收藏或添加到安装列表。收藏保存于 `~/.project-atlas/npmfav.json`，回收站保存于 `~/.project-atlas/npmtrash.json`。
@@ -110,6 +120,7 @@ Update Package Version 的提交信息固定为 `chore: bump version to <新版�
 | `~/.project-atlas/project.json`                                        | 项目、Tag、收藏、最近打开时间和项目视图设置；与 IntelliJ IDEA 版共享。 |
 | `~/.project-atlas/repos.json`                                          | 已保存 Git 仓库及其分组、Tag 和视图偏好。                              |
 | `~/.project-atlas/github.json`                                         | GitHub 用户、token、代理设置和仓库缓存。                               |
+| `~/.project-atlas/proxy.json`                                          | 可供状态栏切换的 VS Code 全局 HTTP/HTTPS 代理列表。                    |
 | `~/.project-atlas/commoncmd.json`、`gitmessage.json`、`aiprompts.json` | 个人模板与提示词。                                                     |
 | 工作区 `.aicode.json`                                                  | AICode 分组与相对路径。                                                |
 

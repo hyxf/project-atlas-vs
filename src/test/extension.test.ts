@@ -831,6 +831,10 @@ suite('Extension', () => {
                 fileMatch: '**/.project-atlas/github.json',
                 url: './schemas/github.schema.json',
             },
+            {
+                fileMatch: '**/.project-atlas/proxy.json',
+                url: './schemas/proxy.schema.json',
+            },
             { fileMatch: '**/aiprompts.json', url: './schemas/aiprompts.schema.json' },
         ]);
     });

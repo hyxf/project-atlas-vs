@@ -21,6 +21,7 @@ import { activateTemplates } from './features/templates/templatesFeature';
 import { activateTemplateBackup } from './features/templateBackup/templateBackupFeature';
 import { activateUpdateFeature } from './features/update/updateFeature';
 import { activateNpmPackages } from './features/npmPackages/npmPackagesFeature';
+import { activateProxyStatusBar } from './features/proxy/proxyFeature';
 
 export async function activate(context: vscode.ExtensionContext): Promise<void> {
     await Promise.all([run(() => ensureCommonCommandsFile()), run(() => ensureGitMessagesFile())]);
@@ -36,6 +37,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
     activateTemplateBackup(context);
     activateUpdateFeature(context);
     activateNpmPackages(context);
+    activateProxyStatusBar(context);
     const handlers: Record<string, (...args: unknown[]) => unknown> = {
         createReleaseTag: createReleaseTagCommand,
         insertCommonCommand,
