@@ -1,8 +1,10 @@
 import { promises as fs } from 'fs';
 import * as net from 'net';
+import * as https from 'https';
 import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 
 export const globalProxyFile = path.join(os.homedir(), '.project-atlas', 'proxy.json');
 
@@ -162,9 +164,12 @@ export function activateProxyStatusBar(context: vscode.ExtensionContext): void {
             try {
                 await vscode.window.withProgress(
                     { location: vscode.ProgressLocation.Notification, title: 'Checking VS Code proxy' },
-                    () => verifyProxyEndpoint(proxy),
+                    async () => {
+                        await verifyProxyEndpoint(proxy);
+                        await verifyGoogleAccess(proxy);
+                    },
                 );
-                await vscode.window.showInformationMessage(`VS Code proxy is reachable: ${proxy}`);
+                await vscode.window.showInformationMessage(`VS Code proxy is available: ${proxy}`);
             } catch (error) {
                 await vscode.window.showErrorMessage(
                     `VS Code proxy is unavailable: ${error instanceof Error ? error.message : String(error)}`,
@@ -212,5 +217,25 @@ function verifyProxyEndpoint(proxy: string): Promise<void> {
         });
         socket.once('error', fail);
         socket.setTimeout(5_000, () => fail(new Error('Connection timed out.')));
+    });
+}
+
+function verifyGoogleAccess(proxy: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+        const request = https.get(
+            'https://www.google.com/generate_204',
+            { agent: new HttpsProxyAgent(proxy) },
+            (response) => {
+                response.resume();
+                const status = response.statusCode ?? 0;
+                if (status >= 200 && status < 400) {
+                    resolve();
+                } else {
+                    reject(new Error(`Google returned HTTP ${status}.`));
+                }
+            },
+        );
+        request.once('error', reject);
+        request.setTimeout(5_000, () => request.destroy(new Error('Google request timed out.')));
     });
 }

@@ -60,7 +60,7 @@ Project Atlas 是一款用于管理本地项目、Git 仓库和开发素材的 V
 }
 ```
 
-在命令面板执行 **Project Atlas: Check Global Proxy** 可检测当前代理端口是否可连接；Direct 模式下会提示尚未配置代理。
+在命令面板执行 **Project Atlas: Check Global Proxy** 可检测当前代理端口是否可连接，以及能否通过该代理访问 Google；Direct 模式下会提示尚未配置代理。
 
 ### npm packages
 
