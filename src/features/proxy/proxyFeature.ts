@@ -113,7 +113,7 @@ export function activateProxyStatusBar(context: vscode.ExtensionContext): void {
     const toggle = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 101);
     const refresh = () => {
         const proxy = currentProxy();
-        toggle.text = proxy === undefined ? 'Direct' : 'Proxy';
+        toggle.text = proxy === undefined ? '$(circle-slash) Direct' : '$(plug) Proxy';
         toggle.tooltip =
             proxy === undefined ? 'Use the configured global VS Code proxy' : `Using global VS Code proxy: ${proxy}`;
     };
