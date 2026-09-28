@@ -19,7 +19,7 @@ export interface ProxyOption {
 }
 
 export class ProxyConfigurationStore {
-    public constructor(readonly file = globalProxyFile) {}
+    public constructor(readonly file = globalProxyFile) { }
 
     public async proxies(): Promise<ProxyOption[]> {
         const source = await this.read();
@@ -110,7 +110,7 @@ function legacyProxyOption(value: string, source: string): ProxyOption {
 
 export function activateProxyStatusBar(context: vscode.ExtensionContext): void {
     const store = new ProxyConfigurationStore();
-    const toggle = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 101);
+    const toggle = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Right, -100);
     const refresh = () => {
         const proxy = currentProxy();
         toggle.text = proxy === undefined ? '$(circle-slash) Direct' : '$(plug) Proxy';
@@ -140,12 +140,12 @@ export function activateProxyStatusBar(context: vscode.ExtensionContext): void {
                 ...(existing === undefined || proxies.some(({ url }) => url === existing)
                     ? []
                     : [
-                          {
-                              label: 'system',
-                              description: `${existing} · $(check)`,
-                              target: existing,
-                          },
-                      ]),
+                        {
+                            label: 'system',
+                            description: `${existing} · $(check)`,
+                            target: existing,
+                        },
+                    ]),
                 ...proxies.map(({ name, url }) => ({
                     label: name,
                     description: url === existing ? `${url} · $(check)` : url,
