@@ -129,11 +129,19 @@ export function activateProxyStatusBar(context: vscode.ExtensionContext): void {
             await store.ensureFile();
             const proxies = await store.proxies();
             const choices: ProxyChoice[] = [
-                { label: 'Direct', description: 'Do not use a VS Code HTTP proxy', target: undefined },
+                {
+                    label: existing === undefined ? '$(check) Direct' : 'Direct',
+                    description: 'Do not use a VS Code HTTP proxy',
+                    target: undefined,
+                },
                 ...(existing === undefined || proxies.some(({ url }) => url === existing)
                     ? []
-                    : [{ label: 'system', description: existing, target: existing }]),
-                ...proxies.map(({ name, url }) => ({ label: name, description: url, target: url })),
+                    : [{ label: '$(check) system', description: existing, target: existing }]),
+                ...proxies.map(({ name, url }) => ({
+                    label: url === existing ? `$(check) ${name}` : name,
+                    description: url,
+                    target: url,
+                })),
                 {
                     label: '$(gear) Edit Proxy Configuration File',
                     description: path.basename(store.file),
