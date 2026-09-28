@@ -152,6 +152,11 @@ export function activateProxyStatusBar(context: vscode.ExtensionContext): void {
                     target: url,
                 })),
                 {
+                    kind: vscode.QuickPickItemKind.Separator,
+                    label: 'Configuration',
+                    target: undefined,
+                },
+                {
                     label: '$(gear) Edit Proxy Configuration File',
                     description: path.basename(store.file),
                     target: null,
