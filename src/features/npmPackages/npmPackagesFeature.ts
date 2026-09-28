@@ -172,14 +172,32 @@ export function activateNpmPackages(context: vscode.ExtensionContext): void {
         );
     });
 
-    context.subscriptions.push(vscode.window.registerTreeDataProvider('projectAtlas.npmPackages', provider));
-    context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders(() => void refresh()));
-    const watcher = vscode.workspace.createFileSystemWatcher('**/package.json');
+    let packageWatcher: vscode.Disposable | undefined;
+    const watchWorkspacePackage = () => {
+        packageWatcher?.dispose();
+        const folders = vscode.workspace.workspaceFolders;
+        if (!folders || folders.length !== 1) {
+            packageWatcher = undefined;
+            return;
+        }
+        const watcher = vscode.workspace.createFileSystemWatcher(
+            new vscode.RelativePattern(folders[0]!.uri, 'package.json'),
+        );
+        packageWatcher = vscode.Disposable.from(
+            watcher,
+            watcher.onDidCreate(() => void refresh()),
+            watcher.onDidChange(() => void refresh()),
+            watcher.onDidDelete(() => void refresh()),
+        );
+    };
+    watchWorkspacePackage();
     context.subscriptions.push(
-        watcher,
-        watcher.onDidCreate(() => void refresh()),
-        watcher.onDidChange(() => void refresh()),
-        watcher.onDidDelete(() => void refresh()),
+        vscode.window.registerTreeDataProvider('projectAtlas.npmPackages', provider),
+        { dispose: () => packageWatcher?.dispose() },
+        vscode.workspace.onDidChangeWorkspaceFolders(() => {
+            watchWorkspacePackage();
+            void refresh();
+        }),
     );
     void refresh();
 }
