@@ -2503,6 +2503,7 @@
     "pretest": "yarn run format:check && yarn run compile && yarn run lint",
     "lint": "eslint src",
     "test": "vscode-test",
+    "test:online": "yarn test --grep proxy --invert",
     "package:extension": "vsce package --yarn",
     "install:extension": "yarn package:extension --out project-atlas-vs.vsix && code --install-extension project-atlas-vs.vsix --force",
     "deploy": "vsce publish --yarn"
