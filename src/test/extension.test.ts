@@ -679,8 +679,8 @@ suite('Extension', () => {
             ],
         );
         assert.strictEqual(paletteCommands[0]?.category, 'Project Atlas');
-        assert.strictEqual(paletteCommands[1]?.category, 'AICode');
-        assert.strictEqual(paletteCommands[2]?.category, 'AICode');
+        assert.strictEqual(paletteCommands[1]?.category, 'Project Atlas');
+        assert.strictEqual(paletteCommands[2]?.category, 'Project Atlas');
         assert.strictEqual(paletteCommands[3]?.category, 'AICode');
         for (const [command, enablement] of [
             [
