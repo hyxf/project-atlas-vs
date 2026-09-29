@@ -2,11 +2,13 @@ import { promises as fs } from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { pickRepositoryTags } from '../repositoryManagement/tagPicker';
+import { openJetBrainsProject, syncJetBrainsMenuContext } from './jetbrainsApps';
 import { ListFilter, ProjectItem, SortBy, untaggedFilter } from './model';
 import { editProjectForm } from './projectForm';
 import { containsPath, duplicateDirectory, normalizePath, ProjectService } from './service';
 import { ProjectStore } from './store';
 import { ProjectDecorationProvider, ProjectDropController, ProjectNode, ProjectsTree } from './tree';
+import { openXcodeProject, syncXcodeMenuContext } from './xcodeApp';
 
 let service: ProjectService;
 let tree: ProjectsTree;
@@ -33,6 +35,10 @@ export function activateProjectManagement(context: vscode.ExtensionContext): voi
         copyPath: (node) => copyPath(resolveProject(node)),
         reveal: (node) => reveal(resolveProject(node)),
         openTerminal: (node) => openTerminal(resolveProject(node)),
+        openWithPycharm: (node) =>
+            openJetBrainsProject(resolveProject(node), 'pycharm', service.markOpened.bind(service)),
+        openWithIdea: (node) => openJetBrainsProject(resolveProject(node), 'idea', service.markOpened.bind(service)),
+        openWithXcode: (node) => openXcodeProject(resolveProject(node), service.markOpened.bind(service)),
         duplicate: (node) => duplicateProject(resolveProject(node)),
         remove: (node) => removeProject(resolveProject(node)),
         delete: (node) => deleteProject(resolveProject(node)),
@@ -70,6 +76,8 @@ export function activateProjectManagement(context: vscode.ExtensionContext): voi
     context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(() => void run(syncCurrentProjectContext)));
     void run(async () => {
         await syncMenuContext();
+        await syncJetBrainsMenuContext();
+        await syncXcodeMenuContext();
         await trackCurrentWorkspace();
     });
 }
@@ -88,6 +96,8 @@ async function run(action: () => unknown): Promise<unknown> {
 async function refresh(): Promise<void> {
     await service.projects(true);
     await syncMenuContext();
+    await syncJetBrainsMenuContext();
+    await syncXcodeMenuContext();
     await syncCurrentProjectContext();
     tree.refresh();
 }

@@ -4,9 +4,11 @@ import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { editProjectForm } from '../features/projectManagement/projectForm';
+import { findJetBrainsApp } from '../features/projectManagement/jetbrainsApps';
 import { containsPath, duplicateDirectory, ProjectService } from '../features/projectManagement/service';
 import { ProjectStore } from '../features/projectManagement/store';
 import { parseUriList, ProjectsTree } from '../features/projectManagement/tree';
+import { findXcodeApp } from '../features/projectManagement/xcodeApp';
 
 suite('Project Management', () => {
     let temporary: string;
@@ -49,6 +51,29 @@ suite('Project Management', () => {
                 assert.strictEqual(options.title, 'Add Project');
             },
         );
+    });
+
+    test('finds PyCharm and IntelliJ IDEA application bundles', async () => {
+        const applications = path.join(temporary, 'Applications');
+        await fs.mkdir(path.join(applications, 'PyCharm CE.app'), { recursive: true });
+        await fs.mkdir(path.join(applications, 'IntelliJ IDEA.app'), { recursive: true });
+        await fs.mkdir(path.join(applications, 'Other.app'), { recursive: true });
+
+        assert.strictEqual(
+            await findJetBrainsApp('pycharm', [applications]),
+            path.join(applications, 'PyCharm CE.app'),
+        );
+        assert.strictEqual(
+            await findJetBrainsApp('idea', [applications]),
+            path.join(applications, 'IntelliJ IDEA.app'),
+        );
+    });
+
+    test('finds the Xcode application bundle', async () => {
+        const applications = path.join(temporary, 'Applications');
+        await fs.mkdir(path.join(applications, 'Xcode.app'), { recursive: true });
+
+        assert.strictEqual(await findXcodeApp([applications]), path.join(applications, 'Xcode.app'));
     });
 
     test('saves, normalizes, updates, searches, and sorts projects', async () => {

@@ -760,6 +760,21 @@
         "category": "Project Atlas"
       },
       {
+        "command": "project-atlas.openWithPycharm",
+        "title": "PyCharm",
+        "category": "Project Atlas"
+      },
+      {
+        "command": "project-atlas.openWithIdea",
+        "title": "IntelliJ IDEA",
+        "category": "Project Atlas"
+      },
+      {
+        "command": "project-atlas.openWithXcode",
+        "title": "Xcode",
+        "category": "Project Atlas"
+      },
+      {
         "command": "project-atlas.closeCurrent",
         "title": "Close Current Project",
         "category": "Project Atlas",
@@ -970,6 +985,10 @@
       {
         "id": "projectAtlas.repositoryViewMenu",
         "label": "Group By"
+      },
+      {
+        "id": "projectAtlas.openWithMenu",
+        "label": "Open With"
       }
     ],
     "viewsContainers": {
@@ -1536,6 +1555,23 @@
           "group": "sort@3"
         }
       ],
+      "projectAtlas.openWithMenu": [
+        {
+          "command": "project-atlas.openWithPycharm",
+          "when": "projectAtlas.pycharmAvailable",
+          "group": "openWith@1"
+        },
+        {
+          "command": "project-atlas.openWithIdea",
+          "when": "projectAtlas.ideaAvailable",
+          "group": "openWith@2"
+        },
+        {
+          "command": "project-atlas.openWithXcode",
+          "when": "projectAtlas.xcodeAvailable",
+          "group": "openWith@3"
+        }
+      ],
       "commandPalette": [
         {
           "command": "project-atlas.editCommonCommandTags",
@@ -1932,6 +1968,18 @@
           "when": "false"
         },
         {
+          "command": "project-atlas.openWithPycharm",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.openWithIdea",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.openWithXcode",
+          "when": "false"
+        },
+        {
           "command": "project-atlas.edit",
           "when": "false"
         },
@@ -2167,9 +2215,14 @@
           "group": "navigation@2"
         },
         {
+          "submenu": "projectAtlas.openWithMenu",
+          "when": "(viewItem == project || viewItem == currentProject) && (projectAtlas.pycharmAvailable || projectAtlas.ideaAvailable || projectAtlas.xcodeAvailable)",
+          "group": "navigation@3"
+        },
+        {
           "command": "project-atlas.closeCurrent",
           "when": "viewItem == currentProject",
-          "group": "navigation@3"
+          "group": "navigation@4"
         },
         {
           "command": "project-atlas.edit",
