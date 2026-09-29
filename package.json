@@ -523,14 +523,20 @@
         "command": "project-atlas.installFavoriteNpmPackage",
         "title": "Install as Dependency",
         "category": "Project Atlas",
-        "icon": "$(cloud-download)",
+        "icon": {
+          "light": "resources/npm-install.svg",
+          "dark": "resources/npm-install-dark.svg"
+        },
         "enablement": "viewItem == npmFavoritePackageAddable"
       },
       {
         "command": "project-atlas.installFavoriteNpmPackageAsDevDependency",
         "title": "Install as Dev Dependency",
         "category": "Project Atlas",
-        "icon": "$(beaker)",
+        "icon": {
+          "light": "resources/npm-install-dev.svg",
+          "dark": "resources/npm-install-dev-dark.svg"
+        },
         "enablement": "viewItem == npmFavoritePackageAddable"
       },
       {
