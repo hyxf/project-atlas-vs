@@ -2386,11 +2386,6 @@
         {
           "command": "project-atlas.editAiPromptTags",
           "when": "view == projectAtlas.aiPrompts && viewItem == aiPrompt",
-          "group": "inline@1"
-        },
-        {
-          "command": "project-atlas.editAiPromptTags",
-          "when": "view == projectAtlas.aiPrompts && viewItem == aiPrompt",
           "group": "aiPrompts@2"
         },
         {
