@@ -3,7 +3,7 @@ import { randomBytes } from 'crypto';
 import * as vscode from 'vscode';
 import { AiPrompt, aiPromptsFile, changeAiPrompt, ensureAiPromptsFile, readAiPromptSnapshot } from './aiPromptStore';
 import { TemplateSnapshot } from '../templates/templateStore';
-import { expandTreeView, TemplateItem, TemplateDragAndDropController } from '../templates/templatesFeature';
+import { expandTreeView, TemplateItem } from '../templates/templatesFeature';
 import { assertSaved } from '../templates/templateCommands';
 import { editAiPrompt, editAiPromptTags, matchesPrompt } from './aiPromptCommands';
 import { buildPromptItems, PromptTagGroup } from './aiPromptItems';
@@ -84,15 +84,11 @@ window.addEventListener('message', ({data}) => {
 }
 
 export function activateAiPrompts(context: vscode.ExtensionContext): void {
-    let mode: 'LIST' | 'GROUP' = context.globalState.get('projectAtlas.aiPromptsMode') === 'LIST' ? 'LIST' : 'GROUP';
     const collapsed = new Set(context.globalState.get<string[]>('projectAtlas.aiPromptsCollapsed', []));
     const parents = new Map<vscode.TreeItem, vscode.TreeItem | undefined>();
     const changed = new vscode.EventEmitter<void>();
     let view: vscode.TreeView<vscode.TreeItem>;
-    let viewEvents: vscode.Disposable[] = [];
-    let switching = Promise.resolve();
     const refresh = () => changed.fire();
-    const canSort = () => mode === 'LIST';
     const provider: vscode.TreeDataProvider<vscode.TreeItem> = {
         onDidChangeTreeData: changed.event,
         getTreeItem: (item) => item,
@@ -106,7 +102,7 @@ export function activateAiPrompts(context: vscode.ExtensionContext): void {
             try {
                 await ensureAiPromptsFile();
                 const snapshot = await readAiPromptSnapshot();
-                const items = buildPromptItems(snapshot, mode, aiPromptsFile, [...collapsed]);
+                const items = buildPromptItems(snapshot, aiPromptsFile, [...collapsed]);
                 parents.clear();
                 for (const item of items) {
                     if (item instanceof PromptTagGroup) {
@@ -132,16 +128,6 @@ export function activateAiPrompts(context: vscode.ExtensionContext): void {
     const createView = () => {
         view = vscode.window.createTreeView('projectAtlas.aiPrompts', {
             treeDataProvider: provider,
-            ...(canSort()
-                ? {
-                      dragAndDropController: new TemplateDragAndDropController(
-                          'projectAtlas.aiPrompts',
-                          aiPromptsFile,
-                          refresh,
-                          canSort,
-                      ),
-                  }
-                : {}),
         });
         view.description = 'aiprompts.json';
         const remember = (element: vscode.TreeItem, isCollapsed: boolean) => {
@@ -155,7 +141,7 @@ export function activateAiPrompts(context: vscode.ExtensionContext): void {
             }
             void context.globalState.update('projectAtlas.aiPromptsCollapsed', [...collapsed]);
         };
-        viewEvents = [
+        context.subscriptions.push(
             view.onDidCollapseElement(({ element }) => remember(element, true)),
             view.onDidExpandElement(({ element }) => remember(element, false)),
             view.onDidChangeVisibility(({ visible }) => {
@@ -163,13 +149,9 @@ export function activateAiPrompts(context: vscode.ExtensionContext): void {
                     refresh();
                 }
             }),
-        ];
+        );
     };
     createView();
-    const updateContext = async () => {
-        await vscode.commands.executeCommand('setContext', 'projectAtlas.aiPromptsMode', mode);
-    };
-    void updateContext();
     const register = (name: string, handler: (item?: unknown) => unknown) =>
         context.subscriptions.push(
             vscode.commands.registerCommand(`project-atlas.${name}`, async (item?: unknown) => {
@@ -307,25 +289,6 @@ export function activateAiPrompts(context: vscode.ExtensionContext): void {
             await changeAiPrompt(item.snapshot, { type: action, id: prompt.id });
         });
     }
-    for (const name of ['aiPromptsListView', 'aiPromptsGroupView']) {
-        register(name, () => {
-            switching = switching
-                .catch(() => undefined)
-                .then(async () => {
-                    if (name === 'aiPromptsListView') {
-                        mode = 'LIST';
-                    } else if (name === 'aiPromptsGroupView') {
-                        mode = 'GROUP';
-                    }
-                    viewEvents.forEach((event) => event.dispose());
-                    view.dispose();
-                    createView();
-                    await updateContext();
-                    await context.globalState.update('projectAtlas.aiPromptsMode', mode);
-                });
-            return switching;
-        });
-    }
     register('searchAiPrompts', async () => {
         await ensureAiPromptsFile();
         const snapshot = await readAiPromptSnapshot();
@@ -385,7 +348,6 @@ export function activateAiPrompts(context: vscode.ExtensionContext): void {
         watcher.onDidDelete(refresh),
         {
             dispose: () => {
-                viewEvents.forEach((event) => event.dispose());
                 view.dispose();
             },
         },

@@ -17,7 +17,6 @@ import { execFile } from 'child_process';
 import { promisify } from 'util';
 import { queueTemplateWrite, reorderTemplates } from '../features/templates/templateStore';
 import {
-    TemplateItem,
     TemplateDragAndDropController,
     TemplateViewRegistration,
     TemplatesTreeProvider,
@@ -669,8 +668,6 @@ suite('Extension', () => {
                 'project-atlas.refreshAiPrompts',
                 'project-atlas.editAiPromptsFile',
                 'project-atlas.searchAiPrompts',
-                'project-atlas.aiPromptsListView',
-                'project-atlas.aiPromptsGroupView',
                 'project-atlas.backupTemplateData',
                 'project-atlas.restoreTemplateData',
                 'project-atlas.refreshTemplateBackup',
@@ -1733,7 +1730,7 @@ suite('AI Prompts data safety', () => {
                 { id: second, title: 'B', content: 'text', tags: ['开发', '审查'], favorite: true },
             ],
         };
-        const grouped = buildPromptItems(snapshot, 'GROUP', file) as PromptTagGroup[];
+        const grouped = buildPromptItems(snapshot, file) as PromptTagGroup[];
         assert.deepStrictEqual(
             grouped.map((group) => group.tag),
             ['开发', '审查', ''],
@@ -1742,13 +1739,12 @@ suite('AI Prompts data safety', () => {
         assert.notStrictEqual(grouped[0]!.children[0]!.id, grouped[1]!.children[0]!.id);
         assert.strictEqual(grouped[0]!.children[0]!.snapshot.entries[grouped[0]!.children[0]!.index]!.id, second);
         assert.ok(matchesPrompt(snapshot.entries[1]!, '审查'));
-        const items = buildPromptItems(snapshot, 'LIST', file);
-        assert.deepStrictEqual(
-            items.map((item) => item.id),
-            [first, second],
+        assert.strictEqual(grouped[2]!.children[0]?.description, '· First prompt');
+        assert.ok(
+            grouped
+                .flatMap((group) => group.children)
+                .every((item) => (item.iconPath as vscode.ThemeIcon).id === 'note'),
         );
-        assert.strictEqual(items[0]?.description, '· First prompt');
-        assert.ok(items.every((item) => (item.iconPath as vscode.ThemeIcon).id === 'note'));
         assert.strictEqual(matchesPrompt(snapshot.entries[0]!, 'HIDDEN term'), true);
         assert.strictEqual(matchesPrompt(snapshot.entries[1]!, 'hidden'), false);
         const html = renderPromptPreview({
@@ -1760,7 +1756,7 @@ suite('AI Prompts data safety', () => {
         assert.ok(html.includes('&lt;/pre&gt;'));
     });
 
-    test('drag sorting persists order only when the active mode allows it', async () => {
+    test('does not allow drag sorting in grouped mode', async () => {
         await fs.writeFile(
             file,
             JSON.stringify({
@@ -1772,27 +1768,20 @@ suite('AI Prompts data safety', () => {
             }),
         );
         const snapshot = await readAiPromptSnapshot(file);
-        const items = buildPromptItems(snapshot, 'LIST', file) as TemplateItem<unknown>[];
-        let allowed = true;
+        const groups = buildPromptItems(snapshot, file) as PromptTagGroup[];
         const controller = new TemplateDragAndDropController(
             'test.aiPrompts',
             file,
             () => {},
-            () => allowed,
+            () => false,
         );
         const transfer = new vscode.DataTransfer();
-        controller.handleDrag([items[0]!], transfer, new vscode.CancellationTokenSource().token);
-        allowed = false;
+        controller.handleDrag([groups[0]!.children[0]!], transfer, new vscode.CancellationTokenSource().token);
+        assert.strictEqual([...transfer].length, 0);
         await controller.handleDrop(undefined, transfer, new vscode.CancellationTokenSource().token);
         assert.deepStrictEqual(
             (await readAiPromptSnapshot(file)).entries.map((entry) => entry.id),
             [first, second],
-        );
-        allowed = true;
-        await controller.handleDrop(undefined, transfer, new vscode.CancellationTokenSource().token);
-        assert.deepStrictEqual(
-            (await readAiPromptSnapshot(file)).entries.map((entry) => entry.id),
-            [second, first],
         );
     });
 

@@ -21,11 +21,9 @@ export class PromptTagGroup extends vscode.TreeItem {
 
 export function buildPromptItems(
     snapshot: TemplateSnapshot<AiPrompt>,
-    mode: 'LIST' | 'GROUP',
     file = aiPromptsFile,
     collapsed: string[] = [],
 ): vscode.TreeItem[] {
-    const items: TemplateItem<AiPrompt>[] = [];
     const groups = new Map<string, PromptTagGroup>();
     for (const [index, prompt] of snapshot.entries.entries()) {
         const tags = [...new Set(prompt.tags ?? [])];
@@ -45,7 +43,6 @@ export function buildPromptItems(
             item.command = { command: 'project-atlas.previewAiPrompt', title: 'Preview AI Prompt', arguments: [item] };
             return item;
         };
-        items.push(createItem());
         for (const tag of tags.length ? tags : ['']) {
             let group = groups.get(tag);
             if (!group) {
@@ -55,9 +52,6 @@ export function buildPromptItems(
             group.children.push(createItem(tag));
             group.description = String(group.children.length);
         }
-    }
-    if (mode === 'LIST') {
-        return items;
     }
     const untagged = groups.get('');
     groups.delete('');

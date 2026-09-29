@@ -922,18 +922,6 @@
         "icon": "$(files)"
       },
       {
-        "command": "project-atlas.aiPromptsListView",
-        "title": "Show as List",
-        "category": "Project Atlas",
-        "icon": "$(list-flat)"
-      },
-      {
-        "command": "project-atlas.aiPromptsGroupView",
-        "title": "Group by Tags",
-        "category": "Project Atlas",
-        "icon": "$(list-tree)"
-      },
-      {
         "command": "project-atlas.editAiPromptTags",
         "title": "Edit Tags",
         "category": "Project Atlas",
@@ -1468,16 +1456,6 @@
           "command": "project-atlas.expandAiPrompts",
           "when": "view == projectAtlas.aiPrompts && projectAtlas.aiPromptsCollapsed",
           "group": "navigation@4"
-        },
-        {
-          "command": "project-atlas.aiPromptsListView",
-          "when": "view == projectAtlas.aiPrompts && projectAtlas.aiPromptsMode != LIST",
-          "group": "navigation@1"
-        },
-        {
-          "command": "project-atlas.aiPromptsGroupView",
-          "when": "view == projectAtlas.aiPrompts && projectAtlas.aiPromptsMode == LIST",
-          "group": "navigation@1"
         },
         {
           "command": "project-atlas.editAiPromptsFile",
@@ -2125,12 +2103,6 @@
         {
           "command": "project-atlas.duplicateAiPrompt",
           "when": "false"
-        },
-        {
-          "command": "project-atlas.aiPromptsListView"
-        },
-        {
-          "command": "project-atlas.aiPromptsGroupView"
         },
         {
           "command": "project-atlas.editAiPromptTags",
