@@ -91,7 +91,7 @@ Project Atlas 是一款用于管理本地项目、Git 仓库和开发素材的 V
 | **AI Prompts**       | `~/.project-atlas/aiprompts.json`  | 保存带标题、正文、说明和标签的本地提示词。                     |
 | **Backup & Restore** | VS Code globalState                | 通过 VS Code Settings Sync 备份并恢复已配置的文件。            |
 
-三类模板均支持新增、编辑、删除、编辑原始 JSON 和刷新。保存会保留未知字段，并检查文件冲突和编辑器未保存修改。Common Commands 和 AI Prompts 支持在条目菜单中快速编辑标签；两者的列表均按标签分组。拖动项目可直接调整 JSON 数组顺序：Git Messages 仅列表模式可排序；AI Prompts 仅“显示全部”的列表模式可排序。
+三类模板均支持新增、编辑、删除、编辑原始 JSON 和刷新。保存会保留未知字段，并检查文件冲突和编辑器未保存修改。Common Commands 和 AI Prompts 支持在条目菜单中快速编辑标签；两者的列表均按标签分组。Git Messages 始终按提交类型分组，AI Prompts 始终按标签分组；只有 Common Commands 支持拖动条目调整 JSON 数组顺序。
 
 Common Commands 可在原始 `commoncmd.json` 中定义变量。顶层 `variables` 可供全部命令使用，命令中的 `variables` 仅供该命令使用；在命令文本使用 `${variable_name}` 引用。运行或插入命令时会提示输入，输入值不会写回文件。支持 `text`、`select`、`multiSelect` 和 `path`（`file`、`folder` 或 `any`）类型：
 
@@ -110,11 +110,13 @@ Common Commands 可在原始 `commoncmd.json` 中定义变量。顶层 `variable
 }
 ```
 
-备份文件由 `projectAtlas.templateBackup.files` 设置控制，默认包含以上三份模板文件。每个条目是绝对路径，支持 `${userHome}` 或以 `~` 开头的主目录路径；以后需要同步其他文件时，只需向该数组新增一个路径。例如：
+备份文件由 `projectAtlas.templateBackup.files` 设置控制，默认还包含 `npmfav.json` 和 `repos.json`，因此会备份 npm 收藏与已保存的 Git 仓库，以及以上三份模板文件。每个条目是绝对路径，支持 `${userHome}` 或以 `~` 开头的主目录路径；以后需要同步其他文件时，只需向该数组新增一个路径。例如：
 
 ```json
 {
     "projectAtlas.templateBackup.files": [
+        "${userHome}/.project-atlas/npmfav.json",
+        "${userHome}/.project-atlas/repos.json",
         "${userHome}/.project-atlas/aiprompts.json",
         "${userHome}/.project-atlas/commoncmd.json",
         "${userHome}/.project-atlas/gitmessage.json",

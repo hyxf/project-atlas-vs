@@ -6,9 +6,10 @@ Project Atlas 是使用 TypeScript 开发的 VS Code 扩展。入口在 `src/ext
 
 - `projectManagement/`：本地项目、标签、筛选和共享的 `project.json`。
 - `repositoryManagement/`、`githubRepositories/`：保存的 Git 仓库、GitHub 同步和克隆。
+- `npmPackages/`：工作区依赖、npm 收藏、回收站与包管理器命令。
 - `aicodeContext/`：工作区 `.aicode.json`、上下文分组和分支比较。
 - `templates/`、`commonCommands/`、`gitMessages/`、`aiPrompts/`、`templateBackup/`：模板和备份。
-- `gitRemote/`、`gitTagRelease/`、`packageVersion/`、`changelog/`、`update/`：Git 辅助、发布与更新。
+- `proxy/`、`gitRemote/`、`gitTagRelease/`、`packageVersion/`、`changelog/`、`update/`：代理、Git 辅助、发布与更新。
 
 功能目录通常以 `*Feature.ts` 作为 VS Code 注册入口，以 `model.ts` 定义领域类型，以 `*Store.ts` 或 `*Service.ts` 处理持久化与业务逻辑。测试位于 `src/test/`，按功能命名为 `*.test.ts`。JSON Schema 位于 `schemas/`，图标位于 `resources/`，命令、菜单、快捷键、设置和 Schema 关联均在 `package.json` 声明。`out/` 是编译产物，请勿直接修改。
 
@@ -37,7 +38,7 @@ Project Atlas 是使用 TypeScript 开发的 VS Code 扩展。入口在 `src/ext
 
 ## 数据兼容性与安全
 
-扩展与其他 IDE 或旧版扩展共享 `~/.project-atlas/project.json`、`repos.json`、`github.json`、`commoncmd.json`、`gitmessage.json` 和 `aiprompts.json`；工作区根目录 `.aicode.json` 保存 AICode 上下文分组。
+扩展与其他 IDE 或旧版扩展共享 `~/.project-atlas/project.json`、`repos.json`、`github.json`、`proxy.json`、`npmfav.json`、`npmtrash.json`、`commoncmd.json`、`gitmessage.json` 和 `aiprompts.json`；工作区根目录 `.aicode.json` 保存 AICode 上下文分组。
 
 写入共享 JSON 时必须保留未知的顶层、设置和记录字段，以保持跨 IDE 兼容。采用临时文件原子替换；解析失败、文件冲突或未保存的编辑器修改时不得覆盖源文件。模板写入使用同目录 `<文件名>.lock` 排他锁，修改锁策略前须补充并发回归测试。
 
@@ -47,7 +48,7 @@ Project Atlas 是使用 TypeScript 开发的 VS Code 扩展。入口在 `src/ext
 
 测试使用 Mocha 与 Node `assert`，文件名遵循 `*.test.ts`。将测试放在对应功能的测试文件中，例如 AICode 改动放入 `branchComparison.test.ts`，仓库功能放入 `repositoryManagement.test.ts`，GitHub 功能放入 `githubRepositories.test.ts`；跨项目存储和扩展激活行为放入 `extension.test.ts`。测试使用临时目录并在 teardown 中清理。
 
-持久化、迁移、排序、并发控制、Git 操作或删除逻辑的改动必须包含回归测试。外部命令、网络与 VS Code UI 应通过依赖注入或 mock 保持测试可重复，避免依赖用户的真实主目录、凭据或仓库。
+持久化、迁移、排序、并发控制、Git 操作、npm 依赖变更或删除逻辑的改动必须包含回归测试。npm 包管理器命令还应覆盖锁文件推断、显式配置优先级和命令注入防护。外部命令、网络与 VS Code UI 应通过依赖注入或 mock 保持测试可重复，避免依赖用户的真实主目录、凭据或仓库。
 
 ## 提交与 Pull Request
 
