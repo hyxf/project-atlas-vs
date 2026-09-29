@@ -149,15 +149,9 @@ function createCommonCommandItem(
     return item;
 }
 
-export type GitMessageViewMode = 'LIST' | 'GROUP';
-
-export async function loadGitMessageItems(
-    file = gitMessagesFile,
-    mode: GitMessageViewMode = 'GROUP',
-): Promise<vscode.TreeItem[]> {
+export async function loadGitMessageItems(file = gitMessagesFile): Promise<vscode.TreeItem[]> {
     const snapshot = await readGitMessageSnapshot(file);
     const groups = new Map<string, GitMessageTypeGroup>();
-    const items: TemplateItem<GitMessage>[] = [];
     for (const [index, message] of snapshot.entries.entries()) {
         let group = groups.get(message.type);
         if (!group) {
@@ -168,9 +162,8 @@ export async function loadGitMessageItems(
         item.tooltip = formatGitMessage(message);
         item.iconPath = new vscode.ThemeIcon('git-commit');
         group.children.push(item);
-        items.push(item);
     }
-    return mode === 'LIST' ? items : [...groups.values()];
+    return [...groups.values()];
 }
 
 export class TemplateDragAndDropController implements vscode.TreeDragAndDropController<vscode.TreeItem> {
@@ -272,16 +265,13 @@ export function activateTemplates(context: vscode.ExtensionContext): void {
         loadCommonCommandItems,
         'project-atlas.refreshCommonCommands',
     );
-    let mode: GitMessageViewMode =
-        context.globalState.get('projectAtlas.gitMessageViewMode') === 'LIST' ? 'LIST' : 'GROUP';
-    void vscode.commands.executeCommand('setContext', 'projectAtlas.gitMessageViewMode', mode);
     const gitMessagesRegistration = registerView(
         context,
         'projectAtlas.gitMessages',
         gitMessagesFile,
-        () => loadGitMessageItems(gitMessagesFile, mode),
+        () => loadGitMessageItems(gitMessagesFile),
         'project-atlas.refreshGitMessages',
-        () => mode === 'LIST',
+        () => false,
     );
     for (const [viewName, viewId, registration] of [
         ['commonCommands', 'projectAtlas.commonCommands', commonCommandsRegistration],
@@ -308,29 +298,6 @@ export function activateTemplates(context: vscode.ExtensionContext): void {
             ),
         );
         void setCollapsed(false);
-    }
-    let switching = Promise.resolve();
-    for (const [command, nextMode] of [
-        ['project-atlas.gitMessagesListView', 'LIST'],
-        ['project-atlas.gitMessagesGroupView', 'GROUP'],
-    ] as const) {
-        context.subscriptions.push(
-            vscode.commands.registerCommand(command, () => {
-                const next = switching
-                    .catch(() => undefined)
-                    .then(async () => {
-                        if (mode === nextMode) {
-                            return;
-                        }
-                        mode = nextMode;
-                        await gitMessagesRegistration.recreate();
-                        await vscode.commands.executeCommand('setContext', 'projectAtlas.gitMessageViewMode', mode);
-                        await context.globalState.update('projectAtlas.gitMessageViewMode', mode);
-                    });
-                switching = next;
-                return next;
-            }),
-        );
     }
 }
 

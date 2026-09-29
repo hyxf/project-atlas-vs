@@ -344,7 +344,7 @@ suite('Template record data safety', () => {
         }
     });
 
-    test('Git messages support flat ordering across types and disable all sorting in grouped mode', async () => {
+    test('Git messages always group by type and disable sorting', async () => {
         const file = path.join(temporary, 'gitmessage.json');
         const messages = [
             { type: 'fix', subject: 'A', future: 1 },
@@ -353,7 +353,6 @@ suite('Template record data safety', () => {
         ];
         const contents = JSON.stringify({ future: true, messages });
         await fs.writeFile(file, contents);
-        let listMode = false;
         let refreshed = 0;
         const controller = new TemplateDragAndDropController(
             'test.messages',
@@ -361,11 +360,11 @@ suite('Template record data safety', () => {
             () => {
                 refreshed++;
             },
-            () => listMode,
+            () => false,
         );
         const token = new vscode.CancellationTokenSource();
         try {
-            const groups = (await loadGitMessageItems(file, 'GROUP')) as GitMessageTypeGroup[];
+            const groups = (await loadGitMessageItems(file)) as GitMessageTypeGroup[];
             assert.deepStrictEqual(
                 groups.map((item) => item.label),
                 ['fix', 'feat'],
@@ -373,46 +372,11 @@ suite('Template record data safety', () => {
             const transfer = new vscode.DataTransfer();
             controller.handleDrag([groups[0]!.children[0]!], transfer, token.token);
             assert.strictEqual([...transfer].length, 0);
-            let items = await loadGitMessageItems(file, 'LIST');
-            assert.deepStrictEqual(
-                items.map((item) => item.label),
-                ['fix: A', 'feat: B', 'fix: C'],
-            );
-            assert.ok(items.every((item) => item.contextValue === 'gitMessage'));
-            assert.strictEqual(await fs.readFile(file, 'utf8'), contents);
-            listMode = true;
-            controller.handleDrag([items[2]!], transfer, token.token);
-            // A drop started in list mode must not write after switching to grouped mode.
-            listMode = false;
             await controller.handleDrop(groups[0]!.children[0], transfer, token.token);
             await controller.handleDrop(groups[0], transfer, token.token);
             await controller.handleDrop(undefined, transfer, token.token);
             assert.strictEqual(await fs.readFile(file, 'utf8'), contents);
             assert.strictEqual(refreshed, 0);
-            listMode = true;
-            await controller.handleDrop(groups[0], transfer, token.token);
-            assert.strictEqual(await fs.readFile(file, 'utf8'), contents);
-            controller.handleDrag([items[2]!], transfer, token.token);
-            await controller.handleDrop(items[1], transfer, token.token);
-            assert.deepStrictEqual(JSON.parse(await fs.readFile(file, 'utf8')), {
-                future: true,
-                messages: [messages[0], messages[2], messages[1]],
-            });
-            items = await loadGitMessageItems(file, 'LIST');
-            controller.handleDrag([items[0]!], transfer, token.token);
-            await controller.handleDrop(undefined, transfer, token.token);
-            assert.deepStrictEqual(JSON.parse(await fs.readFile(file, 'utf8')), {
-                future: true,
-                messages: [messages[2], messages[1], messages[0]],
-            });
-            assert.strictEqual(refreshed, 2);
-            const saved = await fs.readFile(file, 'utf8');
-            const regrouped = (await loadGitMessageItems(file, 'GROUP')) as GitMessageTypeGroup[];
-            assert.deepStrictEqual(
-                regrouped[0]!.children.map((item) => item.label),
-                ['fix: C', 'fix: A'],
-            );
-            assert.strictEqual(await fs.readFile(file, 'utf8'), saved);
         } finally {
             token.dispose();
         }
