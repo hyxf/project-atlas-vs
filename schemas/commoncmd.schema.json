@@ -5,6 +5,11 @@
   "type": "object",
   "required": ["commands"],
   "properties": {
+    "variables": {
+      "description": "Variables available to every command.",
+      "type": "array",
+      "items": { "$ref": "#/definitions/variable" }
+    },
     "commands": {
       "description": "Terminal commands shown by Project Atlas.",
       "type": "array",
@@ -27,6 +32,11 @@
             "items": {
               "type": "string"
             }
+          },
+          "variables": {
+            "description": "Variables available only to this command.",
+            "type": "array",
+            "items": { "$ref": "#/definitions/variable" }
           }
         },
         "defaultSnippets": [
@@ -39,6 +49,21 @@
             }
           }
         ]
+      }
+    }
+  },
+  "definitions": {
+    "variable": {
+      "type": "object",
+      "required": ["name", "type"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*$" },
+        "label": { "type": "string" },
+        "type": { "enum": ["text", "select", "multiSelect", "path"] },
+        "required": { "type": "boolean" },
+        "default": { "oneOf": [{ "type": "string" }, { "type": "array", "items": { "type": "string" } }] },
+        "options": { "type": "array", "items": { "type": "string" } },
+        "pathKind": { "enum": ["file", "folder", "any"] }
       }
     }
   },

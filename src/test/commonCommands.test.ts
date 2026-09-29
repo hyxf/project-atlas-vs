@@ -6,10 +6,12 @@ import {
     addCommonCommand,
     ensureCommonCommandsFile,
     readCommonCommands,
+    readCommonCommandsDocument,
     readCommonCommandSnapshot,
     updateCommonCommand,
 } from '../features/commonCommands/commonCommandStore';
 import { runCommonCommand } from '../features/commonCommands/commonCommandCommands';
+import { quoteForShell, resolveCommonCommand } from '../features/commonCommands/commonCommandVariables';
 
 suite('Common Commands', () => {
     let temporary: string;
@@ -33,6 +35,53 @@ suite('Common Commands', () => {
         await assert.rejects(() => readCommonCommands(file), /non-empty command/);
         await fs.writeFile(file, JSON.stringify({ commands: [{ command: 'git status', tags: 'Git' }] }));
         await assert.rejects(() => readCommonCommands(file), /invalid tags/);
+    });
+
+    test('reads global and command variables while retaining the existing command format', async () => {
+        const file = path.join(temporary, 'commoncmd.json');
+        await fs.writeFile(
+            file,
+            JSON.stringify({
+                variables: [{ name: 'project_name', type: 'text', required: true }],
+                commands: [
+                    {
+                        command: 'npx create ${project_name} ${kind}',
+                        variables: [{ name: 'kind', type: 'select', options: ['classic', 'blog'] }],
+                    },
+                ],
+            }),
+        );
+        assert.deepStrictEqual(await readCommonCommandsDocument(file), {
+            variables: [{ name: 'project_name', type: 'text', required: true }],
+            commands: [
+                {
+                    command: 'npx create ${project_name} ${kind}',
+                    variables: [{ name: 'kind', type: 'select', options: ['classic', 'blog'] }],
+                },
+            ],
+        });
+
+        await fs.writeFile(file, JSON.stringify({ commands: [], variables: [{ name: 'bad-name', type: 'text' }] }));
+        await assert.rejects(() => readCommonCommands(file), /valid name/);
+
+        await fs.writeFile(
+            file,
+            JSON.stringify({
+                commands: [],
+                variables: [{ name: 'kind', type: 'select', options: ['classic'], default: 'blog' }],
+            }),
+        );
+        await assert.rejects(() => readCommonCommands(file), /default that is not an option/);
+    });
+
+    test('quotes variable values for supported shells', () => {
+        assert.strictEqual(quoteForShell("my site's docs", '/bin/zsh'), "'my site'\\''s docs'");
+        assert.strictEqual(quoteForShell("my site's docs", 'pwsh'), "'my site''s docs'");
+        assert.throws(() => quoteForShell('first\nsecond', '/bin/zsh'), /line breaks/);
+    });
+
+    test('leaves undeclared shell variables unchanged', async () => {
+        assert.strictEqual(await resolveCommonCommand({ command: 'echo ${HOME}' }, [], '/bin/zsh'), 'echo ${HOME}');
     });
 
     test('selects and runs a command when invoked without a tree item', async () => {

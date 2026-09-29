@@ -5,18 +5,27 @@ import {
     CommonCommand,
     commonCommandsFile,
     ensureCommonCommandsFile,
-    readCommonCommands,
+    readCommonCommandsDocument,
 } from './commonCommandStore';
+import { resolveCommonCommand } from './commonCommandVariables';
 
 export async function insertCommonCommand(item?: unknown): Promise<void> {
-    const command =
-        item instanceof TemplateItem && item.contextValue === 'commonCommand'
-            ? (item as TemplateItem<CommonCommand>).snapshot.entries[item.index]?.command
-            : await pickCommonCommand('Insert Common Command', 'Choose a command to insert into the terminal');
-    if (!command) {
+    const isCommonCommandItem = item instanceof TemplateItem && item.contextValue === 'commonCommand';
+    const selected = isCommonCommandItem
+        ? (item as TemplateItem<CommonCommand>).snapshot.entries[item.index]
+        : await pickCommonCommand('Insert Common Command', 'Choose a command to insert into the terminal');
+    if (!selected) {
         return;
     }
 
+    const command = await resolveSelectedCommand(
+        selected,
+        vscode.env.shell,
+        isCommonCommandItem ? (item as TemplateItem<CommonCommand>).file : commonCommandsFile,
+    );
+    if (!command) {
+        return;
+    }
     const terminal = vscode.window.activeTerminal ?? vscode.window.createTerminal({ name: 'Project Atlas' });
     terminal.show();
     terminal.sendText(command, false);
@@ -24,22 +33,42 @@ export async function insertCommonCommand(item?: unknown): Promise<void> {
 
 export async function runCommonCommand(
     item?: unknown,
-    picker: () => Promise<string | undefined> = () =>
+    picker: () => Promise<CommonCommand | string | undefined> = () =>
         pickCommonCommand('Run Common Command', 'Choose a command to run'),
     executor: (command: string) => Promise<void> = executeCommonCommand,
 ): Promise<void> {
     const isCommonCommandItem = item instanceof TemplateItem && item.contextValue === 'commonCommand';
-    const command = isCommonCommandItem
-        ? (item as TemplateItem<CommonCommand>).snapshot.entries[item.index]?.command
+    const selected = isCommonCommandItem
+        ? (item as TemplateItem<CommonCommand>).snapshot.entries[item.index]
         : await picker();
-    if (!command) {
+    if (!selected) {
         if (isCommonCommandItem) {
             throw new Error('This command no longer exists. Refresh the view and try again.');
         }
         return;
     }
 
+    const command = await resolveSelectedCommand(
+        selected,
+        vscode.env.shell,
+        isCommonCommandItem ? (item as TemplateItem<CommonCommand>).file : commonCommandsFile,
+    );
+    if (!command) {
+        return;
+    }
     await executor(command);
+}
+
+async function resolveSelectedCommand(
+    selected: CommonCommand | string,
+    shell: string,
+    file: string,
+): Promise<string | undefined> {
+    if (typeof selected === 'string') {
+        return selected;
+    }
+    const { variables } = await readCommonCommandsDocument(file);
+    return resolveCommonCommand(selected, variables ?? [], shell);
 }
 
 async function executeCommonCommand(command: string): Promise<void> {
@@ -67,8 +96,8 @@ async function executeCommonCommand(command: string): Promise<void> {
     await vscode.tasks.executeTask(task);
 }
 
-async function pickCommonCommand(title: string, placeHolder: string): Promise<string | undefined> {
-    const commands = await readCommonCommands();
+async function pickCommonCommand(title: string, placeHolder: string): Promise<CommonCommand | undefined> {
+    const { commands } = await readCommonCommandsDocument();
     if (!commands.length) {
         await vscode.window.showInformationMessage('Project Atlas: No common commands configured.');
         return;
@@ -76,7 +105,7 @@ async function pickCommonCommand(title: string, placeHolder: string): Promise<st
     const picked = await vscode.window.showQuickPick(
         commands.map((item) => ({
             label: item.command,
-            command: item.command,
+            command: item,
             ...(item.description ? { detail: item.description } : {}),
         })),
         {

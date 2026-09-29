@@ -8,6 +8,24 @@ export interface CommonCommand {
     command: string;
     description?: string;
     tags?: string[];
+    variables?: CommonCommandVariable[];
+}
+
+export type CommonCommandVariableType = 'text' | 'select' | 'multiSelect' | 'path';
+
+export interface CommonCommandVariable {
+    name: string;
+    label?: string;
+    type: CommonCommandVariableType;
+    required?: boolean;
+    default?: string | string[];
+    options?: string[];
+    pathKind?: 'file' | 'folder' | 'any';
+}
+
+export interface CommonCommandsDocument {
+    variables?: CommonCommandVariable[];
+    commands: CommonCommand[];
 }
 
 export const commonCommandsFile = path.join(os.homedir(), '.project-atlas', 'commoncmd.json');
@@ -67,6 +85,10 @@ export async function ensureCommonCommandsFile(file = commonCommandsFile): Promi
 }
 
 export async function readCommonCommands(file = commonCommandsFile): Promise<CommonCommand[]> {
+    return (await readCommonCommandsDocument(file)).commands;
+}
+
+export async function readCommonCommandsDocument(file = commonCommandsFile): Promise<CommonCommandsDocument> {
     let contents: string;
     try {
         contents = await fs.readFile(file, 'utf8');
@@ -78,7 +100,8 @@ export async function readCommonCommands(file = commonCommandsFile): Promise<Com
     }
 
     try {
-        return parseCommonCommands(JSON.parse(contents));
+        const data = JSON.parse(contents);
+        return { commands: parseCommonCommands(data), variables: readCommonCommandVariables(data) };
     } catch (error) {
         if (error instanceof SyntaxError) {
             throw new Error(`Common commands file contains invalid JSON: ${file}`);
@@ -135,11 +158,17 @@ function parseCommonCommands(data: unknown): CommonCommand[] {
     if (!data || typeof data !== 'object' || !Array.isArray((data as { commands?: unknown }).commands)) {
         throw new Error('Common commands file must contain a commands array.');
     }
+    readCommonCommandVariables(data);
     return (data as { commands: unknown[] }).commands.map((entry, index) => {
         if (!entry || typeof entry !== 'object') {
             throw new Error(`Common command ${index + 1} must be an object.`);
         }
-        const { command, description, tags } = entry as { command?: unknown; description?: unknown; tags?: unknown };
+        const { command, description, tags, variables } = entry as {
+            command?: unknown;
+            description?: unknown;
+            tags?: unknown;
+            variables?: unknown;
+        };
         if (typeof command !== 'string' || !command.trim()) {
             throw new Error(`Common command ${index + 1} must have a non-empty command.`);
         }
@@ -154,8 +183,103 @@ function parseCommonCommands(data: unknown): CommonCommand[] {
             command: command.trim(),
             ...(normalizedDescription ? { description: normalizedDescription } : {}),
             ...(tags ? { tags: normalizeCommonCommandTags(tags as string[]) } : {}),
+            ...(variables ? { variables: parseCommonCommandVariables(variables, `Common command ${index + 1}`) } : {}),
         };
     });
+}
+
+export function parseCommonCommandVariables(data: unknown, owner = 'Variables'): CommonCommandVariable[] {
+    if (!Array.isArray(data)) {
+        throw new Error(`${owner} must be an array.`);
+    }
+    const names = new Set<string>();
+    return data.map((entry, index) => {
+        if (!entry || typeof entry !== 'object') {
+            throw new Error(`${owner} variable ${index + 1} must be an object.`);
+        }
+        const {
+            name,
+            label,
+            type,
+            required,
+            default: defaultValue,
+            options,
+            pathKind,
+        } = entry as Record<string, unknown>;
+        if (typeof name !== 'string' || !/^[A-Za-z_][A-Za-z0-9_]*$/.test(name)) {
+            throw new Error(`${owner} variable ${index + 1} must have a valid name.`);
+        }
+        if (names.has(name)) {
+            throw new Error(`${owner} contains duplicate variable ${name}.`);
+        }
+        names.add(name);
+        if (label !== undefined && typeof label !== 'string') {
+            throw new Error(`${owner} variable ${name} has an invalid label.`);
+        }
+        if (type !== 'text' && type !== 'select' && type !== 'multiSelect' && type !== 'path') {
+            throw new Error(`${owner} variable ${name} has an invalid type.`);
+        }
+        if (required !== undefined && typeof required !== 'boolean') {
+            throw new Error(`${owner} variable ${name} has an invalid required value.`);
+        }
+        if (
+            options !== undefined &&
+            (!Array.isArray(options) || options.some((option) => typeof option !== 'string'))
+        ) {
+            throw new Error(`${owner} variable ${name} has invalid options.`);
+        }
+        if ((type === 'select' || type === 'multiSelect') && (!options || !options.length)) {
+            throw new Error(`${owner} variable ${name} requires options.`);
+        }
+        if (pathKind !== undefined && pathKind !== 'file' && pathKind !== 'folder' && pathKind !== 'any') {
+            throw new Error(`${owner} variable ${name} has an invalid pathKind.`);
+        }
+        if (type !== 'path' && pathKind !== undefined) {
+            throw new Error(`${owner} variable ${name} can only use pathKind with path type.`);
+        }
+        if (type === 'multiSelect') {
+            if (
+                defaultValue !== undefined &&
+                (!Array.isArray(defaultValue) || defaultValue.some((value) => typeof value !== 'string'))
+            ) {
+                throw new Error(`${owner} variable ${name} has an invalid default.`);
+            }
+        } else if (defaultValue !== undefined && typeof defaultValue !== 'string') {
+            throw new Error(`${owner} variable ${name} has an invalid default.`);
+        }
+        if (
+            type === 'select' &&
+            typeof defaultValue === 'string' &&
+            defaultValue !== '' &&
+            !options?.includes(defaultValue)
+        ) {
+            throw new Error(`${owner} variable ${name} has a default that is not an option.`);
+        }
+        if (
+            type === 'multiSelect' &&
+            Array.isArray(defaultValue) &&
+            defaultValue.some((value) => !options?.includes(value))
+        ) {
+            throw new Error(`${owner} variable ${name} has a default that is not an option.`);
+        }
+        return {
+            name,
+            ...(label?.trim() ? { label: label.trim() } : {}),
+            type,
+            ...(required !== undefined ? { required } : {}),
+            ...(defaultValue !== undefined ? { default: defaultValue } : {}),
+            ...(options ? { options: [...new Set(options as string[])] } : {}),
+            ...(pathKind ? { pathKind } : {}),
+        };
+    });
+}
+
+export function readCommonCommandVariables(data: unknown): CommonCommandVariable[] {
+    if (!data || typeof data !== 'object') {
+        throw new Error('Common commands file must contain a commands array.');
+    }
+    const variables = (data as CommonCommandsDocument).variables;
+    return variables === undefined ? [] : parseCommonCommandVariables(variables, 'Global variables');
 }
 
 export function normalizeCommonCommandTags(tags: readonly string[]): string[] {
