@@ -686,7 +686,8 @@ suite('Extension', () => {
         assert.strictEqual(paletteCommands[1]?.category, 'Project Atlas');
         assert.strictEqual(paletteCommands[2]?.category, 'Project Atlas');
         assert.strictEqual(paletteCommands[3]?.category, 'Project Atlas');
-        assert.strictEqual(paletteCommands[4]?.category, 'AICode');
+        assert.strictEqual(paletteCommands[4]?.category, 'Project Atlas');
+        assert.strictEqual(paletteCommands[5]?.category, 'AICode');
         for (const [command, enablement] of [
             [
                 'project-atlas.backupTemplateData',
