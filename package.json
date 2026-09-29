@@ -2409,7 +2409,7 @@
         {
           "command": "project-atlas.deleteNpmPackageFromTrash",
           "when": "view == projectAtlas.npmPackages && viewItem == npmTrashedPackage",
-          "group": "inline@2"
+          "group": "danger@1"
         },
         {
           "command": "project-atlas.refreshNpmFavoriteDescriptions",
@@ -2434,12 +2434,12 @@
         {
           "command": "project-atlas.addNpmPackageFavorite",
           "when": "view == projectAtlas.npmPackages && viewItem == npmInstalledPackage",
-          "group": "inline@1"
+          "group": "npmPackages@1"
         },
         {
           "command": "project-atlas.removeNpmPackageFavorite",
           "when": "view == projectAtlas.npmPackages && viewItem == npmInstalledPackageFavorite",
-          "group": "inline@1"
+          "group": "npmPackages@1"
         },
         {
           "command": "project-atlas.addFavoriteNpmPackageToDependencies",
@@ -2469,7 +2469,7 @@
         {
           "command": "project-atlas.editNpmFavoriteTag",
           "when": "view == projectAtlas.npmPackages && (viewItem == npmFavoritePackage || viewItem == npmFavoritePackageAddable)",
-          "group": "inline@2"
+          "group": "npmPackages@3"
         },
         {
           "command": "project-atlas.openNpmPackageHomepage",
