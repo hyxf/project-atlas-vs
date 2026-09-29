@@ -48,7 +48,9 @@ import { editProjectForm } from '../features/projectManagement/projectForm';
 import {
     favoriteInstallCommand,
     favoritePackageManager,
+    favoriteUninstallCommand,
     packageManagerFromLockFiles,
+    workspaceInstallCommand,
     parseFavoritesDocument,
     parseTrashDocument,
     serializeFavoritesDocument,
@@ -94,7 +96,14 @@ suite('npm package favorite tags', () => {
         assert.strictEqual(favoriteInstallCommand('yarn', 'fastify'), 'yarn add fastify');
         assert.strictEqual(favoriteInstallCommand('npm', '@fastify/cors'), 'npm install @fastify/cors');
         assert.strictEqual(favoriteInstallCommand('pnpm', 'fastify'), 'pnpm add fastify');
+        assert.strictEqual(workspaceInstallCommand('yarn'), 'yarn install');
+        assert.strictEqual(workspaceInstallCommand('npm'), 'npm install');
+        assert.strictEqual(workspaceInstallCommand('pnpm'), 'pnpm install');
+        assert.strictEqual(favoriteUninstallCommand('yarn', 'fastify'), 'yarn remove fastify');
+        assert.strictEqual(favoriteUninstallCommand('npm', '@fastify/cors'), 'npm uninstall @fastify/cors');
+        assert.strictEqual(favoriteUninstallCommand('pnpm', 'fastify'), 'pnpm remove fastify');
         assert.throws(() => favoriteInstallCommand('yarn', 'fastify; rm -rf /'), /Invalid npm package name/);
+        assert.throws(() => favoriteUninstallCommand('yarn', 'fastify; rm -rf /'), /Invalid npm package name/);
     });
 
     test('keeps legacy favorites untagged without modifying their metadata', () => {

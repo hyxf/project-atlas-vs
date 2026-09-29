@@ -458,6 +458,12 @@
         "icon": "$(add)"
       },
       {
+        "command": "project-atlas.installWorkspaceNpmPackages",
+        "title": "Install All npm Packages",
+        "category": "Project Atlas",
+        "icon": "$(cloud-download)"
+      },
+      {
         "command": "project-atlas.editNpmFavoritesFile",
         "title": "Edit npm Favorites",
         "category": "Project Atlas",
@@ -519,6 +525,13 @@
         "category": "Project Atlas",
         "icon": "$(cloud-download)",
         "enablement": "viewItem == npmFavoritePackageAddable"
+      },
+      {
+        "command": "project-atlas.uninstallNpmPackage",
+        "title": "Uninstall Package",
+        "category": "Project Atlas",
+        "icon": "$(trash)",
+        "enablement": "viewItem == npmInstalledPackage || viewItem == npmInstalledPackageFavorite || viewItem == npmFavoritePackage"
       },
       {
         "command": "project-atlas.addNpmPackageFavorite",
@@ -1589,6 +1602,10 @@
           "when": "false"
         },
         {
+          "command": "project-atlas.installWorkspaceNpmPackages",
+          "when": "false"
+        },
+        {
           "command": "project-atlas.editNpmFavoriteTag",
           "when": "false"
         },
@@ -1630,6 +1647,10 @@
         },
         {
           "command": "project-atlas.installFavoriteNpmPackage",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.uninstallNpmPackage",
           "when": "false"
         },
         {
@@ -2356,14 +2377,24 @@
           "group": "aiPrompts@2"
         },
         {
+          "command": "project-atlas.uninstallNpmPackage",
+          "when": "view == projectAtlas.npmPackages && (viewItem == npmInstalledPackage || viewItem == npmInstalledPackageFavorite)",
+          "group": "inline@1"
+        },
+        {
           "command": "project-atlas.removeNpmPackage",
           "when": "view == projectAtlas.npmPackages && (viewItem == npmInstalledPackage || viewItem == npmInstalledPackageFavorite)",
-          "group": "inline@2"
+          "group": "npmPackages@3"
         },
         {
           "command": "project-atlas.refreshNpmPackages",
           "when": "view == projectAtlas.npmPackages && viewItem == npmInstall",
           "group": "inline@1"
+        },
+        {
+          "command": "project-atlas.installWorkspaceNpmPackages",
+          "when": "view == projectAtlas.npmPackages && viewItem == npmInstall",
+          "group": "inline@2"
         },
         {
           "command": "project-atlas.editWorkspacePackageJson",
@@ -2428,6 +2459,11 @@
         {
           "command": "project-atlas.installFavoriteNpmPackage",
           "when": "view == projectAtlas.npmPackages && viewItem == npmFavoritePackageAddable",
+          "group": "inline@1"
+        },
+        {
+          "command": "project-atlas.uninstallNpmPackage",
+          "when": "view == projectAtlas.npmPackages && viewItem == npmFavoritePackage",
           "group": "inline@1"
         },
         {

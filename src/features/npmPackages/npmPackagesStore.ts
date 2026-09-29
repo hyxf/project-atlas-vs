@@ -270,10 +270,17 @@ export function packageManagerFromLockFiles(lockFiles: Iterable<string>): Packag
 }
 
 export function favoriteInstallCommand(packageManager: PackageManager, name: string): string {
-    if (!/^(?:@[-a-zA-Z0-9~][-.a-zA-Z0-9_~]*\/)?[-a-zA-Z0-9~][-.a-zA-Z0-9_~]*$/.test(name)) {
-        throw new Error(`Invalid npm package name: ${name}`);
-    }
+    assertPackageName(name);
     return packageManager === 'npm' ? `npm install ${name}` : `${packageManager} add ${name}`;
+}
+
+export function workspaceInstallCommand(packageManager: PackageManager): string {
+    return `${packageManager} install`;
+}
+
+export function favoriteUninstallCommand(packageManager: PackageManager, name: string): string {
+    assertPackageName(name);
+    return packageManager === 'npm' ? `npm uninstall ${name}` : `${packageManager} remove ${name}`;
 }
 
 export function npmPackageTooltip(name: string, version?: string, description?: string): string {
@@ -309,6 +316,12 @@ async function workspaceLockFiles(): Promise<string[]> {
         }),
     );
     return existing.filter((file): file is string => Boolean(file));
+}
+
+function assertPackageName(name: string): void {
+    if (!/^(?:@[-a-zA-Z0-9~][-.a-zA-Z0-9_~]*\/)?[-a-zA-Z0-9~][-.a-zA-Z0-9_~]*$/.test(name)) {
+        throw new Error(`Invalid npm package name: ${name}`);
+    }
 }
 
 async function writeFavorites(root: Record<string, unknown>, favorites: PackageEntry[]): Promise<void> {

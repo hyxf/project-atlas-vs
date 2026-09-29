@@ -3,21 +3,25 @@ import { pickRepositoryTags } from '../repositoryManagement/tagPicker';
 import {
     favoriteTags,
     isInstalled,
+    favoriteInstallCommand,
+    favoriteUninstallCommand,
     openFavoritesFile,
     openTrashFile,
-    favoriteInstallCommand,
     readFavorites,
     readFavoritePackageManager,
+    readInstalled,
     removeFromTrash,
     removeFavorite,
     saveFavorite,
     saveToTrash,
     updateDependencies,
     updateFavoriteTags,
+    workspaceInstallCommand,
     workspacePackageUri,
 } from './npmPackagesStore';
 import { openSearchPanel, refreshFavoritePackageDescriptions } from './npmPackagesSearch';
 import { NpmPackageNode, NpmPackagesTree } from './npmPackagesTree';
+import { PackageManager, TrashedPackageEntry } from './npmPackagesTypes';
 
 export {
     npmPackageTooltip,
@@ -58,6 +62,7 @@ export function activateNpmPackages(context: vscode.ExtensionContext): void {
     });
     register('searchNpmPackages', async () => openSearchPanel(provider));
     register('addNpmPackage', async () => openSearchPanel(provider));
+    register('installWorkspaceNpmPackages', async () => runPackageManagerCommand(workspaceInstallCommand));
     register('editNpmFavoritesFile', openFavoritesFile);
     register('editNpmTrashFile', openTrashFile);
     register('refreshNpmTrash', refresh);
@@ -139,18 +144,18 @@ export function activateNpmPackages(context: vscode.ExtensionContext): void {
         if (!item || item.entry.kind || (await isInstalled(item.entry.name))) {
             return;
         }
-        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-        if (!workspaceFolder || !workspacePackageUri()) {
-            throw new Error('Open exactly one workspace folder with a root package.json.');
+        await runPackageManagerCommand((packageManager) => favoriteInstallCommand(packageManager, item.entry.name));
+    });
+    register('uninstallNpmPackage', async (item: NpmPackageNode) => {
+        if (!item) {
+            return;
         }
-        const packageManager = await readFavoritePackageManager();
-        const command = favoriteInstallCommand(packageManager, item.entry.name);
-        const terminal = vscode.window.createTerminal({
-            name: `Project Atlas: ${packageManager}`,
-            cwd: workspaceFolder.uri,
-        });
-        terminal.show();
-        terminal.sendText(command);
+        const installed = await installedPackage(item.entry.name);
+        if (!installed) {
+            return;
+        }
+        await saveToTrash(installed);
+        await runPackageManagerCommand((packageManager) => favoriteUninstallCommand(packageManager, installed.name));
     });
     register('addNpmPackageFavorite', async (item: NpmPackageNode) => {
         if (item) {
@@ -231,4 +236,26 @@ async function addFavoriteDependency(
     }
     await updateDependencies(item.entry.name, kind, true, item.entry.version || 'latest');
     await refresh();
+}
+
+async function runPackageManagerCommand(commandFor: (packageManager: PackageManager) => string): Promise<void> {
+    const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+    if (!workspaceFolder || !workspacePackageUri()) {
+        throw new Error('Open exactly one workspace folder with a root package.json.');
+    }
+    const packageManager = await readFavoritePackageManager();
+    const terminal = vscode.window.createTerminal({
+        name: `Project Atlas: ${packageManager}`,
+        cwd: workspaceFolder.uri,
+    });
+    terminal.show();
+    terminal.sendText(commandFor(packageManager));
+}
+
+async function installedPackage(name: string): Promise<TrashedPackageEntry | undefined> {
+    const installed = await readInstalled();
+    const entry = [...installed.dependencies, ...installed.devDependencies].find(
+        (candidate) => candidate.name === name,
+    );
+    return entry?.kind ? { ...entry, kind: entry.kind } : undefined;
 }

@@ -68,7 +68,7 @@ Project Atlas 是一款用于管理本地项目、Git 仓库和开发素材的 V
 
 `npmfav.json` 可使用顶层 `packageManager` 选择收藏条目行内 **Install** 使用的包管理器：`"yarn"`、`"npm"` 或 `"pnpm"`。未配置时会检查当前工作区根目录的 `pnpm-lock.yaml`、`yarn.lock`、`package-lock.json` 或 `npm-shrinkwrap.json`；没有锁文件则使用 npm。显式配置始终优先。例如 `"packageManager": "yarn"` 时，安装 `fastify` 会在当前工作区终端执行 `yarn add fastify`。
 
-标题栏按钮提供新增。Install 节点提供打开 `package.json` 的编辑按钮和重新加载依赖的刷新按钮；Favorites 节点提供编辑和刷新元数据按钮；Trash 节点提供编辑 `npmtrash.json` 和刷新按钮。命令面板提供 `Project Atlas: Refresh npm Packages`、`Search npm Packages`、`Add npm Package` 和 `Edit npm Favorites`。移除、恢复、永久删除依赖、打开包主页和单个包的收藏操作需从树节点操作触发。
+标题栏按钮提供新增。Install 节点提供打开 `package.json` 的编辑按钮、重新加载依赖和行内 **Install All Packages**；后者通过所选包管理器运行 `yarn install`、`npm install` 或 `pnpm install`，确保 `package.json` 的全部依赖已安装到本地。Favorites 节点提供编辑和刷新元数据按钮；Trash 节点提供编辑 `npmtrash.json` 和刷新按钮。Install 下已安装的包以及 Favorites 下已安装的收藏包均提供行内 **Uninstall**，通过所选包管理器执行卸载，并在执行前保存到 Trash 以便恢复。命令面板提供 `Project Atlas: Refresh npm Packages`、`Search npm Packages`、`Add npm Package` 和 `Edit npm Favorites`。移除、恢复、永久删除依赖、打开包主页和单个包的收藏操作需从树节点操作触发。
 
 ## AICode 上下文
 
