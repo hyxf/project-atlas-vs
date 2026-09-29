@@ -2406,12 +2406,12 @@
         {
           "command": "project-atlas.refreshNpmPackages",
           "when": "view == projectAtlas.npmPackages && viewItem == npmInstall",
-          "group": "inline@1"
+          "group": "inline@2"
         },
         {
           "command": "project-atlas.installWorkspaceNpmPackages",
           "when": "view == projectAtlas.npmPackages && viewItem == npmInstall",
-          "group": "inline@2"
+          "group": "inline@1"
         },
         {
           "command": "project-atlas.editWorkspacePackageJson",
