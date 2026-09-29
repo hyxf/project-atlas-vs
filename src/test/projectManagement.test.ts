@@ -8,7 +8,7 @@ import { findJetBrainsApp } from '../features/projectManagement/jetbrainsApps';
 import { containsPath, duplicateDirectory, ProjectService } from '../features/projectManagement/service';
 import { ProjectStore } from '../features/projectManagement/store';
 import { parseUriList, ProjectsTree } from '../features/projectManagement/tree';
-import { findXcodeApp } from '../features/projectManagement/xcodeApp';
+import { findXcodeApp, findXcodeProject } from '../features/projectManagement/xcodeApp';
 
 suite('Project Management', () => {
     let temporary: string;
@@ -74,6 +74,15 @@ suite('Project Management', () => {
         await fs.mkdir(path.join(applications, 'Xcode.app'), { recursive: true });
 
         assert.strictEqual(await findXcodeApp([applications]), path.join(applications, 'Xcode.app'));
+    });
+
+    test('prefers an Xcode workspace over a project and Swift package manifest', async () => {
+        const project = path.join(temporary, 'ios-project');
+        await fs.mkdir(path.join(project, 'Atlas.xcodeproj'), { recursive: true });
+        await fs.mkdir(path.join(project, 'Atlas.xcworkspace'), { recursive: true });
+        await fs.writeFile(path.join(project, 'Package.swift'), '// Swift package');
+
+        assert.strictEqual(await findXcodeProject(project), path.join(project, 'Atlas.xcworkspace'));
     });
 
     test('saves, normalizes, updates, searches, and sorts projects', async () => {

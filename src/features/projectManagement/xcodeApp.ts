@@ -36,6 +36,19 @@ export async function syncXcodeMenuContext(): Promise<void> {
     );
 }
 
+export async function findXcodeProject(projectPath: string): Promise<string | undefined> {
+    const entries = await fs.readdir(projectPath, { withFileTypes: true });
+    const findEntry = (matcher: RegExp) =>
+        entries
+            .filter((entry) => matcher.test(entry.name))
+            .sort((left, right) => left.name.localeCompare(right.name))[0];
+    const workspace = findEntry(/\.xcworkspace$/i);
+    const xcodeProject = findEntry(/\.xcodeproj$/i);
+    const swiftPackage = entries.find((entry) => entry.name === 'Package.swift');
+    const projectEntry = workspace ?? xcodeProject ?? swiftPackage;
+    return projectEntry ? path.join(projectPath, projectEntry.name) : undefined;
+}
+
 export async function openXcodeProject(
     project: ProjectItem | undefined,
     markOpened: (project: ProjectItem) => Promise<void>,
@@ -54,6 +67,10 @@ export async function openXcodeProject(
     if (!application) {
         throw new Error('Xcode is not installed.');
     }
-    await executeFile('open', ['-a', application, project.path]);
+    const xcodeProject = await findXcodeProject(project.path);
+    if (!xcodeProject) {
+        throw new Error('No .xcworkspace, .xcodeproj, or Package.swift file was found in this project directory.');
+    }
+    await executeFile('open', ['-a', application, xcodeProject]);
     await markOpened(project);
 }
