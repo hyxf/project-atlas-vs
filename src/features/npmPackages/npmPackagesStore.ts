@@ -5,7 +5,7 @@ import * as path from 'path';
 import { applyEdits, modify } from 'jsonc-parser';
 import * as vscode from 'vscode';
 import { ensureDocumentSaved, ensureSourceUnchanged } from '../packageVersion/packageVersionService';
-import { DependencyKind, PackageEntry, TrashedPackageEntry } from './npmPackagesTypes';
+import { DependencyKind, PackageEntry, PackageManager, TrashedPackageEntry } from './npmPackagesTypes';
 
 const favoritesFile = path.join(os.homedir(), '.project-atlas', 'npmfav.json');
 const trashFile = path.join(os.homedir(), '.project-atlas', 'npmtrash.json');
@@ -44,13 +44,24 @@ export async function readFavorites(): Promise<PackageEntry[]> {
     }
 }
 
+/** Returns the configured manager, or infers it from the workspace lock file. */
+export async function readFavoritePackageManager(): Promise<PackageManager> {
+    const configured = configuredFavoritePackageManager((await readFavoritesDocument()).root);
+    return configured ?? packageManagerFromLockFiles(await workspaceLockFiles());
+}
+
 export async function ensureFavoritesFile(): Promise<void> {
     await fs.mkdir(path.dirname(favoritesFile), { recursive: true });
-    await fs.writeFile(favoritesFile, '{\n  "favorites": []\n}\n', { encoding: 'utf8', flag: 'wx' }).catch((error) => {
-        if ((error as NodeJS.ErrnoException).code !== 'EEXIST') {
-            throw error;
-        }
-    });
+    await fs
+        .writeFile(favoritesFile, '{\n  "favorites": []\n}\n', {
+            encoding: 'utf8',
+            flag: 'wx',
+        })
+        .catch((error) => {
+            if ((error as NodeJS.ErrnoException).code !== 'EEXIST') {
+                throw error;
+            }
+        });
 }
 
 export async function openFavoritesFile(): Promise<void> {
@@ -236,6 +247,35 @@ export function serializeFavoritesDocument(document: { root: Record<string, unkn
     return `${JSON.stringify({ ...document.root, favorites: document.items }, null, 2)}\n`;
 }
 
+export function favoritePackageManager(root: Record<string, unknown>): PackageManager {
+    return configuredFavoritePackageManager(root) ?? 'yarn';
+}
+
+export function configuredFavoritePackageManager(root: Record<string, unknown>): PackageManager | undefined {
+    const packageManager = root.packageManager;
+    return packageManager === 'npm' || packageManager === 'pnpm' || packageManager === 'yarn'
+        ? packageManager
+        : undefined;
+}
+
+export function packageManagerFromLockFiles(lockFiles: Iterable<string>): PackageManager {
+    const files = new Set(lockFiles);
+    if (files.has('pnpm-lock.yaml')) {
+        return 'pnpm';
+    }
+    if (files.has('yarn.lock')) {
+        return 'yarn';
+    }
+    return 'npm';
+}
+
+export function favoriteInstallCommand(packageManager: PackageManager, name: string): string {
+    if (!/^(?:@[-a-zA-Z0-9~][-.a-zA-Z0-9_~]*\/)?[-a-zA-Z0-9~][-.a-zA-Z0-9_~]*$/.test(name)) {
+        throw new Error(`Invalid npm package name: ${name}`);
+    }
+    return packageManager === 'npm' ? `npm install ${name}` : `${packageManager} add ${name}`;
+}
+
 export function npmPackageTooltip(name: string, version?: string, description?: string): string {
     const packageName = version ? `${name}@${version}` : name;
     return description ? `${packageName}\n\n${description}` : packageName;
@@ -250,6 +290,25 @@ async function readFavoritesDocument(): Promise<{ root: Record<string, unknown>;
         }
         throw new Error(`Could not read ${favoritesFile}. Fix the JSON and refresh.`);
     }
+}
+
+async function workspaceLockFiles(): Promise<string[]> {
+    const folder = vscode.workspace.workspaceFolders?.length === 1 ? vscode.workspace.workspaceFolders[0] : undefined;
+    if (!folder) {
+        return [];
+    }
+    const lockFiles = ['pnpm-lock.yaml', 'yarn.lock', 'package-lock.json', 'npm-shrinkwrap.json'];
+    const existing = await Promise.all(
+        lockFiles.map(async (file) => {
+            try {
+                const stat = await vscode.workspace.fs.stat(vscode.Uri.joinPath(folder.uri, file));
+                return stat.type === vscode.FileType.File ? file : undefined;
+            } catch {
+                return undefined;
+            }
+        }),
+    );
+    return existing.filter((file): file is string => Boolean(file));
 }
 
 async function writeFavorites(root: Record<string, unknown>, favorites: PackageEntry[]): Promise<void> {

@@ -5,7 +5,9 @@ import {
     isInstalled,
     openFavoritesFile,
     openTrashFile,
+    favoriteInstallCommand,
     readFavorites,
+    readFavoritePackageManager,
     removeFromTrash,
     removeFavorite,
     saveFavorite,
@@ -133,6 +135,23 @@ export function activateNpmPackages(context: vscode.ExtensionContext): void {
     register('addFavoriteNpmPackageToDevDependencies', async (item: NpmPackageNode) =>
         addFavoriteDependency(item, 'devDependencies', refresh),
     );
+    register('installFavoriteNpmPackage', async (item: NpmPackageNode) => {
+        if (!item || item.entry.kind || (await isInstalled(item.entry.name))) {
+            return;
+        }
+        const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+        if (!workspaceFolder || !workspacePackageUri()) {
+            throw new Error('Open exactly one workspace folder with a root package.json.');
+        }
+        const packageManager = await readFavoritePackageManager();
+        const command = favoriteInstallCommand(packageManager, item.entry.name);
+        const terminal = vscode.window.createTerminal({
+            name: `Project Atlas: ${packageManager}`,
+            cwd: workspaceFolder.uri,
+        });
+        terminal.show();
+        terminal.sendText(command);
+    });
     register('addNpmPackageFavorite', async (item: NpmPackageNode) => {
         if (item) {
             await saveFavorite(item.entry);

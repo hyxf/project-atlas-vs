@@ -1,5 +1,7 @@
 export type DependencyKind = 'dependencies' | 'devDependencies';
 
+export type PackageManager = 'yarn' | 'npm' | 'pnpm';
+
 export interface PackageEntry {
     name: string;
     version?: string | undefined;

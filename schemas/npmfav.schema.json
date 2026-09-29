@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Project Atlas npm Favorites",
+  "description": "Favorite npm packages and the package manager used to install them.",
+  "type": "object",
+  "required": ["favorites"],
+  "properties": {
+    "packageManager": {
+      "description": "Package manager used by the Favorites Install action. When omitted, Project Atlas detects pnpm-lock.yaml, yarn.lock, package-lock.json, or npm-shrinkwrap.json in the workspace root.",
+      "enum": ["yarn", "npm", "pnpm"]
+    },
+    "favorites": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1
+          },
+          "version": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "tag": {
+            "type": "string"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  },
+  "defaultSnippets": [
+    {
+      "label": "npm favorites",
+      "body": {
+        "packageManager": "${1|yarn,npm,pnpm|}",
+        "favorites": []
+      }
+    }
+  ]
+}

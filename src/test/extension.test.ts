@@ -46,6 +46,9 @@ import { ProjectService } from '../features/projectManagement/service';
 import { ProjectStore } from '../features/projectManagement/store';
 import { editProjectForm } from '../features/projectManagement/projectForm';
 import {
+    favoriteInstallCommand,
+    favoritePackageManager,
+    packageManagerFromLockFiles,
     parseFavoritesDocument,
     parseTrashDocument,
     serializeFavoritesDocument,
@@ -78,6 +81,22 @@ suite('npm package trash data safety', () => {
 });
 
 suite('npm package favorite tags', () => {
+    test('uses the configured package manager and generates safe install commands', () => {
+        assert.strictEqual(favoritePackageManager({ packageManager: 'npm' }), 'npm');
+        assert.strictEqual(favoritePackageManager({ packageManager: 'pnpm' }), 'pnpm');
+        assert.strictEqual(favoritePackageManager({ packageManager: 'unknown' }), 'yarn');
+        assert.strictEqual(favoritePackageManager({}), 'yarn');
+        assert.strictEqual(packageManagerFromLockFiles(['pnpm-lock.yaml']), 'pnpm');
+        assert.strictEqual(packageManagerFromLockFiles(['yarn.lock']), 'yarn');
+        assert.strictEqual(packageManagerFromLockFiles(['package-lock.json']), 'npm');
+        assert.strictEqual(packageManagerFromLockFiles(['npm-shrinkwrap.json']), 'npm');
+        assert.strictEqual(packageManagerFromLockFiles([]), 'npm');
+        assert.strictEqual(favoriteInstallCommand('yarn', 'fastify'), 'yarn add fastify');
+        assert.strictEqual(favoriteInstallCommand('npm', '@fastify/cors'), 'npm install @fastify/cors');
+        assert.strictEqual(favoriteInstallCommand('pnpm', 'fastify'), 'pnpm add fastify');
+        assert.throws(() => favoriteInstallCommand('yarn', 'fastify; rm -rf /'), /Invalid npm package name/);
+    });
+
     test('keeps legacy favorites untagged without modifying their metadata', () => {
         const document = parseFavoritesDocument({
             favorites: [{ name: 'lodash', version: '^4.17.21', metadata: { source: 'another-client' } }],
@@ -844,6 +863,10 @@ suite('Extension', () => {
             {
                 fileMatch: '**/.project-atlas/proxy.json',
                 url: './schemas/proxy.schema.json',
+            },
+            {
+                fileMatch: '**/.project-atlas/npmfav.json',
+                url: './schemas/npmfav.schema.json',
             },
             { fileMatch: '**/aiprompts.json', url: './schemas/aiprompts.schema.json' },
         ]);

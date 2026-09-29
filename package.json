@@ -514,6 +514,13 @@
         "enablement": "viewItem == npmFavoritePackageAddable"
       },
       {
+        "command": "project-atlas.installFavoriteNpmPackage",
+        "title": "Install Favorite Package",
+        "category": "Project Atlas",
+        "icon": "$(cloud-download)",
+        "enablement": "viewItem == npmFavoritePackageAddable"
+      },
+      {
         "command": "project-atlas.addNpmPackageFavorite",
         "title": "Add to Favorites",
         "category": "Project Atlas",
@@ -1622,6 +1629,10 @@
           "when": "false"
         },
         {
+          "command": "project-atlas.installFavoriteNpmPackage",
+          "when": "false"
+        },
+        {
           "command": "project-atlas.addNpmPackageFavorite",
           "when": "false"
         },
@@ -2415,6 +2426,11 @@
           "group": "danger@1"
         },
         {
+          "command": "project-atlas.installFavoriteNpmPackage",
+          "when": "view == projectAtlas.npmPackages && viewItem == npmFavoritePackageAddable",
+          "group": "inline@1"
+        },
+        {
           "command": "project-atlas.editNpmFavoriteTag",
           "when": "view == projectAtlas.npmPackages && (viewItem == npmFavoritePackage || viewItem == npmFavoritePackageAddable)",
           "group": "inline@2"
@@ -2556,6 +2572,10 @@
       {
         "fileMatch": "**/.project-atlas/proxy.json",
         "url": "./schemas/proxy.schema.json"
+      },
+      {
+        "fileMatch": "**/.project-atlas/npmfav.json",
+        "url": "./schemas/npmfav.schema.json"
       },
       {
         "fileMatch": "**/aiprompts.json",
