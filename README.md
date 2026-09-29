@@ -93,6 +93,8 @@ Project Atlas 是一款用于管理本地项目、Git 仓库和开发素材的 V
 
 Common Commands 可在原始 `commoncmd.json` 中定义变量。顶层 `variables` 可供全部命令使用，命令中的 `variables` 仅供该命令使用；在命令文本使用 `${variable_name}` 引用。运行或插入命令时会提示输入，输入值不会写回文件。支持 `text`、`select`、`multiSelect` 和 `path`（`file`、`folder` 或 `any`）类型：
 
+编辑或新增 Common Command 时，可直接在 HTML 表单的“Command variables”区新增、修改或删除命令变量；Common Commands 视图标题的变量图标可管理全局变量。
+
 ```json
 {
     "variables": [{ "name": "project_name", "label": "Project name", "type": "text", "required": true }],

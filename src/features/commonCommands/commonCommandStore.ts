@@ -2,7 +2,13 @@ import { randomUUID } from 'crypto';
 import { promises as fs } from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { changeTemplate, queueTemplateWrite, readTemplateSnapshot, TemplateSnapshot } from '../templates/templateStore';
+import {
+    changeTemplate,
+    mutateTemplate,
+    queueTemplateWrite,
+    readTemplateSnapshot,
+    TemplateSnapshot,
+} from '../templates/templateStore';
 
 export interface CommonCommand {
     command: string;
@@ -57,6 +63,30 @@ export function updateCommonCommand(
         } else {
             delete entry.tags;
         }
+        if (value.variables !== undefined) {
+            const variables = parseCommonCommandVariables(value.variables, 'Command variables');
+            if (variables.length) {
+                entry.variables = variables;
+            } else {
+                delete entry.variables;
+            }
+        }
+    });
+}
+
+export function updateGlobalCommonCommandVariables(
+    snapshot: TemplateSnapshot<CommonCommand>,
+    variables: unknown,
+    file = commonCommandsFile,
+): Promise<void> {
+    return mutateTemplate(file, snapshot, (document) => {
+        const parsed = parseCommonCommandVariables(variables, 'Global variables');
+        if (parsed.length) {
+            document.variables = parsed;
+        } else {
+            delete document.variables;
+        }
+        parseCommonCommands(document);
     });
 }
 

@@ -16,6 +16,7 @@ export interface TemplateFormField {
     hint?: string;
     halfWidth?: boolean;
     monospace?: boolean;
+    variableEditor?: boolean;
 }
 
 export interface TemplateFormOptions {
@@ -167,10 +168,17 @@ function escapeHtml(value: string): string {
     );
 }
 
+function renderVariableEditor(field: TemplateFormField): string {
+    return `<div class="field"><label>${escapeHtml(field.label)}<span class="field-status">Optional</span></label><div class="variable-editor" data-name="${escapeHtml(field.name)}" data-value="${escapeHtml(field.value)}"><div class="variable-list"></div><button type="button" class="secondary add-variable" data-variable-action="add">Add variable</button></div>${field.hint ? `<p class="field-hint">${escapeHtml(field.hint)}</p>` : ''}</div>`;
+}
+
 export function renderTemplateForm(options: TemplateFormOptions): string {
     const nonce = randomBytes(16).toString('hex');
     const fields = options.fields
         .map((field) => {
+            if (field.variableEditor) {
+                return renderVariableEditor(field);
+            }
             const attributes = `id="${escapeHtml(field.name)}" name="${escapeHtml(field.name)}" placeholder="${escapeHtml(field.placeholder ?? '')}" ${field.required ? 'required' : ''}${field.readOnly ? ' readonly' : ''}${field.hint ? ` aria-describedby="${escapeHtml(field.name)}-hint"` : ''}${field.monospace ? ' class="code-input" spellcheck="false"' : ''}`;
             if (field.checkbox) {
                 return `<div class="field"><label class="checkbox-field" for="${escapeHtml(field.name)}"><input type="checkbox" ${attributes} value="true"${field.value === 'true' ? ' checked' : ''}>${escapeHtml(field.label)}</label>${field.hint ? `<p class="field-hint" id="${escapeHtml(field.name)}-hint">${escapeHtml(field.hint)}</p>` : ''}</div>`;
@@ -221,6 +229,20 @@ button:hover { background: var(--vscode-button-hoverBackground); } button.second
 button.secondary:hover:not(:disabled) { background: var(--vscode-button-secondaryHoverBackground, var(--vscode-button-secondaryBackground, var(--vscode-editor-background))); border-color: currentColor; }
 button:disabled { opacity: .6; cursor: default; } #error { margin: 0 28px 24px; padding: 10px 12px; border: 1px solid var(--vscode-inputValidation-errorBorder, var(--vscode-errorForeground)); border-radius: 4px; background: var(--vscode-inputValidation-errorBackground); color: var(--vscode-errorForeground); white-space: pre-wrap; overflow-wrap: anywhere; }
 .hint { margin: 0; font-size: 11px; color: var(--vscode-descriptionForeground); }
+.variable-editor { border: 1px solid var(--vscode-widget-border, var(--vscode-panel-border, transparent)); border-radius: 8px; padding: 12px; background: var(--vscode-editor-inactiveSelectionBackground, transparent); }
+.variable-list { display: grid; gap: 12px; margin-bottom: 12px; }
+.variable-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 16px; border: 1px solid var(--vscode-widget-border, var(--vscode-panel-border, transparent)); border-radius: 7px; background: var(--vscode-editor-background); box-shadow: 0 1px 2px rgba(0, 0, 0, .08); }
+.variable-row-header { grid-column: 1 / -1; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding-bottom: 10px; border-bottom: 1px solid var(--vscode-widget-border, var(--vscode-panel-border, transparent)); }
+.variable-row-title { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.variable-kind { padding: 1px 7px; border-radius: 999px; color: var(--vscode-descriptionForeground); background: var(--vscode-badge-background); font-size: 11px; font-weight: 400; }
+.variable-row .variable-wide { grid-column: 1 / -1; }
+.variable-row label { margin: 0; display: block; font-size: 12px; }
+.variable-row input, .variable-row textarea, .variable-row select { margin-top: 4px; }
+.variable-row textarea { min-height: 56px; }
+.variable-row .checkbox-field { display: flex; align-items: center; gap: 7px; }
+.variable-row .remove-variable { min-width: auto; padding: 4px 10px; }
+.add-variable { width: 100%; border-style: dashed; }
+.variable-hidden { display: none !important; }
 @media (max-width: 480px) { body { padding: 24px 16px; } .fields { padding: 20px; gap: 20px; } .half-width { grid-column: 1 / -1; } .footer { padding: 16px 20px; } #error { margin: 0 20px 20px; } }
 </style></head><body><main><header><p class="eyebrow">${escapeHtml(options.eyebrow ?? 'Project Atlas · Templates')}</p><h1>${escapeHtml(options.title)}</h1>${options.description ? `<p class="subtitle">${escapeHtml(options.description)}</p>` : ''}</header>
 <form id="editor"><div class="fields">${fields}</div><p id="error" role="alert" tabindex="-1" hidden></p>
@@ -240,9 +262,70 @@ function setSaving(value) {
 function readValues() {
     const values = Object.fromEntries(new FormData(form));
     for (const checkbox of form.querySelectorAll('input[type="checkbox"]')) values[checkbox.name] = String(checkbox.checked);
+    for (const editor of form.querySelectorAll('.variable-editor')) {
+        const variables = [...editor.querySelectorAll('.variable-row')].map(row => {
+            const get = name => row.querySelector('[data-variable="' + name + '"]');
+            const type = get('type').value;
+            const options = get('options').value.split(/[\\n,]/).map(value => value.trim()).filter(Boolean);
+            const defaultValue = type === 'multiSelect'
+                ? get('defaultMulti').value.split(/[\\n,]/).map(value => value.trim()).filter(Boolean)
+                : get('defaultSingle').value.trim();
+            return {
+                name: get('name').value.trim(),
+                ...(get('label').value.trim() ? { label: get('label').value.trim() } : {}),
+                type,
+                required: get('required').checked,
+                ...((type === 'select' || type === 'multiSelect') ? { options } : {}),
+                ...(type === 'path' ? { pathKind: get('pathKind').value } : {}),
+                ...((Array.isArray(defaultValue) ? defaultValue.length : defaultValue) ? { default: defaultValue } : {})
+            };
+        });
+        values[editor.dataset.name] = JSON.stringify(variables);
+    }
     return values;
 }
-form.addEventListener('input', () => vscode.postMessage({ type: 'change', values: readValues() }));
+function changed() { vscode.postMessage({ type: 'change', values: readValues() }); }
+form.addEventListener('input', changed);
+function addVariableRow(editor, variable = {}) {
+    const row = document.createElement('div');
+    row.className = 'variable-row';
+    row.innerHTML = '<div class="variable-row-header"><strong class="variable-row-title">Variable <span class="variable-kind"></span></strong><button type="button" class="secondary remove-variable" data-variable-action="remove">Delete</button></div><label>Name<input data-variable="name" placeholder="project_name"></label><label>Display label<input data-variable="label" placeholder="Project name"></label><label>Type<select data-variable="type"><option value="text">Text input</option><option value="select">Single select</option><option value="multiSelect">Multi select</option><option value="path">File or folder</option></select></label><label class="checkbox-field"><input type="checkbox" data-variable="required">Required</label><label class="variable-wide variable-options">Options<textarea data-variable="options" placeholder="One option per line"></textarea></label><label class="variable-default-single"><span data-variable-default-label>Default text</span><input data-variable="defaultSingle"></label><label class="variable-wide variable-default-multi">Default options<textarea data-variable="defaultMulti" placeholder="One option per line"></textarea></label><label class="variable-path-kind">Path kind<select data-variable="pathKind"><option value="any">File or folder</option><option value="file">File</option><option value="folder">Folder</option></select></label>';
+    const set = (name, value) => { const input = row.querySelector('[data-variable="' + name + '"]'); if (input) input.value = value; };
+    set('name', variable.name || ''); set('label', variable.label || ''); set('type', variable.type || 'text');
+    set('options', (variable.options || []).join('\\n')); set('pathKind', variable.pathKind || 'any');
+    set('defaultSingle', Array.isArray(variable.default) ? '' : (variable.default || ''));
+    set('defaultMulti', Array.isArray(variable.default) ? variable.default.join('\\n') : '');
+    row.querySelector('[data-variable="required"]').checked = variable.required !== false;
+    updateVariableRow(row);
+    editor.querySelector('.variable-list').append(row);
+}
+function updateVariableRow(row) {
+    const type = row.querySelector('[data-variable="type"]').value;
+    const isChoice = type === 'select' || type === 'multiSelect';
+    const isMulti = type === 'multiSelect';
+    row.querySelector('.variable-options').classList.toggle('variable-hidden', !isChoice);
+    row.querySelector('.variable-path-kind').classList.toggle('variable-hidden', type !== 'path');
+    row.querySelector('.variable-default-single').classList.toggle('variable-hidden', isMulti);
+    row.querySelector('.variable-default-multi').classList.toggle('variable-hidden', !isMulti);
+    row.querySelector('[data-variable-default-label]').textContent = type === 'path' ? 'Default path' : type === 'select' ? 'Default option' : 'Default text';
+    row.querySelector('.variable-kind').textContent = type === 'text' ? 'Text' : type === 'select' ? 'Single select' : type === 'multiSelect' ? 'Multi select' : 'Path';
+}
+for (const editor of form.querySelectorAll('.variable-editor')) {
+    try { JSON.parse(editor.dataset.value || '[]').forEach(variable => addVariableRow(editor, variable)); } catch { /* Validation runs when saving. */ }
+}
+form.addEventListener('click', event => {
+    const button = event.target.closest('[data-variable-action]');
+    if (!button) return;
+    const editor = button.closest('.variable-editor');
+    if (button.dataset.variableAction === 'add') addVariableRow(editor);
+    if (button.dataset.variableAction === 'remove') button.closest('.variable-row').remove();
+    changed();
+});
+form.addEventListener('change', event => {
+    const type = event.target.closest('[data-variable="type"]');
+    if (type) updateVariableRow(type.closest('.variable-row'));
+    changed();
+});
 form.addEventListener('keydown', event => {
     if (event.key === 'Tab' && event.target instanceof HTMLTextAreaElement && !event.shiftKey) {
         event.preventDefault();
@@ -253,10 +336,7 @@ form.addEventListener('keydown', event => {
 form.addEventListener('submit', (event) => {
     event.preventDefault();
     if (saving) return;
-    const values = Object.fromEntries(new FormData(form));
-    for (const checkbox of form.querySelectorAll('input[type="checkbox"]')) {
-        values[checkbox.name] = String(checkbox.checked);
-    }
+    const values = readValues();
     error.hidden = true;
     setSaving(true);
     vscode.postMessage({ type: 'save', values });
@@ -270,6 +350,6 @@ document.addEventListener('keydown', (event) => {
 window.addEventListener('message', ({ data }) => {
     if (data.type === 'error') { setSaving(false); error.textContent = data.message; error.hidden = false; error.focus(); }
 });
-form.querySelector('input, textarea, select').focus();
+form.querySelector('input, textarea, select, button').focus();
 </script></body></html>`;
 }

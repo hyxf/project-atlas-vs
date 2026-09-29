@@ -8,6 +8,7 @@ import { CommonCommand, readCommonCommandSnapshot } from '../features/commonComm
 import { GitMessage, readGitMessageSnapshot } from '../features/gitMessages/gitMessageStore';
 import {
     addCommonCommandItem,
+    editGlobalCommonCommandVariables,
     editCommonCommandTags,
     addGitMessageItem,
     editCommonCommandItem,
@@ -195,16 +196,16 @@ suite('Template views', () => {
         ] as const) {
             const original = await fs.readFile(file, 'utf8');
             await add(file, async ({ fields }) => {
-                assert.ok(fields.every(({ value }) => value === ''));
+                assert.ok(fields.every(({ name, value }) => (name === 'variables' ? value === '[]' : value === '')));
             });
             assert.strictEqual(await fs.readFile(file, 'utf8'), original);
         }
         await addCommonCommandItem(commandFile, async ({ fields, save }) => {
             assert.deepStrictEqual(
                 fields.map(({ name }) => name),
-                ['command', 'description', 'tags'],
+                ['command', 'description', 'tags', 'variables'],
             );
-            await save({ command: 'git status', description: '', tags: 'Git\nReview' });
+            await save({ command: 'git status', description: '', tags: 'Git\nReview', variables: '[]' });
         });
         await addGitMessageItem(messageFile, async ({ fields, save }) => {
             assert.deepStrictEqual(
@@ -233,7 +234,7 @@ suite('Template views', () => {
             async ({ fields }) => {
                 assert.deepStrictEqual(
                     fields.map(({ value }) => value),
-                    ['git status', '', ''],
+                    ['git status', '', '', '[]'],
                 );
             },
         );
@@ -262,9 +263,12 @@ suite('Template views', () => {
         await editCommonCommandItem(
             new TemplateItem('git status', snapshot, 0, file, 'commonCommand'),
             async ({ save }) => {
-                await assert.rejects(save({ command: 'git diff', description: 'New', tags: '' }), /already exists/);
+                await assert.rejects(
+                    save({ command: 'git diff', description: 'New', tags: '', variables: '[]' }),
+                    /already exists/,
+                );
                 assert.strictEqual(await fs.readFile(file, 'utf8'), snapshot.contents);
-                await save({ command: 'git log\ngit status', description: '', tags: 'Git\nReview' });
+                await save({ command: 'git log\ngit status', description: '', tags: 'Git\nReview', variables: '[]' });
             },
         );
         assert.deepStrictEqual(JSON.parse(await fs.readFile(file, 'utf8')).commands[0], {
@@ -272,6 +276,54 @@ suite('Template views', () => {
             extra: true,
             tags: ['Git', 'Review'],
         });
+    });
+
+    test('manages global variables through the template form', async () => {
+        const file = path.join(temporary, 'commoncmd.json');
+        await fs.writeFile(file, JSON.stringify({ commands: [] }));
+        await editGlobalCommonCommandVariables(async ({ fields, save }) => {
+            assert.strictEqual(fields[0]?.variableEditor, true);
+            await save({ variables: '[{"name":"project_name","type":"text","required":true}]' });
+        }, file);
+        assert.deepStrictEqual(JSON.parse(await fs.readFile(file, 'utf8')).variables, [
+            { name: 'project_name', type: 'text', required: true },
+        ]);
+    });
+
+    test('saves command variables from the HTML variable editor', async () => {
+        const file = path.join(temporary, 'commoncmd.json');
+        await fs.writeFile(file, JSON.stringify({ commands: [{ command: 'tool ${kind}' }] }));
+        const snapshot = await readCommonCommandSnapshot(file);
+        await editCommonCommandItem(
+            new TemplateItem('tool ${kind}', snapshot, 0, file, 'commonCommand'),
+            async ({ save }) => {
+                await save({
+                    command: 'tool ${kind}',
+                    description: '',
+                    tags: '',
+                    variables: '[{"name":"kind","type":"select","options":["fast","safe"]}]',
+                });
+            },
+        );
+        assert.deepStrictEqual(JSON.parse(await fs.readFile(file, 'utf8')).commands[0].variables, [
+            { name: 'kind', type: 'select', options: ['fast', 'safe'] },
+        ]);
+    });
+
+    test('removes command variables when the HTML variable editor saves an empty list', async () => {
+        const file = path.join(temporary, 'commoncmd.json');
+        await fs.writeFile(
+            file,
+            JSON.stringify({ commands: [{ command: 'tool ${kind}', variables: [{ name: 'kind', type: 'text' }] }] }),
+        );
+        const snapshot = await readCommonCommandSnapshot(file);
+        await editCommonCommandItem(
+            new TemplateItem('tool ${kind}', snapshot, 0, file, 'commonCommand'),
+            async ({ save }) => {
+                await save({ command: 'tool ${kind}', description: '', tags: '', variables: '[]' });
+            },
+        );
+        assert.strictEqual('variables' in JSON.parse(await fs.readFile(file, 'utf8')).commands[0], false);
     });
 
     test('edits command tags with the shared tag picker', async () => {
@@ -336,6 +388,18 @@ suite('Template views', () => {
         assert.deepStrictEqual(validateFormValues(fields, { command: 'git status', unexpected: 'ignored' }), {
             command: 'git status',
         });
+        const variableHtml = renderTemplateForm({
+            title: 'Variables',
+            fields: [{ name: 'variables', label: 'Variables', value: '[]', variableEditor: true }],
+            save: async () => {},
+        });
+        assert.ok(variableHtml.includes('variable-editor'));
+        assert.ok(variableHtml.includes('Add variable'));
+        assert.ok(variableHtml.includes('data-variable="defaultSingle"'));
+        assert.ok(variableHtml.includes('data-variable="defaultMulti"'));
+        assert.ok(variableHtml.includes('variable-kind'));
+        assert.ok(variableHtml.includes('variable-options'));
+        assert.ok(variableHtml.includes('updateVariableRow'));
     });
 
     test('displays commands grouped by tags and Git messages grouped by type in file order', async () => {

@@ -3,8 +3,10 @@ import {
     CommonCommand,
     commonCommandsFile,
     deleteCommonCommand,
+    parseCommonCommandVariables,
     readCommonCommandSnapshot,
     updateCommonCommand,
+    updateGlobalCommonCommandVariables,
 } from '../commonCommands/commonCommandStore';
 import { pickRepositoryTags } from '../repositoryManagement/tagPicker';
 import {
@@ -54,6 +56,13 @@ export async function editCommonCommandItem(
                 placeholder: 'Git\nReview',
                 hint: 'One tag per line. Leave empty for no tags.',
             },
+            {
+                name: 'variables',
+                label: 'Command variables',
+                value: JSON.stringify(value.variables ?? []),
+                variableEditor: true,
+                hint: 'Use ${name} in the command. Options accept one value per line.',
+            },
         ],
         save: async (values) => {
             assertSaved(item.file);
@@ -64,9 +73,36 @@ export async function editCommonCommandItem(
                     command: values.command!,
                     description: values.description!,
                     tags: values.tags!.split(/\r\n|[\r\n]/),
+                    variables: parseCommonCommandVariables(JSON.parse(values.variables ?? '[]'), 'Command variables'),
                 },
                 item.file,
             );
+        },
+    });
+}
+
+export async function editGlobalCommonCommandVariables(
+    form: TemplateForm = showTemplateForm,
+    file = commonCommandsFile,
+): Promise<void> {
+    assertSaved(file);
+    const snapshot = await readCommonCommandSnapshot(file);
+    const contents = JSON.parse(snapshot.contents) as { variables?: unknown };
+    await form({
+        title: 'Manage Global Command Variables',
+        description: 'Variables defined here can be used by every common command.',
+        fields: [
+            {
+                name: 'variables',
+                label: 'Global variables',
+                value: JSON.stringify(contents.variables ?? []),
+                variableEditor: true,
+                hint: 'Use ${name} in a command. Options accept one value per line.',
+            },
+        ],
+        save: async (values) => {
+            assertSaved(file);
+            await updateGlobalCommonCommandVariables(snapshot, JSON.parse(values.variables ?? '[]'), file);
         },
     });
 }
@@ -168,6 +204,19 @@ export function assertSaved(file: string): void {
 
 export function registerTemplateCommands(context: vscode.ExtensionContext): void {
     context.subscriptions.push({ dispose: disposeTemplateForms });
+    context.subscriptions.push(
+        vscode.commands.registerCommand('project-atlas.manageCommonCommandVariables', async () => {
+            try {
+                await editGlobalCommonCommandVariables();
+            } catch (error) {
+                await vscode.window.showErrorMessage(
+                    `Project Atlas: ${error instanceof Error ? error.message : String(error)}`,
+                );
+            } finally {
+                await vscode.commands.executeCommand('project-atlas.refreshCommonCommands');
+            }
+        }),
+    );
     for (const [name, add, refresh] of [
         ['addCommonCommand', addCommonCommandItem, 'refreshCommonCommands'],
         ['addGitMessage', addGitMessageItem, 'refreshGitMessages'],

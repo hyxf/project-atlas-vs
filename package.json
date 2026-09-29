@@ -56,6 +56,12 @@
         "icon": "$(add)"
       },
       {
+        "command": "project-atlas.manageCommonCommandVariables",
+        "title": "Manage Global Command Variables",
+        "category": "Project Atlas",
+        "icon": "$(symbol-variable)"
+      },
+      {
         "command": "project-atlas.runCommonCommand",
         "title": "Run Common Command",
         "category": "Project Atlas",
@@ -1164,19 +1170,24 @@
           "group": "navigation@2"
         },
         {
+          "command": "project-atlas.manageCommonCommandVariables",
+          "when": "view == projectAtlas.commonCommands",
+          "group": "navigation@3"
+        },
+        {
           "command": "project-atlas.collapseCommonCommands",
           "when": "view == projectAtlas.commonCommands && !projectAtlas.commonCommandsCollapsed",
-          "group": "navigation@3"
+          "group": "navigation@4"
         },
         {
           "command": "project-atlas.expandCommonCommands",
           "when": "view == projectAtlas.commonCommands && projectAtlas.commonCommandsCollapsed",
-          "group": "navigation@3"
+          "group": "navigation@4"
         },
         {
           "command": "project-atlas.refreshCommonCommands",
           "when": "view == projectAtlas.commonCommands",
-          "group": "navigation@4"
+          "group": "navigation@5"
         },
         {
           "command": "project-atlas.addGitMessage",
