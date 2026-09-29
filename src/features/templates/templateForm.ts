@@ -239,7 +239,13 @@ button:disabled { opacity: .6; cursor: default; } #error { margin: 0 28px 24px; 
 .variable-row label { margin: 0; display: block; font-size: 12px; }
 .variable-row input, .variable-row textarea, .variable-row select { margin-top: 4px; }
 .variable-row textarea { min-height: 56px; }
-.variable-row .checkbox-field { display: flex; align-items: center; gap: 7px; }
+.variable-row .checkbox-field {
+    display: flex;
+    align-self: stretch;
+    align-items: center;
+    gap: 7px;
+    padding-top: calc(1.5em + 4px);
+}
 .variable-row .remove-variable { min-width: auto; padding: 4px 10px; }
 .add-variable { width: 100%; border-style: dashed; }
 .variable-hidden { display: none !important; }
