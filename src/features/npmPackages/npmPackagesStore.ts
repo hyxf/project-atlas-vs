@@ -274,6 +274,11 @@ export function favoriteInstallCommand(packageManager: PackageManager, name: str
     return packageManager === 'npm' ? `npm install ${name}` : `${packageManager} add ${name}`;
 }
 
+export function favoriteDevInstallCommand(packageManager: PackageManager, name: string): string {
+    assertPackageName(name);
+    return packageManager === 'npm' ? `npm install --save-dev ${name}` : `${packageManager} add -D ${name}`;
+}
+
 export function workspaceInstallCommand(packageManager: PackageManager): string {
     return `${packageManager} install`;
 }

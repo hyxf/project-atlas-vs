@@ -47,6 +47,7 @@ import { ProjectStore } from '../features/projectManagement/store';
 import { editProjectForm } from '../features/projectManagement/projectForm';
 import {
     favoriteInstallCommand,
+    favoriteDevInstallCommand,
     favoritePackageManager,
     favoriteUninstallCommand,
     packageManagerFromLockFiles,
@@ -96,6 +97,9 @@ suite('npm package favorite tags', () => {
         assert.strictEqual(favoriteInstallCommand('yarn', 'fastify'), 'yarn add fastify');
         assert.strictEqual(favoriteInstallCommand('npm', '@fastify/cors'), 'npm install @fastify/cors');
         assert.strictEqual(favoriteInstallCommand('pnpm', 'fastify'), 'pnpm add fastify');
+        assert.strictEqual(favoriteDevInstallCommand('yarn', 'fastify'), 'yarn add -D fastify');
+        assert.strictEqual(favoriteDevInstallCommand('npm', '@fastify/cors'), 'npm install --save-dev @fastify/cors');
+        assert.strictEqual(favoriteDevInstallCommand('pnpm', 'fastify'), 'pnpm add -D fastify');
         assert.strictEqual(workspaceInstallCommand('yarn'), 'yarn install');
         assert.strictEqual(workspaceInstallCommand('npm'), 'npm install');
         assert.strictEqual(workspaceInstallCommand('pnpm'), 'pnpm install');

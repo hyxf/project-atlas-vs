@@ -516,14 +516,21 @@
         "command": "project-atlas.addFavoriteNpmPackageToDevDependencies",
         "title": "Add to Dev Dependencies",
         "category": "Project Atlas",
-        "icon": "$(flask)",
+        "icon": "$(beaker)",
         "enablement": "viewItem == npmFavoritePackageAddable"
       },
       {
         "command": "project-atlas.installFavoriteNpmPackage",
-        "title": "Install Favorite Package",
+        "title": "Install as Dependency",
         "category": "Project Atlas",
         "icon": "$(cloud-download)",
+        "enablement": "viewItem == npmFavoritePackageAddable"
+      },
+      {
+        "command": "project-atlas.installFavoriteNpmPackageAsDevDependency",
+        "title": "Install as Dev Dependency",
+        "category": "Project Atlas",
+        "icon": "$(beaker)",
         "enablement": "viewItem == npmFavoritePackageAddable"
       },
       {
@@ -1650,6 +1657,10 @@
           "when": "false"
         },
         {
+          "command": "project-atlas.installFavoriteNpmPackageAsDevDependency",
+          "when": "false"
+        },
+        {
           "command": "project-atlas.uninstallNpmPackage",
           "when": "false"
         },
@@ -2460,6 +2471,11 @@
           "command": "project-atlas.installFavoriteNpmPackage",
           "when": "view == projectAtlas.npmPackages && viewItem == npmFavoritePackageAddable",
           "group": "inline@1"
+        },
+        {
+          "command": "project-atlas.installFavoriteNpmPackageAsDevDependency",
+          "when": "view == projectAtlas.npmPackages && viewItem == npmFavoritePackageAddable",
+          "group": "inline@2"
         },
         {
           "command": "project-atlas.uninstallNpmPackage",

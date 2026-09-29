@@ -2,6 +2,7 @@ import * as vscode from 'vscode';
 import { pickRepositoryTags } from '../repositoryManagement/tagPicker';
 import {
     favoriteTags,
+    favoriteDevInstallCommand,
     isInstalled,
     favoriteInstallCommand,
     favoriteUninstallCommand,
@@ -145,6 +146,12 @@ export function activateNpmPackages(context: vscode.ExtensionContext): void {
             return;
         }
         await runPackageManagerCommand((packageManager) => favoriteInstallCommand(packageManager, item.entry.name));
+    });
+    register('installFavoriteNpmPackageAsDevDependency', async (item: NpmPackageNode) => {
+        if (!item || item.entry.kind || (await isInstalled(item.entry.name))) {
+            return;
+        }
+        await runPackageManagerCommand((packageManager) => favoriteDevInstallCommand(packageManager, item.entry.name));
     });
     register('uninstallNpmPackage', async (item: NpmPackageNode) => {
         if (!item) {

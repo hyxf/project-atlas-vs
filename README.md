@@ -66,7 +66,7 @@ Project Atlas 是一款用于管理本地项目、Git 仓库和开发素材的 V
 
 当打开的单一工作区根目录包含 `package.json` 时，**npm packages** 视图会显示 `dependencies`、`devDependencies`、收藏和回收站。移除已安装依赖后，原有版本和依赖类别会保存在当前工作区的回收站，可从条目操作中恢复，或直接永久删除该回收站记录。收藏按 tag 分组，默认 tag 为 `untagged`；可在收藏条目上修改为已有或新建 tag。收藏仅在尚未安装时可加入任一依赖类别。标题栏的搜索或新增操作会打开 npm Registry 搜索页，每页 10 条结果，可将结果收藏或添加到安装列表。收藏保存于 `~/.project-atlas/npmfav.json`，回收站保存于 `~/.project-atlas/npmtrash.json`。
 
-`npmfav.json` 可使用顶层 `packageManager` 选择收藏条目行内 **Install** 使用的包管理器：`"yarn"`、`"npm"` 或 `"pnpm"`。未配置时会检查当前工作区根目录的 `pnpm-lock.yaml`、`yarn.lock`、`package-lock.json` 或 `npm-shrinkwrap.json`；没有锁文件则使用 npm。显式配置始终优先。例如 `"packageManager": "yarn"` 时，安装 `fastify` 会在当前工作区终端执行 `yarn add fastify`。
+`npmfav.json` 可使用顶层 `packageManager` 选择收藏条目行内 **Install** 使用的包管理器：`"yarn"`、`"npm"` 或 `"pnpm"`。未配置时会检查当前工作区根目录的 `pnpm-lock.yaml`、`yarn.lock`、`package-lock.json` 或 `npm-shrinkwrap.json`；没有锁文件则使用 npm。显式配置始终优先。未安装的收藏条目提供两个行内安装图标：普通依赖使用 `yarn add fastify`，开发依赖使用 `yarn add -D fastify`（npm 与 pnpm 使用对应命令）。
 
 标题栏按钮提供新增。Install 节点提供打开 `package.json` 的编辑按钮、重新加载依赖和行内 **Install All Packages**；后者通过所选包管理器运行 `yarn install`、`npm install` 或 `pnpm install`，确保 `package.json` 的全部依赖已安装到本地。Favorites 节点提供编辑和刷新元数据按钮；Trash 节点提供编辑 `npmtrash.json` 和刷新按钮。Install 下已安装的包以及 Favorites 下已安装的收藏包均提供行内 **Uninstall**，通过所选包管理器执行卸载，并在执行前保存到 Trash 以便恢复。命令面板提供 `Project Atlas: Refresh npm Packages`、`Search npm Packages`、`Add npm Package` 和 `Edit npm Favorites`。移除、恢复、永久删除依赖、打开包主页和单个包的收藏操作需从树节点操作触发。
 
