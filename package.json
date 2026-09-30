@@ -1599,7 +1599,15 @@
           "when": "false"
         },
         {
+          "command": "project-atlas.refreshNpmPackages",
+          "when": "false"
+        },
+        {
           "command": "project-atlas.refreshNpmFavoriteDescriptions",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.refreshTemplateBackup",
           "when": "false"
         },
         {
@@ -1696,10 +1704,6 @@
         },
         {
           "command": "project-atlas.refreshGitMessages",
-          "when": "false"
-        },
-        {
-          "command": "aicode.createOrUpdateChangelog",
           "when": "false"
         },
         {
@@ -2072,7 +2076,8 @@
           "command": "project-atlas.addAiPrompt"
         },
         {
-          "command": "project-atlas.refreshAiPrompts"
+          "command": "project-atlas.refreshAiPrompts",
+          "when": "false"
         },
         {
           "command": "project-atlas.editAiPromptsFile"

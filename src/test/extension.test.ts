@@ -649,6 +649,7 @@ suite('Extension', () => {
                 'aicode.copyFileList',
                 'aicode.compareBranches',
                 'project-atlas.updatePackageVersion',
+                'aicode.createOrUpdateChangelog',
                 'project-atlas.editGitMessages',
                 'project-atlas.editCommonCommands',
                 'project-atlas.insertCommonCommand',
@@ -659,21 +660,22 @@ suite('Extension', () => {
                 'project-atlas.search',
                 'project-atlas.saveCurrent',
                 'project-atlas.add',
-                'project-atlas.refreshNpmPackages',
                 'project-atlas.searchNpmPackages',
                 'project-atlas.addNpmPackage',
                 'project-atlas.editNpmFavoritesFile',
                 'project-atlas.saveCurrentRepository',
                 'project-atlas.addAiPrompt',
-                'project-atlas.refreshAiPrompts',
                 'project-atlas.editAiPromptsFile',
                 'project-atlas.searchAiPrompts',
                 'project-atlas.backupTemplateData',
                 'project-atlas.restoreTemplateData',
-                'project-atlas.refreshTemplateBackup',
                 'project-atlas.deleteTemplateBackup',
                 'project-atlas.signInForTemplateBackup',
             ],
+        );
+        assert.strictEqual(
+            new Set(manifest.contributes.menus.commandPalette.map(({ command }) => command)).size,
+            manifest.contributes.menus.commandPalette.length,
         );
         assert.strictEqual(paletteCommands[0]?.category, 'Project Atlas');
         assert.strictEqual(paletteCommands[1]?.category, 'Project Atlas');
