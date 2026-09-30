@@ -1,7 +1,8 @@
 import { showTemplateForm, TemplateForm } from '../templates/templateForm';
-import { cleanTags, ProjectItem } from './model';
+import { cleanTags } from './model';
+import type { ProjectFormValues, ProjectItem } from './types';
 
-export type ProjectFormValues = Pick<ProjectItem, 'name' | 'tags' | 'favorite'>;
+export type { ProjectFormValues } from './types';
 
 export async function editProjectForm(
     project: ProjectItem,

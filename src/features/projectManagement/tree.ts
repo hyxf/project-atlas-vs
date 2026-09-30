@@ -1,6 +1,7 @@
 import { promises as fs } from 'fs';
 import * as vscode from 'vscode';
-import { ProjectItem, untaggedFilter } from './model';
+import { untaggedFilter } from './model';
+import type { ProjectItem } from './types';
 import { normalizePath, ProjectService } from './service';
 
 export class ProjectNode extends vscode.TreeItem {

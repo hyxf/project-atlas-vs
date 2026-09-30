@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import type { CompareResult, FileActivationState } from './types';
 import { classifyChangedPaths, parseBranchOptions } from './branchComparison';
 import { ContextService } from './contextService';
 import { buildMarkdown } from './markdown';
@@ -36,7 +37,7 @@ export function activateAICodeContext(context: vscode.ExtensionContext): void {
 
     const command = (id: string, handler: (...args: unknown[]) => Promise<void>) =>
         context.subscriptions.push(vscode.commands.registerCommand(id, (...args) => run(() => handler(...args))));
-    let lastFileActivation: { uri: string; time: number } | undefined;
+    let lastFileActivation: FileActivationState | undefined;
     command('aicode.openFile', async (argument) => {
         const node = argument instanceof ContextNode && argument.kind === 'file' ? argument : undefined;
         if (node?.resourceUri === undefined) {
@@ -455,13 +456,6 @@ class EditorIndicator implements vscode.Disposable {
     public dispose(): void {
         this.disposables.forEach((item) => item.dispose());
     }
-}
-
-interface CompareResult {
-    folder: vscode.WorkspaceFolder;
-    current: string;
-    compare: string;
-    entries: Array<{ path: string; changed: boolean }>;
 }
 
 class CompareResultNode extends vscode.TreeItem {

@@ -1,7 +1,6 @@
-export interface RepositoryIdentity {
-    group: string;
-    name: string;
-}
+import type { RepositoryIdentity, RepositorySshUrl } from './types';
+
+export type { RepositoryIdentity } from './types';
 
 export function repositoryIdentityKey(remoteUrl: string): string | undefined {
     const parsed = parseSshUrl(remoteUrl);
@@ -28,7 +27,7 @@ export function parseRepositoryHost(remoteUrl: string): string | undefined {
     return parseSshUrl(remoteUrl)?.host.toLocaleLowerCase();
 }
 
-function parseSshUrl(remoteUrl: string): { user: string; host: string; port: string; path: string } | undefined {
+function parseSshUrl(remoteUrl: string): RepositorySshUrl | undefined {
     const value = remoteUrl.trim();
     const scpLike = /^([^@/:\s]+)@(\[[^\]]+\]|[^/:\s]+):(.+)$/.exec(value);
     if (scpLike) {

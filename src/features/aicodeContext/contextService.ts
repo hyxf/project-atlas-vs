@@ -1,5 +1,6 @@
 import * as path from 'path';
 import * as vscode from 'vscode';
+import type { RenamedUri } from './types';
 import { ConfigRepository, normalizeRelativePath, validateGroupName } from './configRepository';
 import {
     AICodeConfig,
@@ -237,7 +238,7 @@ export class ContextService implements vscode.Disposable {
         }
     }
 
-    private async syncRenamed(files: readonly { oldUri: vscode.Uri; newUri: vscode.Uri }[]): Promise<void> {
+    private async syncRenamed(files: readonly RenamedUri[]): Promise<void> {
         for (const folder of vscode.workspace.workspaceFolders ?? []) {
             const pairs = files.flatMap(({ oldUri, newUri }) => {
                 const oldTarget = this.resolve(oldUri);

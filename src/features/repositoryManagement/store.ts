@@ -2,7 +2,7 @@ import { randomUUID } from 'crypto';
 import { promises as fs } from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { RepositoryItem, RepositorySettings } from './model';
+import type { RepositoryItem, RepositorySettings } from './types';
 import { repositoryIdentityKey } from './repositoryUrl';
 
 interface StoredRepositoryData extends Record<string, unknown> {

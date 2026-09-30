@@ -1,7 +1,8 @@
 import * as path from 'path';
 import { randomUUID } from 'crypto';
 import { promises as fs } from 'fs';
-import { cleanTags, ProjectItem, SortBy } from './model';
+import { cleanTags } from './model';
+import type { CreateProject, ProjectImportResult, ProjectItem, SortBy } from './types';
 import { ProjectStore } from './store';
 
 export class ProjectService {
@@ -150,17 +151,14 @@ export class ProjectService {
         return copy.sort((a, b) => compare(a.name, b.name) || compare(a.path, b.path));
     }
 
-    async import(
-        projectsToImport: Array<Omit<ProjectItem, 'id' | 'lastOpenedAt'>>,
-        updateExisting: boolean,
-    ): Promise<{ added: number; updated: number; skipped: number; failed: number }> {
+    async import(projectsToImport: CreateProject[], updateExisting: boolean): Promise<ProjectImportResult> {
         return this.mutate(() => this.importProjects(projectsToImport, updateExisting));
     }
 
     private async importProjects(
-        projectsToImport: Array<Omit<ProjectItem, 'id' | 'lastOpenedAt'>>,
+        projectsToImport: CreateProject[],
         updateExisting: boolean,
-    ): Promise<{ added: number; updated: number; skipped: number; failed: number }> {
+    ): Promise<ProjectImportResult> {
         const projects = await this.projects();
         const result = { added: 0, updated: 0, skipped: 0, failed: 0 };
         const seen = new Set<string>();

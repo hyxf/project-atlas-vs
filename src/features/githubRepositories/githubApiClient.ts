@@ -2,15 +2,7 @@ import * as net from 'net';
 import * as https from 'https';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 import { SocksProxyAgent } from 'socks-proxy-agent';
-import { GitHubConfiguration, GitHubRepository } from './model';
-
-interface GitHubResponse {
-    status: number;
-    headers: Record<string, string | string[] | undefined>;
-    body: string;
-}
-
-type GitHubRequest = (url: string, configuration: GitHubConfiguration) => Promise<GitHubResponse>;
+import type { GitHubConfiguration, GitHubRepository, GitHubRequest, GitHubResponse } from './types';
 
 export class GitHubApiClient {
     constructor(private readonly request: GitHubRequest = requestGitHub) {}

@@ -1,9 +1,9 @@
 import * as vscode from 'vscode';
-import { RepositoryItem } from './model';
+import type { RepositoryItem, RepositoryViewMode } from './types';
 import { RepositoryStore } from './store';
 import { parseRepositoryHost } from './repositoryUrl';
 
-export type RepositoryViewMode = 'TAGS' | 'GROUPS' | 'HOSTS';
+export type { RepositoryViewMode } from './types';
 
 export class RepositoryTagNode extends vscode.TreeItem {
     constructor(readonly tag: string | undefined) {

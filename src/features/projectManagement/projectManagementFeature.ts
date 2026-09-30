@@ -3,7 +3,8 @@ import * as path from 'path';
 import * as vscode from 'vscode';
 import { pickRepositoryTags } from '../repositoryManagement/tagPicker';
 import { openJetBrainsProject, syncJetBrainsMenuContext } from './jetbrainsApps';
-import { ListFilter, ProjectItem, SortBy, untaggedFilter } from './model';
+import { untaggedFilter } from './model';
+import type { ListFilter, ProjectClickState, ProjectItem, SortBy } from './types';
 import { editProjectForm } from './projectForm';
 import { containsPath, duplicateDirectory, normalizePath, ProjectService } from './service';
 import { ProjectStore } from './store';
@@ -12,7 +13,7 @@ import { openXcodeProject, syncXcodeMenuContext } from './xcodeApp';
 
 let service: ProjectService;
 let tree: ProjectsTree;
-let lastProjectClick: { id: string; at: number } | undefined;
+let lastProjectClick: ProjectClickState | undefined;
 const doubleClickInterval = 500;
 
 export function activateProjectManagement(context: vscode.ExtensionContext): void {

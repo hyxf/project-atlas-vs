@@ -1,6 +1,7 @@
 import * as crypto from 'crypto';
 import * as vscode from 'vscode';
-import { AICodeConfig, CONFIG_FILE, ConfigLoadResult, DEFAULT_GROUP, defaultConfig } from './model';
+import type { AICodeConfig, ConfigLoadResult, ConfigParseResult } from './types';
+import { CONFIG_FILE, DEFAULT_GROUP, defaultConfig } from './model';
 
 export class ConfigRepository {
     public configUri(folder: vscode.WorkspaceFolder): vscode.Uri {
@@ -80,7 +81,7 @@ export function normalizeRelativePath(value: string, allowBackslash = true): str
     return parts.join('/');
 }
 
-function parseConfig(value: unknown): { config: AICodeConfig; source: 'current' | 'legacy' } {
+function parseConfig(value: unknown): ConfigParseResult {
     if (Array.isArray(value)) {
         if (!value.every((entry) => typeof entry === 'string')) {
             throw new Error('legacy array must contain only strings');

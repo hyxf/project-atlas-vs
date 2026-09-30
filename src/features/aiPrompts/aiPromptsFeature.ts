@@ -1,6 +1,7 @@
 import * as path from 'path';
 import { randomBytes } from 'crypto';
 import * as vscode from 'vscode';
+import type { AiPromptWebviewMessage, PromptQuickPickItem } from './types';
 import { AiPrompt, aiPromptsFile, changeAiPrompt, ensureAiPromptsFile, readAiPromptSnapshot } from './aiPromptStore';
 import { TemplateSnapshot } from '../templates/templateStore';
 import { expandTreeView, TemplateItem } from '../templates/templatesFeature';
@@ -203,7 +204,7 @@ export function activateAiPrompts(context: vscode.ExtensionContext): void {
             if (!message || typeof message !== 'object' || busy) {
                 return;
             }
-            const action = (message as { action?: unknown }).action;
+            const action = (message as AiPromptWebviewMessage).action;
             if (!['copy', 'edit'].includes(String(action))) {
                 return;
             }
@@ -292,7 +293,7 @@ export function activateAiPrompts(context: vscode.ExtensionContext): void {
     register('searchAiPrompts', async () => {
         await ensureAiPromptsFile();
         const snapshot = await readAiPromptSnapshot();
-        const picker = vscode.window.createQuickPick<vscode.QuickPickItem & { index: number }>();
+        const picker = vscode.window.createQuickPick<vscode.QuickPickItem & PromptQuickPickItem>();
         picker.placeholder = 'Search title, description, tags or prompt text';
         const update = () => {
             picker.items = snapshot.entries.flatMap((prompt, index) =>

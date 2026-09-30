@@ -3,8 +3,8 @@ import * as os from 'os';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { runGit, sanitizeGitOutput } from '../gitTagRelease/gitTagService';
-import { GitHubProxyConfiguration } from '../githubRepositories/model';
-import { RepositoryItem } from './model';
+import type { GitHubProxyConfiguration } from '../githubRepositories/types';
+import type { RepositoryItem } from './types';
 
 export interface CloneOptions {
     proxy?: GitHubProxyConfiguration;

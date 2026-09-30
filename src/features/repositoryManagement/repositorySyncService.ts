@@ -1,12 +1,9 @@
-import { ProjectItem } from '../projectManagement/model';
+import type { ProjectItem } from '../projectManagement/types';
+import type { RepositorySyncResult } from './types';
 import { RepositoryStore } from './store';
 import { parseRepositoryIdentity } from './repositoryUrl';
 
-export interface RepositorySyncResult {
-    added: number;
-    existing: number;
-    failed: number;
-}
+export type { RepositorySyncResult } from './types';
 
 export async function syncProjectRepositories(
     projects: readonly ProjectItem[],

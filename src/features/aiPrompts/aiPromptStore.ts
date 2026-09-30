@@ -2,15 +2,10 @@ import { randomUUID } from 'crypto';
 import { promises as fs } from 'fs';
 import * as os from 'os';
 import * as path from 'path';
+import type { AiPrompt, PromptMutation } from './types';
 import { mutateTemplate, readTemplateSnapshot, TemplateSnapshot } from '../templates/templateStore';
 
-export interface AiPrompt {
-    id: string;
-    title: string;
-    content: string;
-    description?: string | undefined;
-    tags?: string[] | undefined;
-}
+export type { AiPrompt, PromptMutation } from './types';
 
 export const aiPromptsFile = path.join(os.homedir(), '.project-atlas', 'aiprompts.json');
 
@@ -133,12 +128,6 @@ export function normalizePromptTags(tags: readonly string[]): string[] {
 export function readAiPromptSnapshot(file = aiPromptsFile): Promise<TemplateSnapshot<AiPrompt>> {
     return readTemplateSnapshot(file, parseAiPrompts);
 }
-
-export type PromptMutation =
-    | { type: 'save'; value: Omit<AiPrompt, 'id'>; id?: string | undefined }
-    | { type: 'delete' | 'duplicate'; id: string }
-    | { type: 'reorder'; order: number[] }
-    | { type: 'tags'; id: string; tags: string[] };
 
 export async function changeAiPrompt(
     snapshot: TemplateSnapshot<AiPrompt>,

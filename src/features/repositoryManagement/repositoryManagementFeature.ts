@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import { runGit } from '../gitTagRelease/gitTagService';
 import { GitHubConfigurationStore } from '../githubRepositories/config';
 import { githubProxyConfiguration } from '../githubRepositories/githubRepositoriesFeature';
-import { ProjectItem } from '../projectManagement/model';
+import type { ProjectItem } from '../projectManagement/types';
 import { ProjectStore } from '../projectManagement/store';
 import { ProjectService } from '../projectManagement/service';
 import { CloneCancellationError, cloneRepository, ensureDefaultCloneParent, resolveCloneTarget } from './cloneService';
@@ -10,7 +10,8 @@ import { syncProjectRepositories } from './repositorySyncService';
 import { editRepositoryForm } from './repositoryForm';
 import { RepositoryStore } from './store';
 import { pickRepositoryTags } from './tagPicker';
-import { RepositoriesTree, RepositoryNode, RepositoryViewMode } from './tree';
+import { RepositoriesTree, RepositoryNode } from './tree';
+import type { RepositoryViewMode } from './types';
 
 export function activateRepositoryManagement(context: vscode.ExtensionContext): void {
     const store = new RepositoryStore();

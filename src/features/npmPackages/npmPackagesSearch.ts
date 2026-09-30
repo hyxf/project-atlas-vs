@@ -2,16 +2,25 @@ import { randomUUID } from 'crypto';
 import * as vscode from 'vscode';
 import { readFavorites, saveFavorite, updateDependencies, updateFavoriteDescriptions } from './npmPackagesStore';
 import { NpmPackagesTree } from './npmPackagesTree';
-import { NpmSearchResult, PackageEntry } from './npmPackagesTypes';
+import type {
+    FavoriteRefreshResult,
+    NpmSearchMessage,
+    NpmSearchPage,
+    NpmSearchProgress,
+    NpmSearchResponse,
+    NpmSearchResult,
+    PackageEntry,
+    PackageMetadata,
+} from './types';
 
 const searchPageSize = 10;
 
 export async function refreshFavoritePackageDescriptions(
     token?: vscode.CancellationToken,
-    report?: vscode.Progress<{ message?: string; increment?: number }>,
-): Promise<{ updated: number; cancelled: boolean }> {
+    report?: vscode.Progress<NpmSearchProgress>,
+): Promise<FavoriteRefreshResult> {
     const favorites = await readFavorites();
-    const metadata = new Map<string, { version: string; description?: string | undefined }>();
+    const metadata = new Map<string, PackageMetadata>();
     for (const favorite of favorites) {
         if (token?.isCancellationRequested) {
             return { updated: 0, cancelled: true };
@@ -38,7 +47,7 @@ export function openSearchPanel(provider: NpmPackagesTree): void {
         if (!message || typeof message !== 'object') {
             return;
         }
-        const value = message as { action?: unknown; text?: unknown; from?: unknown; entry?: unknown };
+        const value = message as NpmSearchMessage;
         try {
             if (value.action === 'search' && typeof value.text === 'string') {
                 await panel.webview.postMessage({
@@ -81,10 +90,7 @@ function isEntry(value: unknown): value is PackageEntry {
     );
 }
 
-async function searchNpm(
-    text: string,
-    from: number,
-): Promise<{ results: NpmSearchResult[]; total: number; from: number }> {
+async function searchNpm(text: string, from: number): Promise<NpmSearchPage> {
     const query = text.trim();
     if (!query) {
         return { results: [], total: 0, from: 0 };
@@ -94,10 +100,7 @@ async function searchNpm(
     return requestNpmSearch(url, offset);
 }
 
-async function requestNpmSearch(
-    url: string,
-    from: number,
-): Promise<{ results: NpmSearchResult[]; total: number; from: number }> {
+async function requestNpmSearch(url: string, from: number): Promise<NpmSearchPage> {
     let response: Response;
     try {
         response = await fetch(url, {
@@ -113,10 +116,7 @@ async function requestNpmSearch(
         throw new Error(`npm search failed with status ${response.status}.`);
     }
     try {
-        const parsed = JSON.parse(await response.text()) as {
-            total?: unknown;
-            objects?: Array<{ package?: NpmSearchResult }>;
-        };
+        const parsed = JSON.parse(await response.text()) as NpmSearchResponse;
         if (!Array.isArray(parsed.objects)) {
             throw new Error('Invalid response');
         }
@@ -132,7 +132,7 @@ async function requestNpmSearch(
     }
 }
 
-async function requestNpmPackage(name: string): Promise<{ version: string; description?: string | undefined }> {
+async function requestNpmPackage(name: string): Promise<PackageMetadata> {
     const result = await searchNpm(name, 0);
     const packageMetadata = result.results.find((item) => item.name === name);
     if (!packageMetadata) {

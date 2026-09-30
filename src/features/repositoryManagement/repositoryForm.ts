@@ -1,6 +1,6 @@
 import * as vscode from 'vscode';
 import { showTemplateForm, TemplateForm } from '../templates/templateForm';
-import { RepositoryItem } from './model';
+import type { RepositoryItem } from './types';
 import { parseRepositoryIdentity } from './repositoryUrl';
 import { RepositoryStore } from './store';
 import { cleanRepositoryTags } from './tagPicker';

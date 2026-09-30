@@ -2,7 +2,14 @@ import { randomUUID } from 'crypto';
 import { promises as fs } from 'fs';
 import * as os from 'os';
 import * as path from 'path';
-import { GitHubConfiguration, GitHubProxyConfiguration, GitHubRepository } from './model';
+import type {
+    GitHubConfiguration,
+    GitHubCredentials,
+    GitHubProxyConfiguration,
+    GitHubProxyUpdate,
+    GitHubRepository,
+    GitHubSettingsUpdate,
+} from './types';
 
 export const defaultProxy = 'http://127.0.0.1:1087';
 export const defaultSocketProxy = 'socks5://127.0.0.1:1086';
@@ -45,7 +52,7 @@ export class GitHubConfigurationStore {
         return parseProxyConfiguration(source, this.file);
     }
 
-    async credentials(): Promise<{ token?: string; user?: string }> {
+    async credentials(): Promise<GitHubCredentials> {
         const source = await this.read(true);
         return {
             ...(typeof source.token === 'string' ? { token: source.token } : {}),
@@ -53,13 +60,7 @@ export class GitHubConfigurationStore {
         };
     }
 
-    async replaceSettings(settings: {
-        token?: string;
-        user?: string;
-        proxyEnabled?: boolean;
-        httpProxy?: string;
-        socketProxy?: string;
-    }): Promise<void> {
+    async replaceSettings(settings: GitHubSettingsUpdate): Promise<void> {
         const write = this.writeQueue.then(async () => {
             const source = await this.read(true);
             const next = {
@@ -82,7 +83,7 @@ export class GitHubConfigurationStore {
         await write;
     }
 
-    async replaceProxyConfiguration(proxy: { enabled?: boolean; url?: string; socketUrl?: string }): Promise<void> {
+    async replaceProxyConfiguration(proxy: GitHubProxyUpdate): Promise<void> {
         await this.replaceSettings({
             ...(proxy.enabled === undefined ? {} : { proxyEnabled: proxy.enabled }),
             ...(proxy.url === undefined ? {} : { httpProxy: proxy.url }),

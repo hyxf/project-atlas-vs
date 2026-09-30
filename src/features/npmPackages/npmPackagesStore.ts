@@ -5,7 +5,15 @@ import * as path from 'path';
 import { applyEdits, modify } from 'jsonc-parser';
 import * as vscode from 'vscode';
 import { ensureDocumentSaved, ensureSourceUnchanged } from '../packageVersion/packageVersionService';
-import { DependencyKind, PackageEntry, PackageManager, TrashedPackageEntry } from './npmPackagesTypes';
+import type {
+    DependencyKind,
+    FavoritesDocument,
+    PackageEntry,
+    PackageManager,
+    PackageMetadata,
+    TrashedPackageEntry,
+    TrashDocument,
+} from './types';
 
 const favoritesFile = path.join(os.homedir(), '.project-atlas', 'npmfav.json');
 const trashFile = path.join(os.homedir(), '.project-atlas', 'npmtrash.json');
@@ -164,9 +172,7 @@ export async function removeFromTrash(name: string): Promise<void> {
     await writeTrash(document.root, updated);
 }
 
-export async function updateFavoriteDescriptions(
-    descriptions: ReadonlyMap<string, { version: string; description?: string | undefined }>,
-): Promise<void> {
+export async function updateFavoriteDescriptions(descriptions: ReadonlyMap<string, PackageMetadata>): Promise<void> {
     const document = await readFavoritesDocument();
     await writeFavorites(
         document.root,
@@ -229,7 +235,7 @@ function entriesOf(value: unknown, kind: DependencyKind): PackageEntry[] {
         .sort((left, right) => left.name.localeCompare(right.name));
 }
 
-export function parseFavoritesDocument(source: unknown): { root: Record<string, unknown>; items: PackageEntry[] } {
+export function parseFavoritesDocument(source: unknown): FavoritesDocument {
     const root = Array.isArray(source) ? { favorites: source } : source;
     if (!root || typeof root !== 'object' || Array.isArray(root)) {
         return { root: { favorites: [] }, items: [] };
@@ -243,7 +249,7 @@ export function parseFavoritesDocument(source: unknown): { root: Record<string, 
     };
 }
 
-export function serializeFavoritesDocument(document: { root: Record<string, unknown>; items: PackageEntry[] }): string {
+export function serializeFavoritesDocument(document: FavoritesDocument): string {
     return `${JSON.stringify({ ...document.root, favorites: document.items }, null, 2)}\n`;
 }
 
@@ -293,7 +299,7 @@ export function npmPackageTooltip(name: string, version?: string, description?: 
     return description ? `${packageName}\n\n${description}` : packageName;
 }
 
-async function readFavoritesDocument(): Promise<{ root: Record<string, unknown>; items: PackageEntry[] }> {
+async function readFavoritesDocument(): Promise<FavoritesDocument> {
     try {
         return parseFavoritesDocument(JSON.parse(await fs.readFile(favoritesFile, 'utf8')));
     } catch (error) {
@@ -343,10 +349,7 @@ async function writeFavorites(root: Record<string, unknown>, favorites: PackageE
     }
 }
 
-export function parseTrashDocument(source: unknown): {
-    root: Record<string, unknown>;
-    items: Record<string, TrashedPackageEntry[]>;
-} {
+export function parseTrashDocument(source: unknown): TrashDocument {
     if (!source || typeof source !== 'object' || Array.isArray(source)) {
         return { root: { trash: {} }, items: {} };
     }
@@ -372,10 +375,7 @@ export function parseTrashDocument(source: unknown): {
     };
 }
 
-async function readTrashDocument(): Promise<{
-    root: Record<string, unknown>;
-    items: Record<string, TrashedPackageEntry[]>;
-}> {
+async function readTrashDocument(): Promise<TrashDocument> {
     try {
         return parseTrashDocument(JSON.parse(await fs.readFile(trashFile, 'utf8')));
     } catch (error) {
@@ -400,10 +400,7 @@ async function writeTrash(root: Record<string, unknown>, trash: Record<string, T
     }
 }
 
-export function serializeTrashDocument(document: {
-    root: Record<string, unknown>;
-    items: Record<string, TrashedPackageEntry[]>;
-}): string {
+export function serializeTrashDocument(document: TrashDocument): string {
     return `${JSON.stringify({ ...document.root, trash: document.items }, null, 2)}\n`;
 }
 

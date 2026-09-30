@@ -1,26 +1,19 @@
-export interface ProjectItem {
-    id: string;
-    name: string;
-    path: string;
-    tags: string[];
-    favorite: boolean;
-    lastOpenedAt?: number | null;
-}
+import type { AtlasSettings } from './types';
 
-export type SortBy = 'NAME' | 'PATH' | 'RECENT';
-export type ViewMode = 'LIST' | 'TAGS';
-export type ListFilter = 'ALL' | 'RECENT' | 'FAVORITES';
+export type {
+    AtlasSettings,
+    CreateProject,
+    ListFilter,
+    ProjectClickState,
+    ProjectFormValues,
+    ProjectImportResult,
+    ProjectItem,
+    ProjectOpenMode,
+    SortBy,
+    ViewMode,
+} from './types';
+
 export const untaggedFilter = '__PROJECT_ATLAS_UNTAGGED__';
-
-export interface AtlasSettings {
-    defaultOpenMode: 'CURRENT_WINDOW' | 'NEW_WINDOW';
-    sortBy: SortBy;
-    selectedFilter: ListFilter;
-    selectedView: ViewMode;
-    selectedListFilter: ListFilter;
-    tagProjectSpacing: number;
-    listProjectSpacing: number;
-}
 
 export const defaultSettings: AtlasSettings = {
     defaultOpenMode: 'CURRENT_WINDOW',

@@ -1,16 +1,14 @@
 import * as https from 'https';
 import * as semver from 'semver';
-import { UpdateCheckResult, UpdateManifest } from './model';
+import type { UpdateCheckResult, UpdateHttpResponse, UpdateManifest, UpdateRequest } from './types';
 
 const REPOSITORY = 'hyxf/project-atlas-vs';
 export const UPDATE_METADATA_URL = 'https://hyxf.github.io/project-atlas-vs/update/stable.json';
 const REQUEST_TIMEOUT_MS = 5_000;
 const MAX_DOWNLOAD_BYTES = 100 * 1024 * 1024;
 
-type Request = (url: string) => Promise<{ status: number; body: string }>;
-
 export class UpdateService {
-    constructor(private readonly request: Request = requestUpdateManifest) {}
+    constructor(private readonly request: UpdateRequest = requestUpdateManifest) {}
 
     async check(currentVersion: string, vscodeVersion: string): Promise<UpdateCheckResult> {
         const normalizedCurrentVersion = requireVersion(currentVersion, 'The installed extension version');
@@ -108,7 +106,7 @@ export function parseUpdateManifest(body: string): UpdateManifest {
     return manifest;
 }
 
-function requestUpdateManifest(url: string): Promise<{ status: number; body: string }> {
+function requestUpdateManifest(url: string): Promise<UpdateHttpResponse> {
     return new Promise((resolve, reject) => {
         const request = https.get(
             url,
