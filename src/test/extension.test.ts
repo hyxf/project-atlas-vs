@@ -744,12 +744,12 @@ suite('Extension', () => {
             group?: string;
         }>;
         assert.deepStrictEqual(explorerContext.slice(-3), [
-            { submenu: 'aicode.explorerActions', group: 'projectAtlas.workspaceTools@50' },
-            { submenu: 'projectAtlas.gitTools', group: 'projectAtlas.workspaceTools@51' },
+            { submenu: 'aicode.explorerActions', group: '1_projectAtlas.workspaceTools@50' },
+            { submenu: 'projectAtlas.gitTools', group: '1_projectAtlas.workspaceTools@51' },
             {
                 command: 'project-atlas.updatePackageVersion',
                 when: 'resourceFilename == package.json && workspaceFolderCount == 1',
-                group: 'projectAtlas.workspaceTools@52',
+                group: '1_projectAtlas.workspaceTools@52',
             },
         ]);
     });
