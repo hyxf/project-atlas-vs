@@ -2242,7 +2242,7 @@
         },
         {
           "command": "project-atlas.closeCurrent",
-          "when": "viewItem == currentProject || viewItem == currentProjectFavorite",
+          "when": "viewItem == currentProject",
           "group": "navigation@4"
         },
         {
