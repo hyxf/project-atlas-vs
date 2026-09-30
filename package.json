@@ -814,6 +814,18 @@
         "icon": "$(star-full)"
       },
       {
+        "command": "project-atlas.favorite",
+        "title": "Favorite",
+        "category": "Project Atlas",
+        "icon": "$(star-full)"
+      },
+      {
+        "command": "project-atlas.unfavorite",
+        "title": "Unfavorite",
+        "category": "Project Atlas",
+        "icon": "$(star-empty)"
+      },
+      {
         "command": "project-atlas.editTags",
         "title": "Edit Tags...",
         "category": "Project Atlas",
@@ -2002,6 +2014,14 @@
           "when": "false"
         },
         {
+          "command": "project-atlas.favorite",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.unfavorite",
+          "when": "false"
+        },
+        {
           "command": "project-atlas.editTags",
           "when": "false"
         },
@@ -2207,62 +2227,67 @@
         },
         {
           "command": "project-atlas.openCurrentWindow",
-          "when": "viewItem == project || viewItem == currentProject",
+          "when": "viewItem == project || viewItem == projectFavorite || viewItem == currentProject || viewItem == currentProjectFavorite",
           "group": "navigation@1"
         },
         {
           "command": "project-atlas.openNewWindow",
-          "when": "viewItem == project || viewItem == currentProject",
+          "when": "viewItem == project || viewItem == projectFavorite || viewItem == currentProject || viewItem == currentProjectFavorite",
           "group": "navigation@2"
         },
         {
           "submenu": "projectAtlas.openWithMenu",
-          "when": "(viewItem == project || viewItem == currentProject) && (projectAtlas.pycharmAvailable || projectAtlas.ideaAvailable || projectAtlas.xcodeAvailable)",
+          "when": "(viewItem == project || viewItem == projectFavorite || viewItem == currentProject || viewItem == currentProjectFavorite) && (projectAtlas.pycharmAvailable || projectAtlas.ideaAvailable || projectAtlas.xcodeAvailable)",
           "group": "navigation@3"
         },
         {
           "command": "project-atlas.closeCurrent",
-          "when": "viewItem == currentProject",
+          "when": "viewItem == currentProject || viewItem == currentProjectFavorite",
           "group": "navigation@4"
         },
         {
           "command": "project-atlas.edit",
-          "when": "viewItem == project || viewItem == currentProject",
+          "when": "viewItem == project || viewItem == projectFavorite || viewItem == currentProject || viewItem == currentProjectFavorite",
           "group": "edit@1"
         },
         {
-          "command": "project-atlas.toggleFavorite",
+          "command": "project-atlas.favorite",
           "when": "viewItem == project || viewItem == currentProject",
           "group": "edit@2"
         },
         {
+          "command": "project-atlas.unfavorite",
+          "when": "viewItem == projectFavorite || viewItem == currentProjectFavorite",
+          "group": "edit@2"
+        },
+        {
           "command": "project-atlas.editTags",
-          "when": "viewItem == project || viewItem == currentProject",
+          "when": "viewItem == project || viewItem == projectFavorite || viewItem == currentProject || viewItem == currentProjectFavorite",
           "group": "edit@3"
         },
         {
           "command": "project-atlas.duplicate",
-          "when": "viewItem == project || viewItem == currentProject",
+          "when": "viewItem == project || viewItem == projectFavorite || viewItem == currentProject || viewItem == currentProjectFavorite",
           "group": "files@1"
         },
         {
           "command": "project-atlas.copyPath",
-          "when": "viewItem == project || viewItem == currentProject",
+          "when": "viewItem == project || viewItem == projectFavorite || viewItem == currentProject || viewItem == currentProjectFavorite",
           "group": "files@2"
         },
         {
           "command": "project-atlas.reveal",
-          "when": "viewItem == project || viewItem == currentProject",
+          "when": "viewItem == project || viewItem == projectFavorite || viewItem == currentProject || viewItem == currentProjectFavorite",
           "group": "files@3"
         },
         {
           "command": "project-atlas.openTerminal",
-          "when": "viewItem == project || viewItem == currentProject",
+          "when": "viewItem == project || viewItem == projectFavorite || viewItem == currentProject || viewItem == currentProjectFavorite",
           "group": "files@4"
         },
         {
           "command": "project-atlas.remove",
-          "when": "viewItem == project || viewItem == currentProject",
+          "when": "viewItem == project || viewItem == projectFavorite || viewItem == currentProject || viewItem == currentProjectFavorite",
           "group": "danger@1"
         },
         {

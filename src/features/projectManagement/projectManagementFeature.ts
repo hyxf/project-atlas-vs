@@ -32,6 +32,8 @@ export function activateProjectManagement(context: vscode.ExtensionContext): voi
         closeCurrent: (node) => closeCurrentProject(resolveProject(node)),
         edit: (node) => editProject(resolveProject(node)),
         toggleFavorite: (node) => toggleFavorite(resolveProject(node)),
+        favorite: (node) => setFavorite(resolveProject(node), true),
+        unfavorite: (node) => setFavorite(resolveProject(node), false),
         editTags: (node) => editTags(resolveProject(node)),
         copyPath: (node) => copyPath(resolveProject(node)),
         reveal: (node) => reveal(resolveProject(node)),
@@ -267,7 +269,13 @@ async function openProjectOnDoubleClick(project: ProjectItem | undefined): Promi
 
 async function toggleFavorite(project?: ProjectItem): Promise<void> {
     if (project) {
-        await service.update({ ...project, favorite: !project.favorite });
+        await setFavorite(project, !project.favorite);
+    }
+}
+
+async function setFavorite(project: ProjectItem | undefined, favorite: boolean): Promise<void> {
+    if (project && project.favorite !== favorite) {
+        await service.update({ ...project, favorite });
         tree.refresh();
     }
 }
