@@ -30,14 +30,18 @@ interface VersionQuickPickItem extends vscode.QuickPickItem {
 
 /** Registers the package.json version update command. */
 export function registerPackageVersionCommand(context: vscode.ExtensionContext): void {
-    context.subscriptions.push(vscode.commands.registerCommand(updatePackageVersionCommand, updatePackageVersion));
+    context.subscriptions.push(
+        vscode.commands.registerCommand(updatePackageVersionCommand, (resource?: vscode.Uri) =>
+            updatePackageVersion(resource),
+        ),
+    );
 }
 
 /**
  * Updates the root package.json version using a SemVer major, minor, or patch increment.
  * Cancelling before execution leaves the version and repository untouched.
  */
-export async function updatePackageVersion(): Promise<void> {
+export async function updatePackageVersion(resource?: vscode.Uri): Promise<void> {
     if (updating) {
         void vscode.window.showInformationMessage('A package version update is already in progress.');
         return;
@@ -51,6 +55,9 @@ export async function updatePackageVersion(): Promise<void> {
         }
 
         const packageJsonUri = vscode.Uri.joinPath(workspaceFolders[0]!.uri, 'package.json');
+        if (resource !== undefined && resource.toString() !== packageJsonUri.toString()) {
+            throw new Error('Update Package Version is available only for the workspace root package.json.');
+        }
         await ensurePackageJsonExists(packageJsonUri);
         ensureOpenPackageJsonSaved(packageJsonUri);
 
