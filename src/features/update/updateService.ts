@@ -10,6 +10,7 @@ const MAX_DOWNLOAD_BYTES = 100 * 1024 * 1024;
 export class UpdateService {
     constructor(private readonly request: UpdateRequest = requestUpdateManifest) {}
 
+    /** Validates trusted release metadata and determines whether an update is applicable. */
     async check(currentVersion: string, vscodeVersion: string): Promise<UpdateCheckResult> {
         const normalizedCurrentVersion = requireVersion(currentVersion, 'The installed extension version');
         const normalizedVscodeVersion = requireVersion(vscodeVersion, 'The installed VS Code version');

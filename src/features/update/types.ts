@@ -1,3 +1,4 @@
+/** Immutable asset information used to download and verify a release VSIX. */
 export interface UpdateDownload {
     url: string;
     fileName: string;
@@ -8,6 +9,7 @@ export interface UpdateCompatibility {
     vscode: string;
 }
 
+/** Signed update metadata accepted from the stable update manifest. */
 export interface UpdateManifest {
     schemaVersion: 1;
     channel: 'stable';
@@ -35,6 +37,7 @@ export interface UpdateAvailableResult {
     update: AvailableUpdate;
 }
 
+/** Discriminated outcome of checking the currently installed version. */
 export type UpdateCheckResult = UpToDateResult | UpdateAvailableResult;
 
 export interface UpdateHttpResponse {
@@ -42,4 +45,5 @@ export interface UpdateHttpResponse {
     body: string;
 }
 
+/** Injectable metadata HTTP transport used by the update service and tests. */
 export type UpdateRequest = (url: string) => Promise<UpdateHttpResponse>;

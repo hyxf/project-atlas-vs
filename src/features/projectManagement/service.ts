@@ -25,6 +25,7 @@ export class ProjectService {
         return projects.find((_project, index) => identities[index] === key);
     }
 
+    /** Creates or updates the project identified by its normalized filesystem path. */
     async save(name: string, projectPath: string, tags: Iterable<string>, favorite: boolean): Promise<ProjectItem> {
         return this.mutate(async () => {
             return this.saveProject(name, projectPath, tags, favorite);
@@ -151,6 +152,7 @@ export class ProjectService {
         return copy.sort((a, b) => compare(a.name, b.name) || compare(a.path, b.path));
     }
 
+    /** Imports valid project directories and optionally refreshes existing matching paths. */
     async import(projectsToImport: CreateProject[], updateExisting: boolean): Promise<ProjectImportResult> {
         return this.mutate(() => this.importProjects(projectsToImport, updateExisting));
     }

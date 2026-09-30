@@ -1,12 +1,15 @@
 import type * as vscode from 'vscode';
 
+/** Source format from which an AICode configuration was successfully loaded. */
 export type ConfigSource = 'current' | 'legacy' | 'empty';
 
+/** Context groups and the active group persisted in a workspace `.aicode.json`. */
 export interface AICodeConfig {
     activeGroup: string;
     groups: Record<string, string[]>;
 }
 
+/** Result returned when a configuration has been successfully parsed. */
 export interface ConfigLoaded {
     kind: 'ok';
     config: AICodeConfig;
@@ -24,8 +27,10 @@ export interface ConfigInvalid {
     cause?: unknown;
 }
 
+/** Exhaustive result of attempting to load a workspace configuration. */
 export type ConfigLoadResult = ConfigLoaded | ConfigMissing | ConfigInvalid;
 
+/** A workspace-relative file path paired with its owning workspace folder. */
 export interface ContextTarget {
     folder: vscode.WorkspaceFolder;
     relativePath: string;

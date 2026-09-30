@@ -8,6 +8,7 @@ export class ConfigRepository {
         return vscode.Uri.joinPath(folder.uri, CONFIG_FILE);
     }
 
+    /** Loads current and legacy formats without writing to the workspace configuration. */
     public async load(folder: vscode.WorkspaceFolder): Promise<ConfigLoadResult> {
         const uri = this.configUri(folder);
         let bytes: Uint8Array;
@@ -33,6 +34,7 @@ export class ConfigRepository {
         }
     }
 
+    /** Atomically saves normalized configuration and rejects a stale expected content stamp. */
     public async save(folder: vscode.WorkspaceFolder, config: AICodeConfig, expectedStamp?: string): Promise<string> {
         const uri = this.configUri(folder);
         if (expectedStamp !== undefined) {

@@ -1,3 +1,4 @@
+/** A reusable prompt entry persisted in `aiprompts.json`. */
 export interface AiPrompt {
     id: string;
     title: string;
@@ -6,6 +7,7 @@ export interface AiPrompt {
     tags?: string[] | undefined;
 }
 
+/** Webview request that creates or updates a prompt. */
 export interface SavePromptMutation {
     type: 'save';
     value: Omit<AiPrompt, 'id'>;
@@ -28,6 +30,7 @@ export interface UpdatePromptTagsMutation {
     tags: string[];
 }
 
+/** Discriminated command accepted by prompt persistence. */
 export type PromptMutation =
     SavePromptMutation | DeleteOrDuplicatePromptMutation | ReorderPromptMutation | UpdatePromptTagsMutation;
 

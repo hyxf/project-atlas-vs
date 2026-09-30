@@ -1,6 +1,8 @@
+/** Dependency sections that Project Atlas can modify in a workspace package.json. */
 export type DependencyKind = 'dependencies' | 'devDependencies';
 export type PackageManager = 'yarn' | 'npm' | 'pnpm';
 
+/** Package data used by installed, favorite, and search result views. */
 export interface PackageEntry {
     name: string;
     version?: string | undefined;
@@ -31,16 +33,19 @@ export interface NpmSearchPage {
     from: number;
 }
 
+/** A favorite-document parse result that preserves unknown root properties. */
 export interface FavoritesDocument {
     root: Record<string, unknown>;
     items: PackageEntry[];
 }
 
+/** A trash-document parse result keyed by the workspace package.json URI. */
 export interface TrashDocument {
     root: Record<string, unknown>;
     items: Record<string, TrashedPackageEntry[]>;
 }
 
+/** Untrusted response shape from the npm search endpoint before runtime validation. */
 export interface NpmSearchResponse {
     total?: unknown;
     objects?: NpmSearchResponseItem[];

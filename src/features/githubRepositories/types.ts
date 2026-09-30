@@ -1,15 +1,18 @@
+/** Credentials and proxy settings needed to read the authenticated user's repositories. */
 export interface GitHubConfiguration {
     token: string;
     user: string;
     proxy: GitHubProxyConfiguration;
 }
 
+/** Proxy settings persisted alongside GitHub credentials. */
 export interface GitHubProxyConfiguration {
     enabled: boolean;
     url?: string;
     socketUrl?: string;
 }
 
+/** Normalized GitHub repository data retained in the local cache. */
 export interface GitHubRepository {
     id: number;
     name: string;
@@ -51,4 +54,5 @@ export interface GitHubResponse {
     body: string;
 }
 
+/** Injectable HTTP transport used by the GitHub client and its tests. */
 export type GitHubRequest = (url: string, configuration: GitHubConfiguration) => Promise<GitHubResponse>;

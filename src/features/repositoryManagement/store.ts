@@ -54,6 +54,7 @@ export class RepositoryStore {
         return this.file;
     }
 
+    /** Adds a repository unless an equivalent normalized SSH identity is already stored. */
     async addIfMissing(repository: RepositoryItem): Promise<'added' | 'existing'> {
         let result: 'added' | 'existing' = 'added';
         const write = this.writeQueue.then(async () => {

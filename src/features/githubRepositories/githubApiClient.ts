@@ -7,6 +7,7 @@ import type { GitHubConfiguration, GitHubRepository, GitHubRequest, GitHubRespon
 export class GitHubApiClient {
     constructor(private readonly request: GitHubRequest = requestGitHub) {}
 
+    /** Verifies the configured identity and retrieves every page of the user's repositories. */
     async repositories(configuration: GitHubConfiguration): Promise<GitHubRepository[]> {
         const proxyUrl = configuration.proxy.url ?? configuration.proxy.socketUrl;
         if (configuration.proxy.enabled && proxyUrl) {

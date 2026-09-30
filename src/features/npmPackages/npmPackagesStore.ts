@@ -235,6 +235,7 @@ function entriesOf(value: unknown, kind: DependencyKind): PackageEntry[] {
         .sort((left, right) => left.name.localeCompare(right.name));
 }
 
+/** Parses favorites while retaining unknown root fields for cross-client compatibility. */
 export function parseFavoritesDocument(source: unknown): FavoritesDocument {
     const root = Array.isArray(source) ? { favorites: source } : source;
     if (!root || typeof root !== 'object' || Array.isArray(root)) {
@@ -349,6 +350,7 @@ async function writeFavorites(root: Record<string, unknown>, favorites: PackageE
     }
 }
 
+/** Parses per-workspace trash entries while retaining unknown root fields. */
 export function parseTrashDocument(source: unknown): TrashDocument {
     if (!source || typeof source !== 'object' || Array.isArray(source)) {
         return { root: { trash: {} }, items: {} };
