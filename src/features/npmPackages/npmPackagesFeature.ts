@@ -63,7 +63,9 @@ export function activateNpmPackages(context: vscode.ExtensionContext): void {
     });
     register('searchNpmPackages', async () => openSearchPanel(provider));
     register('addNpmPackage', async () => openSearchPanel(provider));
-    register('installWorkspaceNpmPackages', async () => runPackageManagerCommand(workspaceInstallCommand));
+    register('installWorkspaceNpmPackages', async () =>
+        runPackageManagerCommand('Install All npm Packages', workspaceInstallCommand),
+    );
     register('editNpmFavoritesFile', openFavoritesFile);
     register('editNpmTrashFile', openTrashFile);
     register('refreshNpmTrash', refresh);
@@ -145,13 +147,17 @@ export function activateNpmPackages(context: vscode.ExtensionContext): void {
         if (!item || item.entry.kind || (await isInstalled(item.entry.name))) {
             return;
         }
-        await runPackageManagerCommand((packageManager) => favoriteInstallCommand(packageManager, item.entry.name));
+        await runPackageManagerCommand(`Install ${item.entry.name}`, (packageManager) =>
+            favoriteInstallCommand(packageManager, item.entry.name),
+        );
     });
     register('installFavoriteNpmPackageAsDevDependency', async (item: NpmPackageNode) => {
         if (!item || item.entry.kind || (await isInstalled(item.entry.name))) {
             return;
         }
-        await runPackageManagerCommand((packageManager) => favoriteDevInstallCommand(packageManager, item.entry.name));
+        await runPackageManagerCommand(`Install ${item.entry.name} as Dev Dependency`, (packageManager) =>
+            favoriteDevInstallCommand(packageManager, item.entry.name),
+        );
     });
     register('uninstallNpmPackage', async (item: NpmPackageNode) => {
         if (!item) {
@@ -162,7 +168,9 @@ export function activateNpmPackages(context: vscode.ExtensionContext): void {
             return;
         }
         await saveToTrash(installed);
-        await runPackageManagerCommand((packageManager) => favoriteUninstallCommand(packageManager, installed.name));
+        await runPackageManagerCommand(`Uninstall ${installed.name}`, (packageManager) =>
+            favoriteUninstallCommand(packageManager, installed.name),
+        );
     });
     register('addNpmPackageFavorite', async (item: NpmPackageNode) => {
         if (item) {
@@ -245,18 +253,31 @@ async function addFavoriteDependency(
     await refresh();
 }
 
-async function runPackageManagerCommand(commandFor: (packageManager: PackageManager) => string): Promise<void> {
+async function runPackageManagerCommand(
+    title: string,
+    commandFor: (packageManager: PackageManager) => string,
+): Promise<void> {
     const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
     if (!workspaceFolder || !workspacePackageUri()) {
         throw new Error('Open exactly one workspace folder with a root package.json.');
     }
     const packageManager = await readFavoritePackageManager();
-    const terminal = vscode.window.createTerminal({
-        name: `Project Atlas: ${packageManager}`,
-        cwd: workspaceFolder.uri,
-    });
-    terminal.show();
-    terminal.sendText(commandFor(packageManager));
+    const command = commandFor(packageManager);
+    const task = new vscode.Task(
+        { type: 'project-atlas-npm', command },
+        vscode.TaskScope.Workspace,
+        title,
+        'Project Atlas',
+        new vscode.ShellExecution(command, { cwd: workspaceFolder.uri.fsPath }),
+    );
+    task.presentationOptions = {
+        reveal: vscode.TaskRevealKind.Always,
+        panel: vscode.TaskPanelKind.Shared,
+        clear: true,
+        focus: false,
+        showReuseMessage: false,
+    };
+    await vscode.tasks.executeTask(task);
 }
 
 async function installedPackage(name: string): Promise<TrashedPackageEntry | undefined> {
