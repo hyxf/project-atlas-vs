@@ -144,6 +144,17 @@ export async function commitVersionChanges(root: string, message: string): Promi
     return git(root, ['rev-parse', 'HEAD']);
 }
 
+/** Creates a local lightweight tag at the committed package version. */
+export async function createVersionTag(root: string, commit: string, tag: string): Promise<void> {
+    await ensureVersionTagAvailable(root, tag);
+    await git(root, ['tag', tag, commit]);
+}
+
+export async function ensureVersionTagAvailable(root: string, tag: string): Promise<void> {
+    const existing = await runGit(root, ['rev-parse', '--verify', '--quiet', `refs/tags/${tag}^{commit}`]);
+    if (existing.code === 0) throw new Error(`Tag ${tag} already exists.`);
+}
+
 export async function pushVersionCommit(
     root: string,
     branch: string,

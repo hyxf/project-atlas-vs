@@ -3,6 +3,8 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import {
     commitVersionChanges,
+    createVersionTag,
+    ensureVersionTagAvailable,
     ensureVersionRepositoryUnchanged,
     findVersionRepository,
     inspectVersionRepository,
@@ -22,6 +24,8 @@ import {
 } from './packageVersionService';
 
 const updatePackageVersionCommand = 'project-atlas.updatePackageVersion';
+const createPackageVersionTagCommand = 'project-atlas.createPackageVersionTag';
+const packageVersionAvailableContext = 'projectAtlas.packageVersionAvailable';
 let updating = false;
 
 interface VersionQuickPickItem extends vscode.QuickPickItem {
@@ -35,6 +39,79 @@ export function registerPackageVersionCommand(context: vscode.ExtensionContext):
             updatePackageVersion(resource),
         ),
     );
+    context.subscriptions.push(
+        vscode.commands.registerCommand(createPackageVersionTagCommand, () => createPackageVersionTag()),
+    );
+    const updateAvailability = () => void setPackageVersionAvailability();
+    const watcher = vscode.workspace.createFileSystemWatcher('**/package.json');
+    context.subscriptions.push(
+        watcher,
+        watcher.onDidCreate(updateAvailability),
+        watcher.onDidChange(updateAvailability),
+        watcher.onDidDelete(updateAvailability),
+        vscode.workspace.onDidChangeWorkspaceFolders(updateAvailability),
+    );
+    updateAvailability();
+}
+
+async function setPackageVersionAvailability(): Promise<void> {
+    const folders = vscode.workspace.workspaceFolders;
+    let available = false;
+    if (folders?.length === 1) {
+        try {
+            const uri = vscode.Uri.joinPath(folders[0]!.uri, 'package.json');
+            const source = new TextDecoder().decode(await vscode.workspace.fs.readFile(uri));
+            const version = (JSON.parse(source) as { version?: unknown }).version;
+            available = typeof version === 'string' && version.trim().length > 0;
+        } catch {
+            available = false;
+        }
+    }
+    await vscode.commands.executeCommand('setContext', packageVersionAvailableContext, available);
+}
+
+async function createPackageVersionTag(): Promise<void> {
+    try {
+        const folders = vscode.workspace.workspaceFolders;
+        if (folders?.length !== 1 || folders[0]!.uri.scheme !== 'file') {
+            throw new Error('Open exactly one local workspace folder to create a package version tag.');
+        }
+        const root = await findVersionRepository(folders[0]!.uri.fsPath);
+        if (!root) {
+            throw new Error('The workspace is not inside a Git repository.');
+        }
+        const packageJsonUri = vscode.Uri.joinPath(folders[0]!.uri, 'package.json');
+        await ensurePackageJsonExists(packageJsonUri);
+        const source = new TextDecoder().decode(await readPackageJson(packageJsonUri, 'read'));
+        const version = (JSON.parse(source) as { version?: unknown }).version;
+        if (typeof version !== 'string' || !version.trim()) {
+            throw new Error('package.json does not contain a version field.');
+        }
+        const tag = `v${version.trim().replace(/^v/i, '')}`;
+        await ensureVersionTagAvailable(root, tag);
+        ensureOpenPackageJsonSaved(packageJsonUri);
+        ensureRepositoryDocumentsSaved(root);
+        const state = await inspectVersionRepository(root);
+        const message = `chore: release ${tag}`;
+        const confirmed = await vscode.window.showWarningMessage(
+            'Commit all saved repository changes and create a local version tag?',
+            {
+                modal: true,
+                detail: `Repository: ${root}\nBranch: ${state.branch}\nCommit: ${message}\nTag: ${tag}\n\n${state.changes || '(No existing changes)'}`,
+            },
+            'Commit and Tag',
+        );
+        if (!confirmed) return;
+        ensureRepositoryDocumentsSaved(root);
+        await ensureVersionRepositoryUnchanged(state);
+        const commit = await commitVersionChanges(root, message);
+        await createVersionTag(root, commit, tag);
+        void vscode.window.showInformationMessage(`Committed (${commit.slice(0, 8)}) and created tag ${tag}.`);
+    } catch (error) {
+        void vscode.window.showErrorMessage(
+            `Create Package Version Tag: ${error instanceof Error ? error.message : String(error)}`,
+        );
+    }
 }
 
 /**

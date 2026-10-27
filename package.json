@@ -273,6 +273,11 @@
         "category": "Project Atlas"
       },
       {
+        "command": "project-atlas.createPackageVersionTag",
+        "title": "Commit and Tag Package Version",
+        "category": "Project Atlas"
+      },
+      {
         "command": "aicode.createOrUpdateChangelog",
         "title": "Create or Update CHANGELOG.md...",
         "category": "Project Atlas"
@@ -1588,6 +1593,10 @@
         }
       ],
       "commandPalette": [
+        {
+          "command": "project-atlas.createPackageVersionTag",
+          "when": "workspaceFolderCount == 1 && projectAtlas.packageVersionAvailable"
+        },
         {
           "command": "aicode.copyFullPath",
           "when": "false"
