@@ -560,6 +560,7 @@ suite('Extension', () => {
             'aicode.copyMarkdown',
             'aicode.copyFileList',
             'aicode.copyRelativePath',
+            'aicode.copyFullPath',
             'aicode.addToTerminal',
             'aicode.refresh',
             'aicode.expandAll',

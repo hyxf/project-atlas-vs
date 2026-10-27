@@ -227,6 +227,16 @@ export function activateAICodeContext(context: vscode.ExtensionContext): void {
             paths.length === 1 ? `Copied relative path: ${paths[0]}` : `Copied ${paths.length} relative paths.`,
         );
     });
+    command('aicode.copyFullPath', async (argument, selected) => {
+        const paths = getUris(argument, selected).map((uri) => uri.fsPath);
+        if (paths.length === 0) {
+            return;
+        }
+        await vscode.env.clipboard.writeText(paths.join('\n'));
+        await vscode.window.showInformationMessage(
+            paths.length === 1 ? `Copied full path: ${paths[0]}` : `Copied ${paths.length} full paths.`,
+        );
+    });
     command('aicode.addToTerminal', async (argument, selected) => {
         const terminal = vscode.window.activeTerminal;
         if (terminal === undefined) {

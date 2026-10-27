@@ -4,7 +4,7 @@
   "displayName": "Project Atlas VS",
   "private": true,
   "description": "Save, organize, search, and quickly open local projects.",
-  "version": "1.3.6",
+  "version": "1.3.8",
   "publisher": "billchiu",
   "icon": "resources/project-atlas.png",
   "homepage": "https://github.com/hyxf/project-atlas-vs/blob/main/README.md",
@@ -197,6 +197,11 @@
       {
         "command": "aicode.copyRelativePath",
         "title": "Copy Relative Path",
+        "category": "AICode"
+      },
+      {
+        "command": "aicode.copyFullPath",
+        "title": "Copy Full Path",
         "category": "AICode"
       },
       {
@@ -1153,6 +1158,10 @@
           "group": "aicode@2"
         },
         {
+          "command": "aicode.copyFullPath",
+          "group": "aicode@2.1"
+        },
+        {
           "command": "aicode.addToTerminal",
           "group": "aicode@3"
         }
@@ -1579,6 +1588,10 @@
         }
       ],
       "commandPalette": [
+        {
+          "command": "aicode.copyFullPath",
+          "when": "false"
+        },
         {
           "command": "project-atlas.editCommonCommandTags",
           "when": "false"
