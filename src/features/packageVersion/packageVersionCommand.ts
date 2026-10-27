@@ -101,7 +101,9 @@ async function createPackageVersionTag(): Promise<void> {
             },
             'Commit and Tag',
         );
-        if (!confirmed) return;
+        if (!confirmed) {
+            return;
+        }
         ensureRepositoryDocumentsSaved(root);
         await ensureVersionRepositoryUnchanged(state);
         const commit = await commitVersionChanges(root, message);

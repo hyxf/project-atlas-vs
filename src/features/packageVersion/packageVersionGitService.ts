@@ -152,7 +152,9 @@ export async function createVersionTag(root: string, commit: string, tag: string
 
 export async function ensureVersionTagAvailable(root: string, tag: string): Promise<void> {
     const existing = await runGit(root, ['rev-parse', '--verify', '--quiet', `refs/tags/${tag}^{commit}`]);
-    if (existing.code === 0) throw new Error(`Tag ${tag} already exists.`);
+    if (existing.code === 0) {
+        throw new Error(`Tag ${tag} already exists.`);
+    }
 }
 
 export async function pushVersionCommit(

@@ -650,6 +650,7 @@ suite('Extension', () => {
                 'aicode.copyFileList',
                 'aicode.compareBranches',
                 'project-atlas.updatePackageVersion',
+                'project-atlas.createPackageVersionTag',
                 'aicode.createOrUpdateChangelog',
                 'project-atlas.editGitMessages',
                 'project-atlas.editCommonCommands',
@@ -731,6 +732,22 @@ suite('Extension', () => {
             {
                 command: 'project-atlas.updatePackageVersion',
                 when: 'workspaceFolderCount == 1',
+            },
+        );
+    });
+
+    test('shows the package version tag command when the workspace root has a version', () => {
+        const extension = vscode.extensions.getExtension('billchiu.project-atlas-vs');
+        assert.ok(extension);
+        const commandPalette = extension.packageJSON.contributes.menus.commandPalette as Array<{
+            command: string;
+            when?: string;
+        }>;
+        assert.deepStrictEqual(
+            commandPalette.find(({ command }) => command === 'project-atlas.createPackageVersionTag'),
+            {
+                command: 'project-atlas.createPackageVersionTag',
+                when: 'workspaceFolderCount == 1 && projectAtlas.packageVersionAvailable',
             },
         );
     });
