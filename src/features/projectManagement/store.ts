@@ -9,13 +9,27 @@ interface StoredData extends Record<string, unknown> {
     schemaVersion?: unknown;
     projects?: unknown;
     settings?: unknown;
+    views?: unknown;
 }
+
+export type ProjectViewVisibility = {
+    githubRepositories: boolean;
+    gitRepositories: boolean;
+    npmPackages: boolean;
+};
+
+export const defaultProjectViewVisibility: ProjectViewVisibility = {
+    githubRepositories: true,
+    gitRepositories: false,
+    npmPackages: false,
+};
 
 export class ProjectStore {
     readonly file: string;
     private source: StoredData = {};
     private validProjects: ProjectItem[] = [];
     private settingsValue: AtlasSettings = { ...defaultSettings };
+    private viewVisibilityValue: ProjectViewVisibility = { ...defaultProjectViewVisibility };
     private loaded = false;
     private loadFailed = false;
     private modified = -1;
@@ -33,6 +47,19 @@ export class ProjectStore {
     async settings(force = false): Promise<AtlasSettings> {
         await this.load(force);
         return cloneSettings(this.settingsValue);
+    }
+
+    async viewVisibility(force = false): Promise<ProjectViewVisibility> {
+        await this.load(force);
+        return { ...this.viewVisibilityValue };
+    }
+
+    async replaceViewVisibility(visibility: ProjectViewVisibility): Promise<void> {
+        const snapshot = { ...visibility };
+        await this.enqueueWrite(async () => {
+            await this.load(true);
+            await this.save(cloneProjects(this.validProjects), cloneSettings(this.settingsValue), snapshot);
+        });
     }
 
     async replaceProjects(projects: ProjectItem[]): Promise<void> {
@@ -71,6 +98,7 @@ export class ProjectStore {
             this.source = {};
             this.validProjects = [];
             this.settingsValue = { ...defaultSettings };
+            this.viewVisibilityValue = { ...defaultProjectViewVisibility };
             this.loaded = true;
             this.loadFailed = false;
             this.modified = -1;
@@ -86,6 +114,7 @@ export class ProjectStore {
                 ? source.projects.map(parseProject).filter((item): item is ProjectItem => item !== undefined)
                 : [];
             this.settingsValue = parseSettings(source.settings);
+            this.viewVisibilityValue = parseViewVisibility(source.views);
             this.loaded = true;
             this.loadFailed = false;
             this.modified = modified;
@@ -110,7 +139,11 @@ export class ProjectStore {
         await write;
     }
 
-    private async save(projectSnapshot: ProjectItem[], settingsSnapshot: AtlasSettings): Promise<void> {
+    private async save(
+        projectSnapshot: ProjectItem[],
+        settingsSnapshot: AtlasSettings,
+        viewVisibilitySnapshot = this.viewVisibilityValue,
+    ): Promise<void> {
         this.ensureWritable();
         await fs.mkdir(path.dirname(this.file), { recursive: true });
         const oldProjects = new Map<string, Record<string, unknown>>();
@@ -147,6 +180,7 @@ export class ProjectStore {
             schemaVersion: 4,
             projects,
             settings,
+            views: { ...(isRecord(this.source.views) ? this.source.views : {}), ...viewVisibilitySnapshot },
         };
         delete output.tags;
         const temporary = `${this.file}.${process.pid}.${randomUUID()}.tmp`;
@@ -158,10 +192,27 @@ export class ProjectStore {
         }
         this.validProjects = cloneProjects(projectSnapshot);
         this.settingsValue = cloneSettings(settingsSnapshot);
+        this.viewVisibilityValue = { ...viewVisibilitySnapshot };
         this.source = output;
         this.modified = (await fs.stat(this.file)).mtimeMs;
         this.loaded = true;
     }
+}
+
+function parseViewVisibility(value: unknown): ProjectViewVisibility {
+    const source = isRecord(value) ? value : {};
+    return {
+        githubRepositories:
+            typeof source.githubRepositories === 'boolean'
+                ? source.githubRepositories
+                : defaultProjectViewVisibility.githubRepositories,
+        gitRepositories:
+            typeof source.gitRepositories === 'boolean'
+                ? source.gitRepositories
+                : defaultProjectViewVisibility.gitRepositories,
+        npmPackages:
+            typeof source.npmPackages === 'boolean' ? source.npmPackages : defaultProjectViewVisibility.npmPackages,
+    };
 }
 
 function cloneProjects(projects: ProjectItem[]): ProjectItem[] {

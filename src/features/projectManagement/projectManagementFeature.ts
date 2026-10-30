@@ -7,7 +7,7 @@ import { untaggedFilter } from './model';
 import type { ListFilter, ProjectClickState, ProjectItem, SortBy } from './types';
 import { editProjectForm } from './projectForm';
 import { containsPath, duplicateDirectory, normalizePath, ProjectService } from './service';
-import { ProjectStore } from './store';
+import { ProjectStore, type ProjectViewVisibility } from './store';
 import { ProjectDecorationProvider, ProjectDropController, ProjectNode, ProjectsTree } from './tree';
 import { openXcodeProject, syncXcodeMenuContext } from './xcodeApp';
 
@@ -17,7 +17,8 @@ let lastProjectClick: ProjectClickState | undefined;
 const doubleClickInterval = 500;
 
 export function activateProjectManagement(context: vscode.ExtensionContext): void {
-    service = new ProjectService(new ProjectStore());
+    const store = new ProjectStore();
+    service = new ProjectService(store);
     tree = new ProjectsTree(service);
     const handlers: Record<string, (...args: unknown[]) => unknown> = {
         refresh,
@@ -70,6 +71,35 @@ export function activateProjectManagement(context: vscode.ExtensionContext): voi
         }),
     );
     context.subscriptions.push(vscode.window.registerFileDecorationProvider(new ProjectDecorationProvider()));
+    context.subscriptions.push(
+        vscode.commands.registerCommand('project-atlas.editProjectViews', () =>
+            run(async () => {
+                const current = await store.viewVisibility();
+                const items: (vscode.QuickPickItem & { key: keyof ProjectViewVisibility })[] = [
+                    { label: 'GitHub Repositories', key: 'githubRepositories', picked: current.githubRepositories },
+                    { label: 'Git Repositories', key: 'gitRepositories', picked: current.gitRepositories },
+                    { label: 'npm packages', key: 'npmPackages', picked: current.npmPackages },
+                ];
+                const selected = await vscode.window.showQuickPick(items, {
+                    title: 'Edit Project Atlas view visibility',
+                    placeHolder: 'Select the views to show',
+                    canPickMany: true,
+                    ignoreFocusOut: true,
+                });
+                if (selected === undefined) {
+                    return;
+                }
+                const chosen = new Set(selected.map((item) => item.key));
+                const visibility = {
+                    githubRepositories: chosen.has('githubRepositories'),
+                    gitRepositories: chosen.has('gitRepositories'),
+                    npmPackages: chosen.has('npmPackages'),
+                };
+                await store.replaceViewVisibility(visibility);
+                await applyProjectViewVisibility(visibility);
+            }),
+        ),
+    );
     for (const [name, handler] of Object.entries(handlers)) {
         context.subscriptions.push(
             vscode.commands.registerCommand(`project-atlas.${name}`, (...args) => run(() => handler(...args))),
@@ -78,11 +108,24 @@ export function activateProjectManagement(context: vscode.ExtensionContext): voi
     context.subscriptions.push(vscode.workspace.onDidChangeWorkspaceFolders(() => void run(trackCurrentWorkspace)));
     context.subscriptions.push(vscode.window.onDidChangeActiveTextEditor(() => void run(syncCurrentProjectContext)));
     void run(async () => {
+        await applyProjectViewVisibility(await store.viewVisibility());
         await syncMenuContext();
         await syncJetBrainsMenuContext();
         await syncXcodeMenuContext();
         await trackCurrentWorkspace();
     });
+}
+
+async function applyProjectViewVisibility(visibility: ProjectViewVisibility): Promise<void> {
+    await Promise.all([
+        vscode.commands.executeCommand(
+            'setContext',
+            'projectAtlas.showGithubRepositories',
+            visibility.githubRepositories,
+        ),
+        vscode.commands.executeCommand('setContext', 'projectAtlas.showGitRepositories', visibility.gitRepositories),
+        vscode.commands.executeCommand('setContext', 'projectAtlas.showNpmPackages', visibility.npmPackages),
+    ]);
 }
 
 async function run(action: () => unknown): Promise<unknown> {

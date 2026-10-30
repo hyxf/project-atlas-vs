@@ -26,6 +26,11 @@
   "contributes": {
     "commands": [
       {
+        "command": "project-atlas.editProjectViews",
+        "title": "Edit Project Atlas Views",
+        "category": "Project Atlas"
+      },
+      {
         "command": "project-atlas.checkForUpdates",
         "title": "Check for Updates",
         "category": "Project Atlas",
@@ -1078,16 +1083,18 @@
         },
         {
           "id": "projectAtlas.repos",
-          "name": "Git Repositories"
+          "name": "Git Repositories",
+          "when": "projectAtlas.showGitRepositories"
         },
         {
           "id": "projectAtlas.githubRepos",
-          "name": "GitHub Repositories"
+          "name": "GitHub Repositories",
+          "when": "projectAtlas.showGithubRepositories"
         },
         {
           "id": "projectAtlas.npmPackages",
           "name": "npm packages",
-          "when": "projectAtlas.npmPackagesAvailable"
+          "when": "projectAtlas.showNpmPackages && projectAtlas.npmPackagesAvailable"
         }
       ]
     },

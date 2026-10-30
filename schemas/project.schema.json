@@ -109,6 +109,28 @@
         }
       },
       "additionalProperties": true
+    },
+    "views": {
+      "type": "object",
+      "description": "Visibility preferences for Project Atlas views in VS Code.",
+      "properties": {
+        "githubRepositories": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether the GitHub Repositories view is shown."
+        },
+        "gitRepositories": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether the Git Repositories view is shown."
+        },
+        "npmPackages": {
+          "type": "boolean",
+          "default": false,
+          "description": "Whether the npm packages view is shown."
+        }
+      },
+      "additionalProperties": true
     }
   },
   "additionalProperties": true

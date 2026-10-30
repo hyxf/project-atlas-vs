@@ -115,6 +115,29 @@ suite('Project Management', () => {
         assert.strictEqual((await store.settings()).defaultOpenMode, 'NEW_WINDOW');
     });
 
+    test('persists configurable view visibility with the requested defaults', async () => {
+        assert.deepStrictEqual(await store.viewVisibility(), {
+            githubRepositories: true,
+            gitRepositories: false,
+            npmPackages: false,
+        });
+        await fs.mkdir(path.dirname(store.file), { recursive: true });
+        await fs.writeFile(store.file, JSON.stringify({ projects: [], views: { futureView: true } }));
+        await store.replaceViewVisibility({ githubRepositories: false, gitRepositories: true, npmPackages: true });
+        const written = JSON.parse(await fs.readFile(store.file, 'utf8'));
+        assert.deepStrictEqual(written.views, {
+            futureView: true,
+            githubRepositories: false,
+            gitRepositories: true,
+            npmPackages: true,
+        });
+        assert.deepStrictEqual(await store.viewVisibility(), {
+            githubRepositories: false,
+            gitRepositories: true,
+            npmPackages: true,
+        });
+    });
+
     test('serializes concurrent project saves without losing projects', async () => {
         await Promise.all([
             service.save('One', path.join(temporary, 'one'), [], false),
