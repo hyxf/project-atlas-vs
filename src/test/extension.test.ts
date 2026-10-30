@@ -638,6 +638,7 @@ suite('Extension', () => {
         assert.deepStrictEqual(
             paletteCommands.map(({ command }) => command),
             [
+                'project-atlas.editProjectViews',
                 'project-atlas.checkForUpdates',
                 'project-atlas.checkGlobalProxy',
                 'project-atlas.toggleGlobalProxy',
@@ -684,7 +685,8 @@ suite('Extension', () => {
         assert.strictEqual(paletteCommands[2]?.category, 'Project Atlas');
         assert.strictEqual(paletteCommands[3]?.category, 'Project Atlas');
         assert.strictEqual(paletteCommands[4]?.category, 'Project Atlas');
-        assert.strictEqual(paletteCommands[5]?.category, 'AICode');
+        assert.strictEqual(paletteCommands[5]?.category, 'Project Atlas');
+        assert.strictEqual(paletteCommands[6]?.category, 'AICode');
         for (const [command, enablement] of [
             [
                 'project-atlas.backupTemplateData',
@@ -911,9 +913,17 @@ suite('Extension', () => {
         ]);
         assert.deepStrictEqual(contributes.views.projectAtlas, [
             { id: 'projectAtlas.projects', name: 'Projects', icon: 'resources/project-atlas.svg' },
-            { id: 'projectAtlas.repos', name: 'Git Repositories' },
-            { id: 'projectAtlas.githubRepos', name: 'GitHub Repositories' },
-            { id: 'projectAtlas.npmPackages', name: 'npm packages', when: 'projectAtlas.npmPackagesAvailable' },
+            { id: 'projectAtlas.repos', name: 'Git Repositories', when: 'projectAtlas.showGitRepositories' },
+            {
+                id: 'projectAtlas.githubRepos',
+                name: 'GitHub Repositories',
+                when: 'projectAtlas.showGithubRepositories',
+            },
+            {
+                id: 'projectAtlas.npmPackages',
+                name: 'npm packages',
+                when: 'projectAtlas.showNpmPackages && projectAtlas.npmPackagesAvailable',
+            },
         ]);
         assert.deepStrictEqual(
             contributes.viewsWelcome.find(({ view }) => view === 'aicode.compareResults'),
