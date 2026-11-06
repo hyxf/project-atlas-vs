@@ -145,7 +145,7 @@ suite('Project form data safety', () => {
                 const data = JSON.parse(await fs.readFile(service.store.file, 'utf8'));
                 data.projects[0].future = { keep: true };
                 await fs.writeFile(service.store.file, JSON.stringify(data));
-                await save({ name: 'Renamed', tags: 'work', favorite: 'true' });
+                await save({ name: 'Renamed', tags: '["work"]', favorite: 'true' });
             },
         );
         assert.ok(openedAt);

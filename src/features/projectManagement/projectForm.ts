@@ -8,6 +8,7 @@ export async function editProjectForm(
     project: ProjectItem,
     save: (values: ProjectFormValues) => Promise<void>,
     form: TemplateForm = showTemplateForm,
+    availableTags: readonly string[] = [],
 ): Promise<void> {
     await form({
         title: project.id ? 'Edit Project' : 'Add Project',
@@ -31,10 +32,10 @@ export async function editProjectForm(
             {
                 name: 'tags',
                 label: 'Tags',
-                value: project.tags.join(', '),
-                multiline: true,
-                placeholder: 'work, frontend',
-                hint: 'Separate tags with commas or new lines. Leave empty for no tags.',
+                value: JSON.stringify(project.tags),
+                tagPicker: true,
+                tagOptions: [...new Set([...availableTags, ...project.tags])].sort((a, b) => a.localeCompare(b)),
+                hint: 'Select existing tags or type to add a new one.',
             },
             {
                 name: 'favorite',
@@ -46,7 +47,7 @@ export async function editProjectForm(
         save: async (values) => {
             await save({
                 name: values.name!.trim(),
-                tags: cleanTags(values.tags!.split(/[,\r\n]/)),
+                tags: cleanTags(JSON.parse(values.tags!) as string[]),
                 favorite: values.favorite === 'true',
             });
         },

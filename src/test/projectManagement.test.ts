@@ -31,7 +31,8 @@ suite('Project Management', () => {
             async (options) => {
                 assert.strictEqual(options.title, 'Edit Project');
                 assert.strictEqual(options.fields.find((field) => field.name === 'favorite')?.value, 'true');
-                await options.save({ name: '  Renamed  ', tags: ' work, tools\nwork\n ', favorite: 'false' });
+                assert.strictEqual(options.fields.find((field) => field.name === 'tags')?.tagPicker, true);
+                await options.save({ name: '  Renamed  ', tags: '["work", "tools", "work", " "]', favorite: 'false' });
             },
         );
         const updated = (await service.projects(true))[0]!;

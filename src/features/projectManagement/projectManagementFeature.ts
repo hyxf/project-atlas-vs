@@ -154,13 +154,20 @@ async function saveCurrent(): Promise<void> {
         return;
     }
     const existing = await service.findByPath(folder.uri.fsPath);
-    await editProjectForm(existing ?? projectDefaults(folder.uri.fsPath), async (values) => {
-        const saved = await service.save(values.name, folder.uri.fsPath, values.tags, values.favorite);
-        await service.markOpened(saved);
-        await syncCurrentProjectContext();
-        tree.refresh();
-        void vscode.window.showInformationMessage(`Project Atlas: ${existing ? 'Updated' : 'Saved'} “${saved.name}”.`);
-    });
+    await editProjectForm(
+        existing ?? projectDefaults(folder.uri.fsPath),
+        async (values) => {
+            const saved = await service.save(values.name, folder.uri.fsPath, values.tags, values.favorite);
+            await service.markOpened(saved);
+            await syncCurrentProjectContext();
+            tree.refresh();
+            void vscode.window.showInformationMessage(
+                `Project Atlas: ${existing ? 'Updated' : 'Saved'} “${saved.name}”.`,
+            );
+        },
+        undefined,
+        await allProjectTags(),
+    );
 }
 
 async function currentWorkspaceFolder(): Promise<vscode.WorkspaceFolder | undefined> {
@@ -216,21 +223,35 @@ async function addFolder(folderPath: string): Promise<void> {
         await vscode.window.showInformationMessage('Project Atlas: Project already exists.');
         return;
     }
-    await editProjectForm(projectDefaults(folderPath), async (values) => {
-        await service.save(values.name, folderPath, values.tags, values.favorite);
-        await syncCurrentProjectContext();
-        tree.refresh();
-    });
+    await editProjectForm(
+        projectDefaults(folderPath),
+        async (values) => {
+            await service.save(values.name, folderPath, values.tags, values.favorite);
+            await syncCurrentProjectContext();
+            tree.refresh();
+        },
+        undefined,
+        await allProjectTags(),
+    );
 }
 
 async function editProject(project: ProjectItem | undefined): Promise<void> {
     if (!project) {
         return;
     }
-    await editProjectForm(project, async (values) => {
-        await service.updateDetails(project.id, values);
-        tree.refresh();
-    });
+    await editProjectForm(
+        project,
+        async (values) => {
+            await service.updateDetails(project.id, values);
+            tree.refresh();
+        },
+        undefined,
+        await allProjectTags(),
+    );
+}
+
+async function allProjectTags(): Promise<string[]> {
+    return [...new Set((await service.projects()).flatMap((project) => project.tags))];
 }
 
 async function quickOpen(newWindow: boolean): Promise<void> {

@@ -17,6 +17,8 @@ export interface TemplateFormField {
     halfWidth?: boolean;
     monospace?: boolean;
     variableEditor?: boolean;
+    tagPicker?: boolean;
+    tagOptions?: string[];
 }
 
 export interface TemplateFormOptions {
@@ -52,6 +54,17 @@ export function validateFormValues(fields: TemplateFormField[], input: unknown):
         }
         if (field.checkbox && value !== 'true' && value !== 'false') {
             throw new Error(`Invalid ${field.label}.`);
+        }
+        if (field.tagPicker) {
+            let tags: unknown;
+            try {
+                tags = JSON.parse(value);
+            } catch {
+                throw new Error(`Invalid ${field.label}.`);
+            }
+            if (!Array.isArray(tags) || tags.some((tag) => typeof tag !== 'string')) {
+                throw new Error(`Invalid ${field.label}.`);
+            }
         }
         if (field.required && !value.trim()) {
             throw new Error(`${field.label} is required.`);
@@ -179,6 +192,9 @@ export function renderTemplateForm(options: TemplateFormOptions): string {
             if (field.variableEditor) {
                 return renderVariableEditor(field);
             }
+            if (field.tagPicker) {
+                return `<div class="field"><label>${escapeHtml(field.label)}<span class="field-status">Optional</span></label><div class="tag-picker" data-name="${escapeHtml(field.name)}" data-value="${escapeHtml(field.value)}" data-options="${escapeHtml(JSON.stringify(field.tagOptions ?? []))}"><div class="tag-list"></div><div class="tag-entry"><input class="tag-input" placeholder="Type a tag"><button type="button" class="secondary add-tag">Add</button></div><div class="tag-options"></div></div>${field.hint ? `<p class="field-hint">${escapeHtml(field.hint)}</p>` : ''}</div>`;
+            }
             const attributes = `id="${escapeHtml(field.name)}" name="${escapeHtml(field.name)}" placeholder="${escapeHtml(field.placeholder ?? '')}" ${field.required ? 'required' : ''}${field.readOnly ? ' readonly' : ''}${field.hint ? ` aria-describedby="${escapeHtml(field.name)}-hint"` : ''}${field.monospace ? ' class="code-input" spellcheck="false"' : ''}`;
             if (field.checkbox) {
                 return `<div class="field"><label class="checkbox-field" for="${escapeHtml(field.name)}"><input type="checkbox" ${attributes} value="true"${field.value === 'true' ? ' checked' : ''}>${escapeHtml(field.label)}</label>${field.hint ? `<p class="field-hint" id="${escapeHtml(field.name)}-hint">${escapeHtml(field.hint)}</p>` : ''}</div>`;
@@ -249,6 +265,12 @@ button:disabled { opacity: .6; cursor: default; } #error { margin: 0 28px 24px; 
 .variable-row .remove-variable { min-width: auto; padding: 4px 10px; }
 .add-variable { width: 100%; border-style: dashed; }
 .variable-hidden { display: none !important; }
+.tag-list, .tag-options { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.tag-chip { min-width: 0; padding: 3px 9px; border-radius: 999px; background: var(--vscode-badge-background); color: var(--vscode-badge-foreground); }
+.tag-chip button { min-width: 0; padding: 0 0 0 6px; border: 0; background: transparent; color: inherit; }
+.tag-entry { display: flex; gap: 8px; }
+.tag-entry input { flex: 1; }
+.tag-options button { min-width: 0; padding: 3px 9px; }
 @media (max-width: 480px) { body { padding: 24px 16px; } .fields { padding: 20px; gap: 20px; } .half-width { grid-column: 1 / -1; } .footer { padding: 16px 20px; } #error { margin: 0 20px 20px; } }
 </style></head><body><main><header><p class="eyebrow">${escapeHtml(options.eyebrow ?? 'Project Atlas · Templates')}</p><h1>${escapeHtml(options.title)}</h1>${options.description ? `<p class="subtitle">${escapeHtml(options.description)}</p>` : ''}</header>
 <form id="editor"><div class="fields">${fields}</div><p id="error" role="alert" tabindex="-1" hidden></p>
@@ -288,6 +310,9 @@ function readValues() {
         });
         values[editor.dataset.name] = JSON.stringify(variables);
     }
+    for (const picker of form.querySelectorAll('.tag-picker')) {
+        values[picker.dataset.name] = JSON.stringify([...picker.querySelectorAll('.tag-chip')].map(chip => chip.dataset.tag));
+    }
     return values;
 }
 function changed() { vscode.postMessage({ type: 'change', values: readValues() }); }
@@ -319,6 +344,35 @@ function updateVariableRow(row) {
 for (const editor of form.querySelectorAll('.variable-editor')) {
     try { JSON.parse(editor.dataset.value || '[]').forEach(variable => addVariableRow(editor, variable)); } catch { /* Validation runs when saving. */ }
 }
+function addTag(picker, value) {
+    const tag = value.trim();
+    if (!tag) return;
+    const selected = [...picker.querySelectorAll('.tag-chip')].map(chip => chip.dataset.tag);
+    if (selected.includes(tag)) return;
+    const chip = document.createElement('span');
+    chip.className = 'tag-chip'; chip.dataset.tag = tag;
+    const label = document.createElement('span'); label.textContent = tag;
+    const remove = document.createElement('button'); remove.type = 'button'; remove.textContent = '×'; remove.setAttribute('aria-label', 'Remove ' + tag);
+    remove.addEventListener('click', () => { chip.remove(); renderTags(picker); changed(); });
+    chip.append(label, remove); picker.querySelector('.tag-list').append(chip);
+    renderTags(picker);
+}
+function renderTags(picker) {
+    const selected = new Set([...picker.querySelectorAll('.tag-chip')].map(chip => chip.dataset.tag));
+    const options = JSON.parse(picker.dataset.options || '[]');
+    const container = picker.querySelector('.tag-options'); container.replaceChildren();
+    for (const tag of options) {
+        if (selected.has(tag)) continue;
+        const button = document.createElement('button'); button.type = 'button'; button.className = 'secondary'; button.textContent = tag;
+        button.addEventListener('click', () => { addTag(picker, tag); changed(); }); container.append(button);
+    }
+}
+for (const picker of form.querySelectorAll('.tag-picker')) {
+    try { JSON.parse(picker.dataset.value || '[]').forEach(tag => addTag(picker, tag)); } catch { /* Validation runs when saving. */ }
+    const input = picker.querySelector('.tag-input');
+    picker.querySelector('.add-tag').addEventListener('click', () => { addTag(picker, input.value); input.value = ''; changed(); });
+    input.addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); picker.querySelector('.add-tag').click(); } });
+}
 form.addEventListener('click', event => {
     const button = event.target.closest('[data-variable-action]');
     if (!button) return;
@@ -342,6 +396,11 @@ form.addEventListener('keydown', event => {
 form.addEventListener('submit', (event) => {
     event.preventDefault();
     if (saving) return;
+    for (const picker of form.querySelectorAll('.tag-picker')) {
+        const input = picker.querySelector('.tag-input');
+        addTag(picker, input.value);
+        input.value = '';
+    }
     const values = readValues();
     error.hidden = true;
     setSaving(true);

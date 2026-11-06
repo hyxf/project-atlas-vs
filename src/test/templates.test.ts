@@ -113,6 +113,15 @@ suite('Template views', () => {
         assert.strictEqual(error.textContent, 'Save failed');
     });
 
+    test('validates selected tags as a string array', () => {
+        const fields = [{ name: 'tags', label: 'Tags', value: '[]', tagPicker: true }];
+        assert.deepStrictEqual(validateFormValues(fields, { tags: '["work"]' }), { tags: '["work"]' });
+        assert.throws(() => validateFormValues(fields, { tags: 'work' }), /Invalid Tags/);
+        assert.throws(() => validateFormValues(fields, { tags: '[1]' }), /Invalid Tags/);
+        const html = renderTemplateForm({ title: 'Add Project', fields, save: async () => {} });
+        assert.match(html, /class="tag-picker"/);
+    });
+
     test('validates checked and unchecked checkbox values', () => {
         const fields = [{ name: 'favorite', label: 'Favorites', value: 'true', checkbox: true }];
         for (const favorite of ['true', 'false']) {
