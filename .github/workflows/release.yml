@@ -23,13 +23,13 @@ jobs:
               uses: actions/setup-node@v5
               with:
                   node-version: 22
-                  cache: yarn
+                  cache: pnpm
 
             - name: Enable Corepack
               run: corepack enable
 
             - name: Install dependencies
-              run: yarn install --frozen-lockfile
+              run: pnpm install --frozen-lockfile
 
             - name: Read version from tag
               id: version
@@ -37,7 +37,7 @@ jobs:
                   TAG_NAME: ${{ github.ref_name }}
               run: |
                   VERSION="${TAG_NAME#v}"
-                  if ! yarn --silent semver "$VERSION" >/dev/null; then
+                  if ! pnpm exec semver "$VERSION" >/dev/null; then
                     echo "Tag must be a valid semantic version prefixed with v (for example, v1.2.3)." >&2
                     exit 1
                   fi
@@ -52,12 +52,12 @@ jobs:
             - name: Test (excluding proxy tests)
               env:
                   NODE_OPTIONS: --no-deprecation
-              run: xvfb-run -a yarn test --grep proxy --invert
+              run: xvfb-run -a pnpm test --grep proxy --invert
 
             - name: Package extension
               env:
                   VSIX_FILE: ${{ steps.version.outputs.vsix }}
-              run: yarn package:extension --out "$VSIX_FILE"
+              run: pnpm package:extension --out "$VSIX_FILE"
 
             - name: Generate checksums
               env:
@@ -71,7 +71,7 @@ jobs:
                   MINIMUM_SUPPORTED_VERSION: ${{ vars.PROJECT_ATLAS_MINIMUM_SUPPORTED_VERSION || '0.0.0' }}
               run: |
                   SHA256="$(sha256sum "$VSIX_FILE" | awk '{print $1}')"
-                  if ! yarn --silent semver "$MINIMUM_SUPPORTED_VERSION" >/dev/null; then
+                  if ! pnpm exec semver "$MINIMUM_SUPPORTED_VERSION" >/dev/null; then
                     echo "PROJECT_ATLAS_MINIMUM_SUPPORTED_VERSION must be a valid semantic version." >&2
                     exit 1
                   fi

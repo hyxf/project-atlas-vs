@@ -2643,19 +2643,19 @@
     ]
   },
   "scripts": {
-    "vscode:prepublish": "yarn clean && yarn compile",
+    "vscode:prepublish": "pnpm clean && pnpm compile",
     "clean": "node -e \"require('fs').rmSync('out', { recursive: true, force: true })\"",
     "compile": "tsc -p ./",
     "watch": "tsc -watch -p ./",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "pretest": "yarn run format:check && yarn run compile && yarn run lint",
+    "pretest": "pnpm run format:check && pnpm run compile && pnpm run lint",
     "lint": "eslint src",
     "test": "vscode-test",
-    "test:online": "yarn test --grep proxy --invert",
-    "package:extension": "vsce package --yarn",
-    "install:extension": "yarn package:extension --out project-atlas-vs.vsix && code --install-extension project-atlas-vs.vsix --force",
-    "deploy": "vsce publish --yarn"
+    "test:online": "pnpm test --grep proxy --invert",
+    "package:extension": "vsce package --no-yarn",
+    "install:extension": "pnpm package:extension --out project-atlas-vs.vsix && code --install-extension project-atlas-vs.vsix --force",
+    "deploy": "vsce publish --no-yarn"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",
