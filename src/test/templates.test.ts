@@ -114,12 +114,14 @@ suite('Template views', () => {
     });
 
     test('validates selected tags as a string array', () => {
-        const fields = [{ name: 'tags', label: 'Tags', value: '[]', tagPicker: true }];
+        const fields = [{ name: 'tags', label: 'Tags', value: '[]', tagPicker: true, tagOptions: ['work'] }];
         assert.deepStrictEqual(validateFormValues(fields, { tags: '["work"]' }), { tags: '["work"]' });
         assert.throws(() => validateFormValues(fields, { tags: 'work' }), /Invalid Tags/);
         assert.throws(() => validateFormValues(fields, { tags: '[1]' }), /Invalid Tags/);
         const html = renderTemplateForm({ title: 'Add Project', fields, save: async () => {} });
         assert.match(html, /class="tag-picker"/);
+        assert.match(html, /data-options="\[&quot;work&quot;\]"/);
+        assert.match(html, /renderTags\(picker\);\s+const input = picker\.querySelector\('\.tag-input'\)/);
     });
 
     test('validates checked and unchecked checkbox values', () => {

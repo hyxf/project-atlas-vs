@@ -370,6 +370,7 @@ function renderTags(picker) {
 }
 for (const picker of form.querySelectorAll('.tag-picker')) {
     try { JSON.parse(picker.dataset.value || '[]').forEach(tag => addTag(picker, tag)); } catch { /* Validation runs when saving. */ }
+    renderTags(picker);
     const input = picker.querySelector('.tag-input');
     picker.querySelector('.add-tag').addEventListener('click', () => { addTag(picker, input.value); input.value = ''; changed(); });
     input.addEventListener('keydown', event => { if (event.key === 'Enter') { event.preventDefault(); picker.querySelector('.add-tag').click(); } });
