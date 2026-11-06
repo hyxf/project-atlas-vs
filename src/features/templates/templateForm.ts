@@ -193,7 +193,7 @@ export function renderTemplateForm(options: TemplateFormOptions): string {
                 return renderVariableEditor(field);
             }
             if (field.tagPicker) {
-                return `<div class="field"><label>${escapeHtml(field.label)}<span class="field-status">Optional</span></label><div class="tag-picker" data-name="${escapeHtml(field.name)}" data-value="${escapeHtml(field.value)}" data-options="${escapeHtml(JSON.stringify(field.tagOptions ?? []))}"><div class="tag-list"></div><div class="tag-entry"><input class="tag-input" placeholder="Type a tag"><button type="button" class="secondary add-tag">Add</button></div><div class="tag-options"></div></div>${field.hint ? `<p class="field-hint">${escapeHtml(field.hint)}</p>` : ''}</div>`;
+                return `<div class="field"><label>${escapeHtml(field.label)}<span class="field-status">Optional</span></label><div class="tag-picker" data-name="${escapeHtml(field.name)}" data-value="${escapeHtml(field.value)}" data-options="${escapeHtml(JSON.stringify(field.tagOptions ?? []))}"><div class="tag-list"></div><div class="tag-options"></div><div class="tag-entry"><input class="tag-input" placeholder="Type a tag"><button type="button" class="secondary add-tag">Add</button></div></div>${field.hint ? `<p class="field-hint">${escapeHtml(field.hint)}</p>` : ''}</div>`;
             }
             const attributes = `id="${escapeHtml(field.name)}" name="${escapeHtml(field.name)}" placeholder="${escapeHtml(field.placeholder ?? '')}" ${field.required ? 'required' : ''}${field.readOnly ? ' readonly' : ''}${field.hint ? ` aria-describedby="${escapeHtml(field.name)}-hint"` : ''}${field.monospace ? ' class="code-input" spellcheck="false"' : ''}`;
             if (field.checkbox) {
@@ -265,7 +265,8 @@ button:disabled { opacity: .6; cursor: default; } #error { margin: 0 28px 24px; 
 .variable-row .remove-variable { min-width: auto; padding: 4px 10px; }
 .add-variable { width: 100%; border-style: dashed; }
 .variable-hidden { display: none !important; }
-.tag-list, .tag-options { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.tag-picker { display: flex; flex-direction: column; gap: 12px; }
+.tag-list, .tag-options { display: flex; flex-wrap: wrap; gap: 6px; }
 .tag-chip { min-width: 0; padding: 3px 9px; border-radius: 999px; background: var(--vscode-badge-background); color: var(--vscode-badge-foreground); }
 .tag-chip button { min-width: 0; padding: 0 0 0 6px; border: 0; background: transparent; color: inherit; }
 .tag-entry { display: flex; gap: 8px; }

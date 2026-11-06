@@ -32,8 +32,13 @@ suite('Project Management', () => {
                 assert.strictEqual(options.title, 'Edit Project');
                 assert.strictEqual(options.fields.find((field) => field.name === 'favorite')?.value, 'true');
                 assert.strictEqual(options.fields.find((field) => field.name === 'tags')?.tagPicker, true);
+                assert.deepStrictEqual(options.fields.find((field) => field.name === 'tags')?.tagOptions, [
+                    'existing',
+                    'tools',
+                ]);
                 await options.save({ name: '  Renamed  ', tags: '["work", "tools", "work", " "]', favorite: 'false' });
             },
+            ['existing'],
         );
         const updated = (await service.projects(true))[0]!;
         assert.strictEqual(updated.name, 'Renamed');
@@ -50,7 +55,9 @@ suite('Project Management', () => {
             async () => assert.fail('Cancel must not save'),
             async (options) => {
                 assert.strictEqual(options.title, 'Add Project');
+                assert.deepStrictEqual(options.fields.find((field) => field.name === 'tags')?.tagOptions, ['existing']);
             },
+            ['existing'],
         );
     });
 
