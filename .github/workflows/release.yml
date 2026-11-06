@@ -12,6 +12,8 @@ jobs:
     release:
         name: Build and release VSIX
         runs-on: ubuntu-24.04
+        env:
+            PNPM_CONFIG_NODE_LINKER: hoisted
 
         steps:
             - name: Check out repository
