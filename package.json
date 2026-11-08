@@ -2367,7 +2367,7 @@
         {
           "command": "project-atlas.openGithubRepository",
           "when": "view == projectAtlas.githubRepos && (viewItem == githubRepositoryAddable || viewItem == githubRepositorySaved)",
-          "group": "navigation@2"
+          "group": "navigationOpen@1"
         },
         {
           "command": "project-atlas.addGithubRepositoryToRepos",

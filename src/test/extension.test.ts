@@ -1351,7 +1351,7 @@ suite('Extension', () => {
             {
                 command: 'project-atlas.openGithubRepository',
                 when: 'view == projectAtlas.githubRepos && (viewItem == githubRepositoryAddable || viewItem == githubRepositorySaved)',
-                group: 'navigation@2',
+                group: 'navigationOpen@1',
             },
         );
         assert.ok(
@@ -1362,7 +1362,8 @@ suite('Extension', () => {
         );
         assert.ok(
             itemMenu.some(
-                ({ command, group }) => command === 'project-atlas.openGithubRepository' && group === 'navigation@2',
+                ({ command, group }) =>
+                    command === 'project-atlas.openGithubRepository' && group === 'navigationOpen@1',
             ),
         );
         assert.ok(
