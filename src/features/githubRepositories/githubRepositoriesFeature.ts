@@ -218,37 +218,49 @@ export function activateGitHubRepositories(context: vscode.ExtensionContext): vo
                 if (!(node instanceof GitHubRepositoryNode)) {
                     return;
                 }
+                if (synchronizing) {
+                    await vscode.window.showWarningMessage(
+                        'Project Atlas: Wait for GitHub repository synchronization or deletion to finish before deleting another repository.',
+                    );
+                    return;
+                }
                 const { repository } = node;
                 if (!(await confirmGitHubRepositoryDeletion(repository, vscode.window.showInputBox))) {
                     return;
                 }
                 if (synchronizing) {
                     await vscode.window.showWarningMessage(
-                        'Project Atlas: Wait for GitHub repository synchronization to finish before deleting a repository.',
+                        'Project Atlas: Wait for GitHub repository synchronization or deletion to finish before deleting another repository.',
                     );
                     return;
                 }
                 synchronizing = true;
+                let result: { succeeded: true } | { succeeded: false; error: unknown } = { succeeded: true };
                 try {
                     await vscode.commands.executeCommand(
                         'setContext',
                         'projectAtlas.githubRepositoriesRefreshing',
                         true,
                     );
-                    const configuration = await githubConfiguration(configurationStore);
-                    await apiClient.deleteRepository(configuration, repository);
-                    try {
-                        await configurationStore.removeRepository(repository.id);
-                    } catch (error) {
-                        tree.refresh();
-                        await vscode.window.showWarningMessage(
-                            `Project Atlas: Deleted ${repository.fullName} on GitHub, but could not update the local cache. Refresh GitHub Repositories after fixing github.json: ${error instanceof Error ? error.message : String(error)}`,
-                        );
-                        return;
-                    }
-                    tree.refresh();
-                    await vscode.window.showInformationMessage(
-                        `Project Atlas: Deleted ${repository.fullName} on GitHub.`,
+                    result = await vscode.window.withProgress(
+                        {
+                            location: vscode.ProgressLocation.Notification,
+                            title: `Deleting ${repository.fullName} on GitHub`,
+                            cancellable: false,
+                        },
+                        async (progress) => {
+                            progress.report({ message: 'Deleting repository from GitHub…' });
+                            const configuration = await githubConfiguration(configurationStore);
+                            await apiClient.deleteRepository(configuration, repository);
+                            progress.report({ increment: 80, message: 'Updating local GitHub cache…' });
+                            try {
+                                await configurationStore.removeRepository(repository.id);
+                            } catch (error) {
+                                return { succeeded: false as const, error };
+                            }
+                            progress.report({ increment: 20, message: 'Complete' });
+                            return { succeeded: true as const };
+                        },
                     );
                 } finally {
                     synchronizing = false;
@@ -258,6 +270,15 @@ export function activateGitHubRepositories(context: vscode.ExtensionContext): vo
                         false,
                     );
                 }
+                if (!result.succeeded) {
+                    tree.refresh();
+                    await vscode.window.showWarningMessage(
+                        `Project Atlas: Deleted ${repository.fullName} on GitHub, but could not update the local cache. Refresh GitHub Repositories after fixing github.json: ${result.error instanceof Error ? result.error.message : String(result.error)}`,
+                    );
+                    return;
+                }
+                tree.refresh();
+                await vscode.window.showInformationMessage(`Project Atlas: Deleted ${repository.fullName} on GitHub.`);
             }),
         ),
         vscode.commands.registerCommand('project-atlas.copyGithubRepositorySshUrl', (node: unknown) =>

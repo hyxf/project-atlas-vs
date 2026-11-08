@@ -2376,7 +2376,7 @@
         },
         {
           "command": "project-atlas.deleteGithubRepository",
-          "when": "view == projectAtlas.githubRepos && !projectAtlas.githubRepositoriesRefreshing && (viewItem == githubRepositoryAddable || viewItem == githubRepositorySaved)",
+          "when": "view == projectAtlas.githubRepos && (viewItem == githubRepositoryAddable || viewItem == githubRepositorySaved)",
           "group": "danger@1"
         },
         {
