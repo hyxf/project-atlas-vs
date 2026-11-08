@@ -17,6 +17,7 @@ import { pickRepositoryTags } from '../repositoryManagement/tagPicker';
 import { ProjectService } from '../projectManagement/service';
 import { ProjectStore } from '../projectManagement/store';
 import { DoubleClickTracker } from './doubleClick';
+import { confirmGitHubRepositoryDeletion } from './deleteConfirmation';
 
 interface ChangedGitHubSettings {
     token: boolean;
@@ -30,7 +31,8 @@ export function activateGitHubRepositories(context: vscode.ExtensionContext): vo
     const configurationStore = new GitHubConfigurationStore();
     const repositoryStore = new RepositoryStore();
     const projectService = new ProjectService(new ProjectStore());
-    const tree = new GitHubRepositoriesTree(configurationStore, new GitHubApiClient(), repositoryStore, () =>
+    const apiClient = new GitHubApiClient();
+    const tree = new GitHubRepositoriesTree(configurationStore, apiClient, repositoryStore, () =>
         githubConfiguration(configurationStore),
     );
     const doubleClick = new DoubleClickTracker();
@@ -207,6 +209,53 @@ export function activateGitHubRepositories(context: vscode.ExtensionContext): vo
                 if (result === 'added') {
                     await vscode.window.showInformationMessage(
                         `Project Atlas: Saved ${repository.fullName} to repos.json.`,
+                    );
+                }
+            }),
+        ),
+        vscode.commands.registerCommand('project-atlas.deleteGithubRepository', (node: unknown) =>
+            run(async () => {
+                if (!(node instanceof GitHubRepositoryNode)) {
+                    return;
+                }
+                const { repository } = node;
+                if (!(await confirmGitHubRepositoryDeletion(repository, vscode.window.showInputBox))) {
+                    return;
+                }
+                if (synchronizing) {
+                    await vscode.window.showWarningMessage(
+                        'Project Atlas: Wait for GitHub repository synchronization to finish before deleting a repository.',
+                    );
+                    return;
+                }
+                synchronizing = true;
+                try {
+                    await vscode.commands.executeCommand(
+                        'setContext',
+                        'projectAtlas.githubRepositoriesRefreshing',
+                        true,
+                    );
+                    const configuration = await githubConfiguration(configurationStore);
+                    await apiClient.deleteRepository(configuration, repository);
+                    try {
+                        await configurationStore.removeRepository(repository.id);
+                    } catch (error) {
+                        tree.refresh();
+                        await vscode.window.showWarningMessage(
+                            `Project Atlas: Deleted ${repository.fullName} on GitHub, but could not update the local cache. Refresh GitHub Repositories after fixing github.json: ${error instanceof Error ? error.message : String(error)}`,
+                        );
+                        return;
+                    }
+                    tree.refresh();
+                    await vscode.window.showInformationMessage(
+                        `Project Atlas: Deleted ${repository.fullName} on GitHub.`,
+                    );
+                } finally {
+                    synchronizing = false;
+                    await vscode.commands.executeCommand(
+                        'setContext',
+                        'projectAtlas.githubRepositoriesRefreshing',
+                        false,
                     );
                 }
             }),

@@ -702,6 +702,12 @@
         "enablement": "viewItem == githubRepositoryAddable"
       },
       {
+        "command": "project-atlas.deleteGithubRepository",
+        "title": "Delete Repository on GitHub...",
+        "category": "Project Atlas",
+        "icon": "$(trash)"
+      },
+      {
         "command": "project-atlas.cloneGithubRepository",
         "title": "Clone Repository...",
         "category": "Project Atlas",
@@ -1609,6 +1615,10 @@
           "when": "false"
         },
         {
+          "command": "project-atlas.deleteGithubRepository",
+          "when": "false"
+        },
+        {
           "command": "project-atlas.editCommonCommandTags",
           "when": "false"
         },
@@ -2363,6 +2373,11 @@
           "command": "project-atlas.cloneGithubRepository",
           "when": "view == projectAtlas.githubRepos && (viewItem == githubRepositoryAddable || viewItem == githubRepositorySaved)",
           "group": "inline@3"
+        },
+        {
+          "command": "project-atlas.deleteGithubRepository",
+          "when": "view == projectAtlas.githubRepos && !projectAtlas.githubRepositoriesRefreshing && (viewItem == githubRepositoryAddable || viewItem == githubRepositorySaved)",
+          "group": "danger@1"
         },
         {
           "command": "project-atlas.copyAiPrompt",

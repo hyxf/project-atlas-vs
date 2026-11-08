@@ -46,9 +46,9 @@ Project Atlas 是一款用于管理本地项目、Git 仓库和开发素材的 V
 
 ### GitHub Repositories
 
-**GitHub Repositories** 从 GitHub API 同步指定账户拥有的仓库，缓存保存在 `~/.project-atlas/github.json`。在扩展设置或配置文件中填写 GitHub 用户名和 personal access token 后刷新；支持搜索、在浏览器打开、复制 SSH URL、克隆，以及加入 Git Repositories。
+**GitHub Repositories** 从 GitHub API 同步指定账户拥有的仓库，缓存保存在 `~/.project-atlas/github.json`。在扩展设置或配置文件中填写 GitHub 用户名和 personal access token 后刷新；支持搜索、在浏览器打开、复制 SSH URL、克隆，以及加入 Git Repositories。右键仓库可从 GitHub 删除；删除前需要输入仓库完整名称确认，成功后只清除本地 GitHub 缓存，不修改 Git Repositories 记录或磁盘文件。
 
-私有仓库需要令牌具有相应权限：经典 token 通常需要 `repo` scope，fine-grained token 需获授权访问目标仓库。网络需要代理时，可在扩展设置配置 HTTP/HTTPS 代理、SOCKS 代理和启用状态；代理同时用于 GitHub 刷新与克隆。
+私有仓库需要令牌具有相应权限：经典 token 通常需要 `repo` scope，fine-grained token 需获授权访问目标仓库。删除仓库还需要管理权限；经典 token 需要 `delete_repo` scope，fine-grained token 需要目标仓库的 Administration: write。网络需要代理时，可在扩展设置配置 HTTP/HTTPS 代理、SOCKS 代理和启用状态；代理同时用于 GitHub 刷新、克隆与删除。
 
 ### VS Code 全局代理
 

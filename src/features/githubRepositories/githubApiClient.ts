@@ -36,6 +36,33 @@ export class GitHubApiClient {
         }
         return repositories;
     }
+
+    /** Deletes a repository through GitHub's REST API. */
+    async deleteRepository(configuration: GitHubConfiguration, repository: GitHubRepository): Promise<void> {
+        const proxyUrl = configuration.proxy.url ?? configuration.proxy.socketUrl;
+        if (configuration.proxy.enabled && proxyUrl) {
+            await verifyProxy(proxyUrl);
+        }
+        let url = `https://api.github.com/repos/${encodeURIComponent(repository.owner)}/${encodeURIComponent(repository.name)}`;
+        let response = await this.request(url, configuration, 'DELETE');
+        let redirects = 0;
+        while (response.status === 307 && redirects < 3) {
+            const location = response.headers.location;
+            if (typeof location !== 'string') {
+                throw new Error('GitHub redirected the delete request without a destination.');
+            }
+            const destination = new URL(location, url);
+            if (destination.origin !== 'https://api.github.com') {
+                throw new Error('GitHub redirected the delete request to an unexpected destination.');
+            }
+            url = destination.toString();
+            response = await this.request(url, configuration, 'DELETE');
+            redirects += 1;
+        }
+        if (response.status !== 204) {
+            throw apiError(response.status, response.body);
+        }
+    }
 }
 
 function verifyProxy(proxy: string): Promise<void> {
@@ -77,11 +104,16 @@ function parseAuthenticatedUser(body: string): string {
     return source.login;
 }
 
-function requestGitHub(url: string, configuration: GitHubConfiguration): Promise<GitHubResponse> {
+function requestGitHub(
+    url: string,
+    configuration: GitHubConfiguration,
+    method: 'GET' | 'DELETE' = 'GET',
+): Promise<GitHubResponse> {
     return new Promise((resolve, reject) => {
-        const request = https.get(
+        const request = https.request(
             url,
             {
+                method,
                 ...(configuration.proxy.enabled && configuration.proxy.url
                     ? { agent: new HttpsProxyAgent(configuration.proxy.url) }
                     : configuration.proxy.enabled && configuration.proxy.socketUrl
@@ -108,6 +140,7 @@ function requestGitHub(url: string, configuration: GitHubConfiguration): Promise
         );
         request.on('error', reject);
         request.setTimeout(30_000, () => request.destroy(new Error('GitHub request timed out.')));
+        request.end();
     });
 }
 

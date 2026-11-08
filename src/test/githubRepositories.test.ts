@@ -8,6 +8,7 @@ import * as vscode from 'vscode';
 import { GitHubConfigurationStore } from '../features/githubRepositories/config';
 import { revealTopGithubRepositoryNode } from '../features/githubRepositories/githubRepositoriesFeature';
 import { GitHubApiClient } from '../features/githubRepositories/githubApiClient';
+import { confirmGitHubRepositoryDeletion } from '../features/githubRepositories/deleteConfirmation';
 import { DoubleClickTracker } from '../features/githubRepositories/doubleClick';
 import { RepositoryStore } from '../features/repositoryManagement/store';
 import {
@@ -108,6 +109,158 @@ suite('GitHub Repositories', () => {
         assert.strictEqual(accountUpdated.future, true);
         assert.strictEqual(accountUpdated.proxyEnabled, false);
         assert.strictEqual(accountUpdated.httpProxy, 'http://127.0.0.1:1088');
+    });
+
+    test('deletes a GitHub repository using the authenticated configuration', async () => {
+        let request: { url: string; token: string; method: string | undefined } | undefined;
+        const client = new GitHubApiClient(async (url, configuration, method) => {
+            request = { url, token: configuration.token, method };
+            return { status: 204, headers: {}, body: '' };
+        });
+
+        await client.deleteRepository(
+            { token: 'secret', user: 'octocat', proxy: { enabled: false } },
+            {
+                id: 1,
+                owner: 'octocat',
+                name: 'hello world',
+                fullName: 'octocat/hello world',
+                htmlUrl: '',
+                sshUrl: '',
+                cloneUrl: '',
+                private: false,
+                archived: false,
+                fork: false,
+                updatedAt: '',
+            },
+        );
+
+        assert.deepStrictEqual(request, {
+            url: 'https://api.github.com/repos/octocat/hello%20world',
+            token: 'secret',
+            method: 'DELETE',
+        });
+    });
+
+    test('follows GitHub API delete redirects without leaving api.github.com', async () => {
+        const requests: Array<{ url: string; method: string | undefined }> = [];
+        const client = new GitHubApiClient(async (url, _configuration, method) => {
+            requests.push({ url, method });
+            return requests.length === 1
+                ? { status: 307, headers: { location: '/repos/octocat/example?redirected=true' }, body: '' }
+                : { status: 204, headers: {}, body: '' };
+        });
+        const target = {
+            id: 1,
+            owner: 'octocat',
+            name: 'example',
+            fullName: 'octocat/example',
+            htmlUrl: '',
+            sshUrl: '',
+            cloneUrl: '',
+            private: false,
+            archived: false,
+            fork: false,
+            updatedAt: '',
+        };
+
+        await client.deleteRepository({ token: 'secret', user: 'octocat', proxy: { enabled: false } }, target);
+
+        assert.deepStrictEqual(requests, [
+            { url: 'https://api.github.com/repos/octocat/example', method: 'DELETE' },
+            { url: 'https://api.github.com/repos/octocat/example?redirected=true', method: 'DELETE' },
+        ]);
+    });
+
+    test('rejects a GitHub API delete redirect to another host', async () => {
+        const client = new GitHubApiClient(async () => ({
+            status: 307,
+            headers: { location: 'https://attacker.example/delete' },
+            body: '',
+        }));
+        const target = {
+            id: 1,
+            owner: 'octocat',
+            name: 'example',
+            fullName: 'octocat/example',
+            htmlUrl: '',
+            sshUrl: '',
+            cloneUrl: '',
+            private: false,
+            archived: false,
+            fork: false,
+            updatedAt: '',
+        };
+
+        await assert.rejects(
+            () => client.deleteRepository({ token: 'secret', user: 'octocat', proxy: { enabled: false } }, target),
+            /unexpected destination/,
+        );
+
+        const differentPortClient = new GitHubApiClient(async () => ({
+            status: 307,
+            headers: { location: 'https://api.github.com:8443/repos/octocat/example' },
+            body: '',
+        }));
+        await assert.rejects(
+            () =>
+                differentPortClient.deleteRepository(
+                    { token: 'secret', user: 'octocat', proxy: { enabled: false } },
+                    target,
+                ),
+            /unexpected destination/,
+        );
+    });
+
+    test('removes only the deleted repository from github.json while preserving other data', async () => {
+        await fs.mkdir(path.dirname(file), { recursive: true });
+        await fs.writeFile(
+            file,
+            JSON.stringify({
+                token: 'secret',
+                futureRoot: true,
+                repositories: [storedRepository(1, 'octocat', 'deleted'), storedRepository(2, 'octocat', 'kept')],
+            }),
+        );
+        const store = new GitHubConfigurationStore(file);
+
+        await store.removeRepository(1);
+
+        const source = JSON.parse(await fs.readFile(file, 'utf8')) as Record<string, unknown>;
+        assert.strictEqual(source.token, 'secret');
+        assert.strictEqual(source.futureRoot, true);
+        assert.deepStrictEqual(
+            (source.repositories as Array<Record<string, unknown>>).map(({ id }) => id),
+            [2],
+        );
+    });
+
+    test('requires the exact repository name before deletion', async () => {
+        const target: GitHubRepositoryNode['repository'] = {
+            id: 1,
+            owner: 'octocat',
+            name: 'example',
+            fullName: 'octocat/example',
+            htmlUrl: '',
+            sshUrl: '',
+            cloneUrl: '',
+            private: false,
+            archived: false,
+            fork: false,
+            updatedAt: '',
+        };
+        const rejectedName = await confirmGitHubRepositoryDeletion(target, async () => 'octocat/other');
+        assert.strictEqual(rejectedName, false);
+
+        const cancelled = await confirmGitHubRepositoryDeletion(target, async () => undefined);
+        assert.strictEqual(cancelled, false);
+
+        const acceptedName = await confirmGitHubRepositoryDeletion(target, async (options) => {
+            assert.strictEqual(options.validateInput?.(target.fullName), undefined);
+            assert.ok(options.validateInput?.('octocat/other'));
+            return target.fullName;
+        });
+        assert.strictEqual(acceptedName, true);
     });
 
     test('migrates the legacy proxy field to httpProxy', async () => {

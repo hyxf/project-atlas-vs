@@ -121,6 +121,23 @@ export class GitHubConfigurationStore {
         await write;
     }
 
+    async removeRepository(repositoryId: number): Promise<void> {
+        const write = this.writeQueue.then(async () => {
+            const source = await this.read();
+            if (!Array.isArray(source.repositories)) {
+                return;
+            }
+            const repositories = source.repositories.filter(
+                (repository) => !isRecord(repository) || repository.id !== repositoryId,
+            );
+            if (repositories.length !== source.repositories.length) {
+                await this.save({ ...source, repositories });
+            }
+        });
+        this.writeQueue = write.catch(() => undefined);
+        await write;
+    }
+
     async ensureFile(): Promise<string> {
         const write = this.writeQueue.then(async () => {
             await fs.mkdir(path.dirname(this.file), { recursive: true });

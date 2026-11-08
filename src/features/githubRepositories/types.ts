@@ -55,4 +55,8 @@ export interface GitHubResponse {
 }
 
 /** Injectable HTTP transport used by the GitHub client and its tests. */
-export type GitHubRequest = (url: string, configuration: GitHubConfiguration) => Promise<GitHubResponse>;
+export type GitHubRequest = (
+    url: string,
+    configuration: GitHubConfiguration,
+    method?: 'GET' | 'DELETE',
+) => Promise<GitHubResponse>;
