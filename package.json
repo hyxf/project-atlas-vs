@@ -695,6 +695,12 @@
         "icon": "$(copy)"
       },
       {
+        "command": "project-atlas.copyGithubRepositoryHttpsUrl",
+        "title": "Copy HTTPS URL",
+        "category": "Project Atlas",
+        "icon": "$(copy)"
+      },
+      {
         "command": "project-atlas.addGithubRepositoryToRepos",
         "title": "Add to Git Repositories",
         "category": "Project Atlas",
@@ -2005,6 +2011,10 @@
           "when": "false"
         },
         {
+          "command": "project-atlas.copyGithubRepositoryHttpsUrl",
+          "when": "false"
+        },
+        {
           "command": "project-atlas.addGithubRepositoryToRepos",
           "when": "false"
         },
@@ -2366,6 +2376,11 @@
         },
         {
           "command": "project-atlas.copyGithubRepositorySshUrl",
+          "when": "view == projectAtlas.githubRepos && (viewItem == githubRepositoryAddable || viewItem == githubRepositorySaved)",
+          "group": "navigation@1"
+        },
+        {
+          "command": "project-atlas.copyGithubRepositoryHttpsUrl",
           "when": "view == projectAtlas.githubRepos && (viewItem == githubRepositoryAddable || viewItem == githubRepositorySaved)",
           "group": "navigation@1"
         },

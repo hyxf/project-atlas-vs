@@ -607,6 +607,7 @@ suite('Extension', () => {
             'project-atlas.editRepositoryTags',
             'project-atlas.cloneRepository',
             'project-atlas.copyGithubRepositorySshUrl',
+            'project-atlas.copyGithubRepositoryHttpsUrl',
             'project-atlas.addGithubRepositoryToRepos',
             'project-atlas.searchGithubRepositories',
             'project-atlas.expandGithubRepositories',
@@ -1325,6 +1326,14 @@ suite('Extension', () => {
             itemMenu.find(({ command }) => command === 'project-atlas.copyGithubRepositorySshUrl'),
             {
                 command: 'project-atlas.copyGithubRepositorySshUrl',
+                when: 'view == projectAtlas.githubRepos && (viewItem == githubRepositoryAddable || viewItem == githubRepositorySaved)',
+                group: 'navigation@1',
+            },
+        );
+        assert.deepStrictEqual(
+            itemMenu.find(({ command }) => command === 'project-atlas.copyGithubRepositoryHttpsUrl'),
+            {
+                command: 'project-atlas.copyGithubRepositoryHttpsUrl',
                 when: 'view == projectAtlas.githubRepos && (viewItem == githubRepositoryAddable || viewItem == githubRepositorySaved)',
                 group: 'navigation@1',
             },

@@ -291,6 +291,16 @@ export function activateGitHubRepositories(context: vscode.ExtensionContext): vo
                 }
             }),
         ),
+        vscode.commands.registerCommand('project-atlas.copyGithubRepositoryHttpsUrl', (node: unknown) =>
+            run(async () => {
+                if (node instanceof GitHubRepositoryNode) {
+                    await vscode.env.clipboard.writeText(node.repository.cloneUrl);
+                    await vscode.window.showInformationMessage(
+                        `Project Atlas: Copied HTTPS URL for ${node.repository.fullName}.`,
+                    );
+                }
+            }),
+        ),
         vscode.commands.registerCommand('project-atlas.handleGithubRepositoryClick', (node: unknown) =>
             run(async () => {
                 if (node instanceof GitHubRepositoryNode && doubleClick.register(node.repository.id.toString())) {
