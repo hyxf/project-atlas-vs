@@ -1618,6 +1618,10 @@
       ],
       "commandPalette": [
         {
+          "command": "project-atlas.setGitCommitMessage",
+          "when": "false"
+        },
+        {
           "command": "project-atlas.createPackageVersionTag",
           "when": "workspaceFolderCount == 1 && projectAtlas.packageVersionAvailable"
         },
