@@ -91,7 +91,7 @@ Project Atlas 是一款用于管理本地项目、Git 仓库和开发素材的 V
 | **AI Prompts**       | `~/.project-atlas/aiprompts.json`  | 保存带标题、正文、说明和标签的本地提示词。                     |
 | **Backup & Restore** | VS Code globalState                | 通过 VS Code Settings Sync 备份并恢复已配置的文件。            |
 
-三类模板均支持新增、编辑、删除、编辑原始 JSON 和刷新。保存会保留未知字段，并检查文件冲突和编辑器未保存修改。Common Commands 和 AI Prompts 支持在条目菜单中快速编辑标签；两者的列表均按标签分组。Git Messages 始终按提交类型分组，AI Prompts 始终按标签分组；只有 Common Commands 支持拖动条目调整 JSON 数组顺序。
+三类模板均支持新增、编辑、删除、编辑原始 JSON 和刷新。Git Messages 可通过 `project-atlas.setGitCommitMessage` 命令接收提交消息并填入 Source Control 输入框，其他扩展可使用 `vscode.commands.executeCommand('project-atlas.setGitCommitMessage', message)` 调用；该命令不会执行提交。保存会保留未知字段，并检查文件冲突和编辑器未保存修改。Common Commands 和 AI Prompts 支持在条目菜单中快速编辑标签；两者的列表均按标签分组。Git Messages 始终按提交类型分组，AI Prompts 始终按标签分组；只有 Common Commands 支持拖动条目调整 JSON 数组顺序。
 
 Common Commands 可在原始 `commoncmd.json` 中定义变量。顶层 `variables` 可供全部命令使用，命令中的 `variables` 仅供该命令使用；在命令文本使用 `${variable_name}` 引用。运行或插入命令时会提示输入，输入值不会写回文件。支持 `text`、`select`、`multiSelect` 和 `path`（`file`、`folder` 或 `any`）类型：
 

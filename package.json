@@ -342,6 +342,11 @@
         "icon": "$(expand-all)"
       },
       {
+        "command": "project-atlas.setGitCommitMessage",
+        "title": "Set Git Commit Message",
+        "category": "Project Atlas"
+      },
+      {
         "command": "project-atlas.selectGitMessage",
         "title": "Select Git Message",
         "category": "Project Atlas",

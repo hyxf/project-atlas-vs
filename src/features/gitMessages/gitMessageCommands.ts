@@ -35,6 +35,18 @@ export async function editGitMessages(): Promise<void> {
     await vscode.window.showTextDocument(vscode.Uri.file(gitMessagesFile));
 }
 
+export async function setGitCommitMessage(message: unknown, repositoryUri?: vscode.Uri): Promise<void> {
+    if (typeof message !== 'string' || !message.trim()) {
+        throw new Error('A non-empty Git commit message must be provided.');
+    }
+    const repository = await resolveRepository(repositoryUri);
+    if (!repository) {
+        throw new Error('No Git repository is available.');
+    }
+    repository.inputBox.value = message.trim();
+    await vscode.window.showInformationMessage('Project Atlas: Git commit message added to Source Control.');
+}
+
 export async function selectGitMessage(sourceControl?: unknown): Promise<void> {
     const messages = await readGitMessages();
     if (!messages.length) {
@@ -65,6 +77,12 @@ async function resolveRepository(sourceControl?: unknown): Promise<GitRepository
     }
     const exports = extension.isActive ? extension.exports : await extension.activate();
     const api = exports.getAPI(1);
+    if (sourceControl instanceof vscode.Uri) {
+        const targetRepository = api.getRepository(sourceControl);
+        if (targetRepository) {
+            return targetRepository;
+        }
+    }
     const activeUri = vscode.window.activeTextEditor?.document.uri;
     const activeRepository = activeUri && api.getRepository(activeUri);
     if (activeRepository) {
