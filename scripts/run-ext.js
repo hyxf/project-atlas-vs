@@ -57,11 +57,7 @@ const run = (command, args, options = {}) =>
 try {
     await run('pnpm', ['run', 'compile']);
     const codeCli = await findCodeCli();
-    await run(codeCli, [
-        '--new-window',
-        '--disable-extensions',
-        `--extensionDevelopmentPath=${root}`,
-    ]);
+    await run(codeCli, ['--new-window', `--extensionDevelopmentPath=${root}`]);
 } catch (error) {
     console.error(
         `[Project-Atlas-VS] ${error instanceof Error ? error.message : String(error)}`,
