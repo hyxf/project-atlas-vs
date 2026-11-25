@@ -2694,7 +2694,8 @@
     "test:online": "pnpm test --grep proxy --invert",
     "package:extension": "vsce package --no-yarn",
     "install:extension": "pnpm package:extension --out project-atlas-vs.vsix && code --install-extension project-atlas-vs.vsix --force",
-    "deploy": "vsce publish --no-yarn"
+    "deploy": "vsce publish --no-yarn",
+    "start": "node scripts/run-ext.js"
   },
   "devDependencies": {
     "@types/mocha": "^10.0.10",

@@ -157,17 +157,17 @@ Update Package Version 的提交信息固定为 `chore: bump version to <新版�
 
 ## 本地开发与发布
 
-需要 Node.js 22 和 Yarn Classic：
+需要 Node.js 22 和 pnpm：
 
 ```bash
-yarn install --frozen-lockfile
-yarn format:check
-yarn compile
-yarn lint
-yarn test
+pnpm install --frozen-lockfile
+pnpm format:check
+pnpm compile
+pnpm lint
+pnpm test
 ```
 
-在 VS Code 按 `F5` 启动 Extension Development Host。执行 `yarn package:extension` 生成 VSIX；`yarn install:extension` 会生成 `project-atlas-vs.vsix` 并通过 VS Code CLI 覆盖安装，使用前请确保 `code` 已加入 `PATH`。
+执行 `pnpm start` 会先编译扩展，再在新的 VS Code 窗口中启动 Extension Development Host。需要先安装依赖；若 VS Code CLI `code` 未加入 `PATH`，可设置 `VSCODE_CLI` 为 CLI 完整路径。也可在 VS Code 按 `F5` 启动。执行 `pnpm package:extension` 生成 VSIX；`pnpm install:extension` 会生成 `project-atlas-vs.vsix` 并通过 VS Code CLI 覆盖安装。
 
 推送与 `package.json` 版本对应的 `v*` 标签（例如 `0.5.0` 对应 `v0.5.0`）会触发 GitHub Actions：安装依赖、运行检查、构建 VSIX、创建 GitHub Release，并生成稳定更新元数据。首次配置升级服务时，请在仓库 **Settings → Pages** 将发布源设置为 **GitHub Actions**。
 
