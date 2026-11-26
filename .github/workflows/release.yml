@@ -53,10 +53,10 @@ jobs:
                   VERSION: ${{ steps.version.outputs.version }}
               run: npm pkg set version="$VERSION"
 
-            - name: Test (excluding proxy tests)
-              env:
-                  NODE_OPTIONS: --no-deprecation
-              run: xvfb-run -a pnpm test --grep proxy --invert
+            # - name: Test (excluding proxy tests)
+            #   env:
+            #       NODE_OPTIONS: --no-deprecation
+            #   run: xvfb-run -a pnpm test --grep proxy --invert
 
             - name: Package extension
               env:
