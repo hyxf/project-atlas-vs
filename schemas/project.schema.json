@@ -137,6 +137,11 @@
           "type": "boolean",
           "default": false,
           "description": "Whether the npm packages view is shown."
+        },
+        "templates": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether the Project Atlas Templates views are shown."
         }
       },
       "additionalProperties": true

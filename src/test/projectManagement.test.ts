@@ -185,21 +185,29 @@ suite('Project Management', () => {
             githubRepositories: true,
             gitRepositories: false,
             npmPackages: false,
+            templates: true,
         });
         await fs.mkdir(path.dirname(store.file), { recursive: true });
         await fs.writeFile(store.file, JSON.stringify({ projects: [], views: { futureView: true } }));
-        await store.replaceViewVisibility({ githubRepositories: false, gitRepositories: true, npmPackages: true });
+        await store.replaceViewVisibility({
+            githubRepositories: false,
+            gitRepositories: true,
+            npmPackages: true,
+            templates: false,
+        });
         const written = JSON.parse(await fs.readFile(store.file, 'utf8'));
         assert.deepStrictEqual(written.views, {
             futureView: true,
             githubRepositories: false,
             gitRepositories: true,
             npmPackages: true,
+            templates: false,
         });
         assert.deepStrictEqual(await store.viewVisibility(), {
             githubRepositories: false,
             gitRepositories: true,
             npmPackages: true,
+            templates: false,
         });
     });
 

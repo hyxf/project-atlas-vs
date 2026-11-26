@@ -1110,19 +1110,23 @@
       "projectAtlasTemplates": [
         {
           "id": "projectAtlas.commonCommands",
-          "name": "Common Commands"
+          "name": "Common Commands",
+          "when": "projectAtlas.showTemplates"
         },
         {
           "id": "projectAtlas.gitMessages",
-          "name": "Git Messages"
+          "name": "Git Messages",
+          "when": "projectAtlas.showTemplates"
         },
         {
           "id": "projectAtlas.aiPrompts",
-          "name": "AI Prompts"
+          "name": "AI Prompts",
+          "when": "projectAtlas.showTemplates"
         },
         {
           "id": "projectAtlas.templateBackup",
-          "name": "Backup & Restore"
+          "name": "Backup & Restore",
+          "when": "projectAtlas.showTemplates"
         }
       ],
       "aicode": [

@@ -112,18 +112,11 @@ async function editProjectViews(store: ProjectStore): Promise<void> {
             return;
         }
         const candidate = values as Record<string, unknown>;
-        if (
-            typeof candidate.githubRepositories !== 'boolean' ||
-            typeof candidate.gitRepositories !== 'boolean' ||
-            typeof candidate.npmPackages !== 'boolean'
-        ) {
+        const keys = Object.keys(defaultVisibilityKeys);
+        if (keys.some((key) => typeof candidate[key] !== 'boolean')) {
             return;
         }
-        const visibility: ProjectViewVisibility = {
-            githubRepositories: candidate.githubRepositories,
-            gitRepositories: candidate.gitRepositories,
-            npmPackages: candidate.npmPackages,
-        };
+        const visibility = Object.fromEntries(keys.map((key) => [key, candidate[key]])) as ProjectViewVisibility;
         try {
             await store.replaceViewVisibility(visibility);
             await applyProjectViewVisibility(visibility);
@@ -140,20 +133,53 @@ async function editProjectViews(store: ProjectStore): Promise<void> {
 function viewVisibilityHtml(visibility: ProjectViewVisibility): string {
     const checkbox = (key: keyof ProjectViewVisibility, label: string, detail: string) =>
         `<label class="row"><span class="copy"><span class="label">${label}</span><span class="detail">${detail}</span></span><input type="checkbox" name="${key}" ${visibility[key] ? 'checked' : ''}></label>`;
+    const groups = [
+        {
+            title: 'Projects',
+            views: [
+                ['githubRepositories', 'GitHub Repositories', 'Repositories saved from GitHub'],
+                ['gitRepositories', 'Git Repositories', 'Saved local Git repositories'],
+                ['npmPackages', 'npm packages', 'Dependencies in the active workspace'],
+            ],
+        },
+        {
+            title: 'Template Views',
+            views: [
+                [
+                    'templates',
+                    'Show template sections',
+                    'Controls the four sections inside Project Atlas: Templates. Its Activity Bar icon stays visible.',
+                ],
+            ],
+        },
+    ] satisfies { title: string; views: [keyof ProjectViewVisibility, string, string][] }[];
+    const sections = groups
+        .map(
+            ({ title, views }) =>
+                `<section><h2>${title}</h2><div class="list">${views.map(([key, label, detail]) => checkbox(key, label, detail)).join('')}</div></section>`,
+        )
+        .join('');
     return `<!DOCTYPE html>
 <html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Project Atlas views</title><style>
+<title>Project Atlas Views</title><style>
 body{font-family:var(--vscode-font-family);color:var(--vscode-foreground);background:var(--vscode-editor-background);padding:32px;max-width:720px;margin:0 auto}
 header{margin-bottom:24px}h1{font-size:22px;line-height:28px;font-weight:500;margin:0 0 8px}.intro{font-size:13px;line-height:20px;color:var(--vscode-descriptionForeground);margin:0}
-.list{border-top:1px solid var(--vscode-panel-border);border-bottom:1px solid var(--vscode-panel-border)}.row{min-height:68px;box-sizing:border-box;display:flex;justify-content:space-between;align-items:center;gap:24px;padding:12px 4px;border-bottom:1px solid var(--vscode-panel-border);cursor:pointer}.row:last-child{border-bottom:0}.row:hover .label{color:var(--vscode-textLink-foreground)}
+section+section{margin-top:32px}h2{font-size:15px;line-height:20px;font-weight:500;margin:0 0 8px}.list{border-top:1px solid var(--vscode-panel-border);border-bottom:1px solid var(--vscode-panel-border)}.row{min-height:68px;box-sizing:border-box;display:flex;justify-content:space-between;align-items:center;gap:24px;padding:12px 4px;border-bottom:1px solid var(--vscode-panel-border);cursor:pointer}.row:last-child{border-bottom:0}.row:hover .label{color:var(--vscode-textLink-foreground)}
 .copy{display:grid;gap:4px}.label{font-size:14px;line-height:20px}.detail{font-size:12px;line-height:16px;color:var(--vscode-descriptionForeground)}input{accent-color:var(--vscode-focusBorder);width:16px;height:16px;margin:0;flex:none;cursor:pointer}input:focus-visible{outline:2px solid var(--vscode-focusBorder);outline-offset:3px}
 .actions{display:flex;justify-content:flex-end;margin-top:24px}button{min-height:32px;border:0;border-radius:2px;padding:0 16px;color:var(--vscode-button-foreground);background:var(--vscode-button-background);font:inherit;cursor:pointer}button:hover{background:var(--vscode-button-hoverBackground)}button:focus-visible{outline:1px solid var(--vscode-focusBorder);outline-offset:2px}button:disabled{opacity:.6;cursor:wait}
-</style></head><body><header><h1>Sidebar views</h1><p class="intro">Choose which sections appear in Project Atlas.</p></header>
-<form id="form"><div class="list">${checkbox('githubRepositories', 'GitHub Repositories', 'Repositories saved from GitHub')}${checkbox('gitRepositories', 'Git Repositories', 'Repositories in your local workspace')}${checkbox('npmPackages', 'npm packages', 'Dependencies in your local workspace')}</div><div class="actions"><button id="save" type="submit">Save</button></div></form>
+</style></head><body><header><h1>Project Atlas views</h1><p class="intro">Choose which sections appear in the Project Atlas sidebars.</p></header>
+<form id="form">${sections}<div class="actions"><button id="save" type="submit">Save</button></div></form>
 <script>
 const vscode=acquireVsCodeApi(),form=document.getElementById('form'),save=document.getElementById('save');form.addEventListener('submit',event=>{event.preventDefault();if(save.disabled)return;const values={};for(const input of document.querySelectorAll('input[type=checkbox]'))values[input.name]=input.checked;save.disabled=true;vscode.postMessage({type:'save',values})});window.addEventListener('message',event=>{if(event.data?.type==='saved'||event.data?.type==='saveFailed')save.disabled=false})
 </script></body></html>`;
 }
+
+const defaultVisibilityKeys: Record<keyof ProjectViewVisibility, true> = {
+    githubRepositories: true,
+    gitRepositories: true,
+    npmPackages: true,
+    templates: true,
+};
 
 async function applyProjectViewVisibility(visibility: ProjectViewVisibility): Promise<void> {
     await Promise.all([
@@ -164,6 +190,7 @@ async function applyProjectViewVisibility(visibility: ProjectViewVisibility): Pr
         ),
         vscode.commands.executeCommand('setContext', 'projectAtlas.showGitRepositories', visibility.gitRepositories),
         vscode.commands.executeCommand('setContext', 'projectAtlas.showNpmPackages', visibility.npmPackages),
+        vscode.commands.executeCommand('setContext', 'projectAtlas.showTemplates', visibility.templates),
     ]);
 }
 

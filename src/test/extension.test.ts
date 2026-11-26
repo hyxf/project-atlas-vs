@@ -907,10 +907,14 @@ suite('Extension', () => {
             { id: 'aicode.compareResults', name: 'Compare Results' },
         ]);
         assert.deepStrictEqual(contributes.views.projectAtlasTemplates, [
-            { id: 'projectAtlas.commonCommands', name: 'Common Commands' },
-            { id: 'projectAtlas.gitMessages', name: 'Git Messages' },
-            { id: 'projectAtlas.aiPrompts', name: 'AI Prompts' },
-            { id: 'projectAtlas.templateBackup', name: 'Backup & Restore' },
+            {
+                id: 'projectAtlas.commonCommands',
+                name: 'Common Commands',
+                when: 'projectAtlas.showTemplates',
+            },
+            { id: 'projectAtlas.gitMessages', name: 'Git Messages', when: 'projectAtlas.showTemplates' },
+            { id: 'projectAtlas.aiPrompts', name: 'AI Prompts', when: 'projectAtlas.showTemplates' },
+            { id: 'projectAtlas.templateBackup', name: 'Backup & Restore', when: 'projectAtlas.showTemplates' },
         ]);
         assert.deepStrictEqual(contributes.views.projectAtlas, [
             { id: 'projectAtlas.projects', name: 'Projects', icon: 'resources/project-atlas.svg' },

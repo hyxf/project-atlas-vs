@@ -16,12 +16,14 @@ export type ProjectViewVisibility = {
     githubRepositories: boolean;
     gitRepositories: boolean;
     npmPackages: boolean;
+    templates: boolean;
 };
 
 export const defaultProjectViewVisibility: ProjectViewVisibility = {
     githubRepositories: true,
     gitRepositories: false,
     npmPackages: false,
+    templates: true,
 };
 
 export class ProjectStore {
@@ -213,6 +215,7 @@ function parseViewVisibility(value: unknown): ProjectViewVisibility {
                 : defaultProjectViewVisibility.gitRepositories,
         npmPackages:
             typeof source.npmPackages === 'boolean' ? source.npmPackages : defaultProjectViewVisibility.npmPackages,
+        templates: typeof source.templates === 'boolean' ? source.templates : defaultProjectViewVisibility.templates,
     };
 }
 
