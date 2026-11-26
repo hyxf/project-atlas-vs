@@ -8,10 +8,11 @@ export class ProjectNode extends vscode.TreeItem {
     constructor(
         readonly project: ProjectItem,
         id = project.id,
+        showDescription = true,
     ) {
         super(project.name, vscode.TreeItemCollapsibleState.None);
         const description = project.description?.trim();
-        this.description = description ? `· ${description}` : '';
+        this.description = showDescription && description ? `· ${description}` : '';
         this.id = id;
         this.tooltip = `${project.name}\n${project.path}${project.tags.length ? `\n${project.tags.join(' · ')}` : ''}`;
         this.resourceUri = vscode.Uri.from({ scheme: 'project-atlas', path: `/${project.id}`, query: project.path });
@@ -99,7 +100,7 @@ export class ProjectsTree implements vscode.TreeDataProvider<ProjectNode | TagNo
                     .filter((project) =>
                         element.tag === undefined ? project.tags.length === 0 : project.tags.includes(element.tag),
                     )
-                    .map((project) => this.node(project, element.id)),
+                    .map((project) => this.node(project, element.id, settings.showDescriptions)),
             );
         }
         if (settings.selectedView === 'TAGS') {
@@ -110,11 +111,11 @@ export class ProjectsTree implements vscode.TreeDataProvider<ProjectNode | TagNo
             }
             return nodes;
         }
-        return Promise.all(projects.map((project) => this.node(project)));
+        return Promise.all(projects.map((project) => this.node(project, undefined, settings.showDescriptions)));
     }
 
-    private async node(project: ProjectItem, parentId?: string): Promise<ProjectNode> {
-        const node = new ProjectNode(project, parentId ? `${parentId}:${project.id}` : project.id);
+    private async node(project: ProjectItem, parentId?: string, showDescription = true): Promise<ProjectNode> {
+        const node = new ProjectNode(project, parentId ? `${parentId}:${project.id}` : project.id, showDescription);
         const exists = await fs.stat(project.path).then(
             (stat) => stat.isDirectory(),
             () => false,

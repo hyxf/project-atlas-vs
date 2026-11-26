@@ -60,6 +60,10 @@ export function activateProjectManagement(context: vscode.ExtensionContext): voi
         sortNameSelected: () => setSort('NAME'),
         sortPathSelected: () => setSort('PATH'),
         sortRecentSelected: () => setSort('RECENT'),
+        showDescriptions: () => setShowDescriptions(true),
+        showDescriptionsSelected: () => setShowDescriptions(true),
+        hideDescriptions: () => setShowDescriptions(false),
+        hideDescriptionsSelected: () => setShowDescriptions(false),
         openDataFile,
     };
     context.subscriptions.push(
@@ -483,6 +487,13 @@ async function setSort(sort: SortBy): Promise<void> {
     await syncMenuContext(settings.selectedListFilter, sort);
     tree.refresh();
 }
+async function setShowDescriptions(showDescriptions: boolean): Promise<void> {
+    const settings = await service.store.settings();
+    settings.showDescriptions = showDescriptions;
+    await service.store.replaceSettings(settings);
+    await vscode.commands.executeCommand('setContext', 'projectAtlas.showDescriptions', showDescriptions);
+    tree.refresh();
+}
 async function syncMenuContext(filter?: ListFilter, sort?: SortBy): Promise<void> {
     if (!filter || !sort) {
         const settings = await service.store.settings();
@@ -491,6 +502,8 @@ async function syncMenuContext(filter?: ListFilter, sort?: SortBy): Promise<void
     }
     await vscode.commands.executeCommand('setContext', 'projectAtlas.filter', filter);
     await vscode.commands.executeCommand('setContext', 'projectAtlas.sort', sort);
+    const settings = await service.store.settings();
+    await vscode.commands.executeCommand('setContext', 'projectAtlas.showDescriptions', settings.showDescriptions);
 }
 async function openDataFile(): Promise<void> {
     await vscode.window.showTextDocument(vscode.Uri.file(await service.store.ensureFile()));

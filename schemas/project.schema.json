@@ -101,6 +101,11 @@
           "default": "ALL",
           "description": "Selected filter in the list view. Falls back to selectedFilter when omitted."
         },
+        "showDescriptions": {
+          "type": "boolean",
+          "default": true,
+          "description": "Whether project descriptions are shown in the project list."
+        },
         "tagProjectSpacing": {
           "type": "number",
           "default": 4,

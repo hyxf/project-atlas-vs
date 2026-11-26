@@ -258,6 +258,7 @@ function parseSettings(value: unknown): AtlasSettings {
         selectedFilter: parseFilter(source.selectedFilter),
         selectedView: source.selectedView === 'TAGS' || source.selectedFilter === 'TAG' ? 'TAGS' : 'LIST',
         selectedListFilter: parseFilter(source.selectedListFilter ?? source.selectedFilter),
+        showDescriptions: source.showDescriptions !== false,
         tagProjectSpacing: clampNumber(source.tagProjectSpacing, 4),
         listProjectSpacing: clampNumber(source.listProjectSpacing, 4),
     };

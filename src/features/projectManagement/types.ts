@@ -21,6 +21,7 @@ export interface AtlasSettings {
     selectedFilter: ListFilter;
     selectedView: ViewMode;
     selectedListFilter: ListFilter;
+    showDescriptions: boolean;
     tagProjectSpacing: number;
     listProjectSpacing: number;
 }

@@ -21,6 +21,7 @@ export const defaultSettings: AtlasSettings = {
     selectedFilter: 'ALL',
     selectedView: 'LIST',
     selectedListFilter: 'ALL',
+    showDescriptions: true,
     tagProjectSpacing: 4,
     listProjectSpacing: 4,
 };

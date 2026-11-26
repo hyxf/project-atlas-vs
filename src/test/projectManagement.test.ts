@@ -77,6 +77,17 @@ suite('Project Management', () => {
         const undocumentedNode = projectNodes.find((node) => node.project.id === undocumented.id)!;
         assert.strictEqual(tree.getTreeItem(documentedNode).description, '· Main app');
         assert.strictEqual(tree.getTreeItem(undocumentedNode).description, '');
+
+        const settings = await store.settings();
+        settings.showDescriptions = false;
+        await store.replaceSettings(settings);
+        tree.refresh();
+        const hiddenNodes = await tree.getChildren();
+        const hiddenDocumentedNode = hiddenNodes
+            .filter((node) => 'project' in node)
+            .find((node) => node.project.id === documented.id)!;
+        assert.strictEqual(tree.getTreeItem(hiddenDocumentedNode).description, '');
+        assert.strictEqual((await new ProjectStore(store.file).settings()).showDescriptions, false);
     });
 
     test('persists an optional project description and reloads it', async () => {

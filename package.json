@@ -797,6 +797,26 @@
         "enablement": "false"
       },
       {
+        "command": "project-atlas.showDescriptions",
+        "title": "Show"
+      },
+      {
+        "command": "project-atlas.hideDescriptions",
+        "title": "Hide"
+      },
+      {
+        "command": "project-atlas.showDescriptionsSelected",
+        "title": "Show",
+        "icon": "$(check)",
+        "enablement": "false"
+      },
+      {
+        "command": "project-atlas.hideDescriptionsSelected",
+        "title": "Hide",
+        "icon": "$(check)",
+        "enablement": "false"
+      },
+      {
         "command": "project-atlas.openDataFile",
         "title": "Open Data File",
         "category": "Project Atlas",
@@ -1030,6 +1050,11 @@
         "id": "projectAtlas.sortMenu",
         "label": "Sort",
         "icon": "$(list-ordered)"
+      },
+      {
+        "id": "projectAtlas.descriptionMenu",
+        "label": "Description",
+        "icon": "$(whole-word)"
       },
       {
         "id": "projectAtlas.gitTools",
@@ -1488,6 +1513,11 @@
           "group": "view@2"
         },
         {
+          "submenu": "projectAtlas.descriptionMenu",
+          "when": "view == projectAtlas.projects",
+          "group": "view@3"
+        },
+        {
           "command": "project-atlas.addAiPrompt",
           "when": "view == projectAtlas.aiPrompts",
           "group": "navigation@0"
@@ -1597,6 +1627,28 @@
           "command": "project-atlas.sortRecent",
           "when": "projectAtlas.sort != RECENT",
           "group": "sort@3"
+        }
+      ],
+      "projectAtlas.descriptionMenu": [
+        {
+          "command": "project-atlas.showDescriptionsSelected",
+          "when": "projectAtlas.showDescriptions",
+          "group": "description@1"
+        },
+        {
+          "command": "project-atlas.showDescriptions",
+          "when": "!projectAtlas.showDescriptions",
+          "group": "description@1"
+        },
+        {
+          "command": "project-atlas.hideDescriptionsSelected",
+          "when": "!projectAtlas.showDescriptions",
+          "group": "description@2"
+        },
+        {
+          "command": "project-atlas.hideDescriptions",
+          "when": "projectAtlas.showDescriptions",
+          "group": "description@2"
         }
       ],
       "projectAtlas.openWithMenu": [
@@ -2153,6 +2205,22 @@
         },
         {
           "command": "project-atlas.sortRecentSelected",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.showDescriptions",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.hideDescriptions",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.showDescriptionsSelected",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.hideDescriptionsSelected",
           "when": "false"
         },
         {
