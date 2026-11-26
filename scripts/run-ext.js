@@ -59,8 +59,6 @@ try {
     const codeCli = await findCodeCli();
     await run(codeCli, ['--new-window', `--extensionDevelopmentPath=${root}`]);
 } catch (error) {
-    console.error(
-        `[Project-Atlas-VS] ${error instanceof Error ? error.message : String(error)}`,
-    );
+    console.error(`[Project-Atlas-VS] ${error instanceof Error ? error.message : String(error)}`);
     process.exitCode = 1;
 }
