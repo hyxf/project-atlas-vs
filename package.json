@@ -658,6 +658,13 @@
         "enablement": "!projectAtlas.githubRepositoriesRefreshing"
       },
       {
+        "command": "project-atlas.refreshGithubStars",
+        "title": "Refresh GitHub Stars",
+        "category": "Project Atlas",
+        "icon": "$(refresh)",
+        "enablement": "!projectAtlas.githubStarsRefreshing"
+      },
+      {
         "command": "project-atlas.openSettings",
         "title": "Open Project Atlas Settings",
         "category": "Project Atlas",
@@ -1498,9 +1505,14 @@
           "group": "navigation@5"
         },
         {
-          "command": "project-atlas.openSettings",
+          "command": "project-atlas.refreshGithubStars",
           "when": "view == projectAtlas.githubRepos",
           "group": "navigation@6"
+        },
+        {
+          "command": "project-atlas.openSettings",
+          "when": "view == projectAtlas.githubRepos",
+          "group": "navigation@7"
         },
         {
           "submenu": "projectAtlas.filterMenu",
@@ -2044,6 +2056,10 @@
           "when": "false"
         },
         {
+          "command": "project-atlas.refreshGithubStars",
+          "when": "false"
+        },
+        {
           "command": "project-atlas.openSettings",
           "when": "false"
         },
@@ -2443,7 +2459,7 @@
         },
         {
           "command": "project-atlas.openGithubRepository",
-          "when": "view == projectAtlas.githubRepos && (viewItem == githubRepositoryAddable || viewItem == githubRepositorySaved)",
+          "when": "view == projectAtlas.githubRepos && (viewItem == githubRepositoryAddable || viewItem == githubRepositorySaved || viewItem == githubStarredRepository)",
           "group": "navigationOpen@1"
         },
         {

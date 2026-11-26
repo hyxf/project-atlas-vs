@@ -46,7 +46,7 @@ Project Atlas 是一款用于管理本地项目、Git 仓库和开发素材的 V
 
 ### GitHub Repositories
 
-**GitHub Repositories** 从 GitHub API 同步指定账户拥有的仓库，缓存保存在 `~/.project-atlas/github.json`。在扩展设置或配置文件中填写 GitHub 用户名和 personal access token 后刷新；支持搜索、在浏览器打开、复制 SSH URL、克隆，以及加入 Git Repositories。右键仓库可从 GitHub 删除；删除前需要输入仓库完整名称确认，成功后只清除本地 GitHub 缓存，不修改 Git Repositories 记录或磁盘文件。
+**GitHub Repositories** 从 GitHub API 同步指定账户拥有的仓库，缓存保存在 `~/.project-atlas/github.json`。在扩展设置或配置文件中填写 GitHub 用户名和 personal access token 后刷新；支持搜索、在浏览器打开、复制 SSH URL、克隆，以及加入 Git Repositories。工具栏中的 **Refresh GitHub Stars** 会单独同步该账户收藏的全部仓库，缓存到 `~/.project-atlas/github-stars.json`，并在 Public、Private 同级的 Stars 组中显示；Stars 仓库右键菜单仅提供 **Open on GitHub**。右键 GitHub Repositories 中的自有仓库可从 GitHub 删除；删除前需要输入仓库完整名称确认，成功后会清除本地 GitHub 与 Stars 缓存，不修改 Git Repositories 记录或磁盘文件。
 
 私有仓库需要令牌具有相应权限：经典 token 通常需要 `repo` scope，fine-grained token 需获授权访问目标仓库。删除仓库还需要管理权限；经典 token 需要 `delete_repo` scope，fine-grained token 需要目标仓库的 Administration: write。网络需要代理时，可在扩展设置配置 HTTP/HTTPS 代理、SOCKS 代理和启用状态；代理同时用于 GitHub 刷新、克隆与删除。
 
@@ -143,6 +143,7 @@ Update Package Version 的提交信息固定为 `chore: bump version to <新版�
 | `~/.project-atlas/project.json`                                        | 项目、Tag、收藏、最近打开时间和项目视图设置；与 IntelliJ IDEA 版共享。 |
 | `~/.project-atlas/repos.json`                                          | 已保存 Git 仓库及其分组、Tag 和视图偏好。                              |
 | `~/.project-atlas/github.json`                                         | GitHub 用户、token、代理设置和仓库缓存。                               |
+| `~/.project-atlas/github-stars.json`                                   | GitHub 用户收藏的仓库缓存。                                            |
 | `~/.project-atlas/proxy.json`                                          | 可供状态栏切换的 VS Code 全局 HTTP/HTTPS 代理列表。                    |
 | `~/.project-atlas/commoncmd.json`、`gitmessage.json`、`aiprompts.json` | 个人模板与提示词。                                                     |
 | 工作区 `.aicode.json`                                                  | AICode 分组与相对路径。                                                |

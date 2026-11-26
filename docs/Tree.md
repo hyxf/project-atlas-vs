@@ -399,7 +399,11 @@ VS Code
 │           │
 │           ├── Tree
 │           │   │
-│           │   └── GitHub Repository Tree Item
+│           │   ├── Public
+│           │   ├── Private
+│           │   └── Stars
+│           │       [context menu: Open on GitHub only]
+│           │       └── GitHub Repository Tree Item
 │           │       │
 │           │       └── Tree Item Context Menu
 │           │           │
@@ -434,8 +438,12 @@ VS Code
 │               │   [when: !projectAtlas.githubRepositoriesRefreshing]
 │               │   [group: navigation@5]
 │               │
+│               ├── Refresh GitHub Stars
+│               │   [when: !projectAtlas.githubStarsRefreshing]
+│               │   [group: navigation@6]
+│               │
 │               └── Open Project Atlas Settings
-│                   [group: navigation@6]
+│                   [group: navigation@7]
 ```
 
 ---
@@ -637,6 +645,7 @@ VS Code
     ├── Edit Repository Tags... [hidden]
     ├── Clone Repository... [hidden]
     ├── Refresh GitHub Repositories [hidden]
+    ├── Refresh GitHub Stars [hidden]
     ├── Open Project Atlas Settings [hidden]
     ├── Open GitHub Configuration [hidden]
     ├── Search GitHub Repositories [hidden]
@@ -1122,8 +1131,9 @@ VS Code
 │               ├── Open Configuration
 │               ├── Expand
 │               ├── Collapse
-│               ├── Refresh
-│               └── Open Settings
+│               ├── Refresh GitHub Repositories
+│               ├── Refresh GitHub Stars
+│               └── Open Project Atlas Settings
 │
 ├── Explorer
 │   └── File / Folder

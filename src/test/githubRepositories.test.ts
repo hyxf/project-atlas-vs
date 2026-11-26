@@ -8,6 +8,7 @@ import * as vscode from 'vscode';
 import { GitHubConfigurationStore } from '../features/githubRepositories/config';
 import { revealTopGithubRepositoryNode } from '../features/githubRepositories/githubRepositoriesFeature';
 import { GitHubApiClient } from '../features/githubRepositories/githubApiClient';
+import { GitHubStarsStore } from '../features/githubRepositories/starsStore';
 import { confirmGitHubRepositoryDeletion } from '../features/githubRepositories/deleteConfirmation';
 import { DoubleClickTracker } from '../features/githubRepositories/doubleClick';
 import { RepositoryStore } from '../features/repositoryManagement/store';
@@ -15,6 +16,7 @@ import {
     GitHubLanguageNode,
     GitHubRepositoriesTree,
     GitHubRepositoryNode,
+    GitHubStarsNode,
     GitHubVisibilityNode,
 } from '../features/githubRepositories/tree';
 
@@ -408,6 +410,112 @@ suite('GitHub Repositories', () => {
         assert.strictEqual(repositories[2]?.private, true);
     });
 
+    test('loads every page of starred repositories', async () => {
+        const urls: string[] = [];
+        const client = new GitHubApiClient(async (url) => {
+            urls.push(url);
+            if (urls.length === 1) {
+                return { status: 200, headers: {}, body: JSON.stringify({ login: 'octocat' }) };
+            }
+            return urls.length === 2
+                ? {
+                      status: 200,
+                      headers: { link: '<https://api.github.com/user/starred?page=2>; rel="next"' },
+                      body: JSON.stringify([repository(1, 'octocat', 'star-one')]),
+                  }
+                : { status: 200, headers: {}, body: JSON.stringify([repository(2, 'octocat', 'star-two')]) };
+        });
+
+        const repositories = await client.starredRepositories({
+            token: 'secret',
+            user: 'octocat',
+            proxy: { enabled: false },
+        });
+
+        assert.deepStrictEqual(urls, [
+            'https://api.github.com/user',
+            'https://api.github.com/user/starred?per_page=100',
+            'https://api.github.com/user/starred?page=2',
+        ]);
+        assert.deepStrictEqual(
+            repositories.map(({ fullName }) => fullName),
+            ['octocat/star-one', 'octocat/star-two'],
+        );
+    });
+
+    test('stores starred repositories atomically while preserving unknown fields', async () => {
+        const starsFile = path.join(temporary, '.project-atlas', 'github-stars.json');
+        const store = new GitHubStarsStore(starsFile);
+        await fs.mkdir(path.dirname(starsFile), { recursive: true });
+        await fs.writeFile(starsFile, JSON.stringify({ futureRoot: true, repositories: [] }));
+
+        await store.replaceRepositories([
+            {
+                id: 9,
+                name: 'starred',
+                fullName: 'octocat/starred',
+                owner: 'octocat',
+                htmlUrl: 'https://github.com/octocat/starred',
+                sshUrl: 'git@github.com:octocat/starred.git',
+                cloneUrl: 'https://github.com/octocat/starred.git',
+                private: false,
+                archived: false,
+                fork: false,
+                updatedAt: '2026-09-11T00:00:00Z',
+            },
+        ]);
+
+        const data = JSON.parse(await fs.readFile(starsFile, 'utf8')) as Record<string, unknown>;
+        assert.strictEqual(data.futureRoot, true);
+        assert.deepStrictEqual(
+            (await store.repositories()).map(({ fullName }) => fullName),
+            ['octocat/starred'],
+        );
+    });
+
+    test('shows Stars beside Public and Private with starred repositories beneath it', async () => {
+        const starsFile = path.join(temporary, '.project-atlas', 'github-stars.json');
+        const configStore = new GitHubConfigurationStore(file);
+        await fs.mkdir(path.dirname(file), { recursive: true });
+        await fs.writeFile(file, JSON.stringify({ repositories: [] }));
+        const starsStore = new GitHubStarsStore(starsFile);
+        await starsStore.replaceRepositories([
+            {
+                id: 11,
+                name: 'starred',
+                fullName: 'octocat/starred',
+                owner: 'octocat',
+                htmlUrl: 'https://github.com/octocat/starred',
+                sshUrl: 'git@github.com:octocat/starred.git',
+                cloneUrl: 'https://github.com/octocat/starred.git',
+                private: false,
+                archived: false,
+                fork: false,
+                updatedAt: '2026-09-11T00:00:00Z',
+            },
+        ]);
+        const tree = new GitHubRepositoriesTree(
+            configStore,
+            new GitHubApiClient(),
+            new RepositoryStore(path.join(temporary, '.project-atlas', 'repos.json')),
+            starsStore,
+        );
+
+        const roots = await tree.getChildren();
+        assert.deepStrictEqual(
+            roots.map(({ label }) => label),
+            ['Public', 'Private', 'Stars'],
+        );
+        const stars = roots[2];
+        assert.ok(stars instanceof GitHubStarsNode);
+        const repositories = await tree.getChildren(stars);
+        assert.strictEqual(repositories.length, 1);
+        assert.ok(repositories[0] instanceof GitHubRepositoryNode);
+        assert.strictEqual(repositories[0].isStarred, true);
+        assert.strictEqual(repositories[0].contextValue, 'githubStarredRepository');
+        assert.strictEqual(await tree.getParent(repositories[0]), stars);
+    });
+
     test('reports an invalid token without including it in the error', async () => {
         const client = new GitHubApiClient(async () => ({
             status: 401,
@@ -458,14 +566,19 @@ suite('GitHub Repositories', () => {
             url: 'git@github.com:octocat/private-python.git',
             tags: ['saved'],
         });
-        const tree = new GitHubRepositoriesTree(new GitHubConfigurationStore(file), client, repositoryStore);
+        const tree = new GitHubRepositoriesTree(
+            new GitHubConfigurationStore(file),
+            client,
+            repositoryStore,
+            new GitHubStarsStore(path.join(temporary, '.project-atlas', 'github-stars.json')),
+        );
 
         const visibilityNodes = await tree.getChildren();
         assert.deepStrictEqual(
             visibilityNodes.map(({ label }) => label),
-            ['Public', 'Private'],
+            ['Public', 'Private', 'Stars'],
         );
-        assert.ok(visibilityNodes.every((node) => node instanceof GitHubVisibilityNode));
+        assert.ok(visibilityNodes.slice(0, 2).every((node) => node instanceof GitHubVisibilityNode));
         assert.ok(visibilityNodes.every((node) => node.collapsibleState === vscode.TreeItemCollapsibleState.Expanded));
 
         const privateNode = visibilityNodes[1];
@@ -573,6 +686,7 @@ suite('GitHub Repositories', () => {
                 throw new Error('The local tree must not request GitHub.');
             }),
             new RepositoryStore(path.join(temporary, '.project-atlas', 'repos.json')),
+            new GitHubStarsStore(path.join(temporary, '.project-atlas', 'github-stars.json')),
         );
 
         const visibilityNode = (await tree.getChildren())[0];
@@ -683,6 +797,7 @@ suite('GitHub Repositories', () => {
             store,
             client,
             new RepositoryStore(path.join(temporary, '.project-atlas', 'repos.json')),
+            new GitHubStarsStore(path.join(temporary, '.project-atlas', 'github-stars.json')),
         );
 
         assert.strictEqual(await tree.synchronize(), 2);

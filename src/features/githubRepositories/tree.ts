@@ -4,6 +4,7 @@ import { GitHubConfigurationStore } from './config';
 import { GitHubConfiguration, GitHubRepository } from './model';
 import { repositoryIdentityKey } from '../repositoryManagement/repositoryUrl';
 import { RepositoryStore } from '../repositoryManagement/store';
+import { GitHubStarsStore } from './starsStore';
 
 export class GitHubRepositoryNode extends vscode.TreeItem {
     constructor(
@@ -12,10 +13,15 @@ export class GitHubRepositoryNode extends vscode.TreeItem {
         readonly visibility: 'Public' | 'Private',
         readonly languageRepositories: GitHubRepository[],
         readonly visibilityRepositories: GitHubRepository[],
+        readonly isStarred = false,
     ) {
         super(repository.fullName);
-        this.id = `github-repository:${repository.id}`;
-        this.contextValue = addable ? 'githubRepositoryAddable' : 'githubRepositorySaved';
+        this.id = `github-repository:${isStarred ? 'starred:' : ''}${repository.id}`;
+        this.contextValue = isStarred
+            ? 'githubStarredRepository'
+            : addable
+              ? 'githubRepositoryAddable'
+              : 'githubRepositorySaved';
         const description = [repository.description?.trim(), repository.archived ? 'Archived' : undefined]
             .filter((value): value is string => Boolean(value))
             .join(' · ');
@@ -50,6 +56,16 @@ export class GitHubVisibilityNode extends vscode.TreeItem {
     }
 }
 
+export class GitHubStarsNode extends vscode.TreeItem {
+    constructor(readonly repositories: GitHubRepository[]) {
+        super('Stars', vscode.TreeItemCollapsibleState.Expanded);
+        this.id = 'github-stars';
+        this.contextValue = 'githubStars';
+        this.description = repositories.length.toString();
+        this.iconPath = new vscode.ThemeIcon('star');
+    }
+}
+
 export class GitHubLanguageNode extends vscode.TreeItem {
     constructor(
         readonly visibility: 'Public' | 'Private',
@@ -65,7 +81,7 @@ export class GitHubLanguageNode extends vscode.TreeItem {
     }
 }
 
-export type GitHubTreeNode = GitHubVisibilityNode | GitHubLanguageNode | GitHubRepositoryNode;
+export type GitHubTreeNode = GitHubVisibilityNode | GitHubStarsNode | GitHubLanguageNode | GitHubRepositoryNode;
 
 export class GitHubRepositoriesTree implements vscode.TreeDataProvider<GitHubTreeNode> {
     private readonly changed = new vscode.EventEmitter<GitHubTreeNode | undefined>();
@@ -77,6 +93,7 @@ export class GitHubRepositoriesTree implements vscode.TreeDataProvider<GitHubTre
         private readonly configurationStore: GitHubConfigurationStore,
         private readonly client: GitHubApiClient,
         private readonly repositoryStore: RepositoryStore,
+        private readonly starsStore: GitHubStarsStore = new GitHubStarsStore(),
         private readonly configurationProvider: () => Promise<GitHubConfiguration> = () =>
             this.configurationStore.configuration(),
     ) {}
@@ -105,6 +122,14 @@ export class GitHubRepositoriesTree implements vscode.TreeDataProvider<GitHubTre
         return repositories.length;
     }
 
+    async synchronizeStars(): Promise<number> {
+        const configuration = await this.configurationProvider();
+        const repositories = await this.client.starredRepositories(configuration);
+        await this.starsStore.replaceRepositories(repositories);
+        this.refresh();
+        return repositories.length;
+    }
+
     getTreeItem(element: GitHubTreeNode): vscode.TreeItem {
         return element;
     }
@@ -113,8 +138,14 @@ export class GitHubRepositoriesTree implements vscode.TreeDataProvider<GitHubTre
         if (element instanceof GitHubVisibilityNode) {
             return undefined;
         }
+        if (element instanceof GitHubStarsNode) {
+            return undefined;
+        }
         if (element instanceof GitHubLanguageNode) {
             return this.visibilityNode(element.visibilityRepositories, element.visibility);
+        }
+        if (element instanceof GitHubRepositoryNode && element.isStarred) {
+            return (await this.getChildren()).find((node): node is GitHubStarsNode => node instanceof GitHubStarsNode);
         }
         return this.identify(
             new GitHubLanguageNode(
@@ -129,6 +160,24 @@ export class GitHubRepositoriesTree implements vscode.TreeDataProvider<GitHubTre
     async getChildren(element?: GitHubTreeNode): Promise<GitHubTreeNode[]> {
         if (element instanceof GitHubRepositoryNode) {
             return [];
+        }
+        if (element instanceof GitHubStarsNode) {
+            const savedRepositoryKeys = new Set(
+                (await this.repositoryStore.repositories())
+                    .map((repository) => repositoryIdentityKey(repository.url))
+                    .filter((key): key is string => key !== undefined),
+            );
+            return element.repositories.sort(compareRepositories).map((repository) => {
+                const key = repositoryIdentityKey(repository.sshUrl);
+                return new GitHubRepositoryNode(
+                    repository,
+                    key === undefined || !savedRepositoryKeys.has(key),
+                    repository.private ? 'Private' : 'Public',
+                    [],
+                    [],
+                    true,
+                );
+            });
         }
         if (element instanceof GitHubLanguageNode) {
             const savedRepositoryKeys = new Set(
@@ -173,6 +222,7 @@ export class GitHubRepositoriesTree implements vscode.TreeDataProvider<GitHubTre
                 repositories.filter((repository) => repository.private),
                 'Private',
             ),
+            new GitHubStarsNode(await this.starsStore.repositories()),
         ];
     }
 

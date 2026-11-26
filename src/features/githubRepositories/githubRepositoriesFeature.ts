@@ -18,6 +18,7 @@ import { ProjectService } from '../projectManagement/service';
 import { ProjectStore } from '../projectManagement/store';
 import { DoubleClickTracker } from './doubleClick';
 import { confirmGitHubRepositoryDeletion } from './deleteConfirmation';
+import { GitHubStarsStore } from './starsStore';
 
 interface ChangedGitHubSettings {
     token: boolean;
@@ -32,11 +33,13 @@ export function activateGitHubRepositories(context: vscode.ExtensionContext): vo
     const repositoryStore = new RepositoryStore();
     const projectService = new ProjectService(new ProjectStore());
     const apiClient = new GitHubApiClient();
-    const tree = new GitHubRepositoriesTree(configurationStore, apiClient, repositoryStore, () =>
+    const starsStore = new GitHubStarsStore();
+    const tree = new GitHubRepositoriesTree(configurationStore, apiClient, repositoryStore, starsStore, () =>
         githubConfiguration(configurationStore),
     );
     const doubleClick = new DoubleClickTracker();
     let synchronizing = false;
+    let synchronizingStars = false;
     let revealRequest = 0;
     let syncingSettings = false;
     const synchronize = () =>
@@ -66,7 +69,34 @@ export function activateGitHubRepositories(context: vscode.ExtensionContext): vo
             }
             await vscode.window.showInformationMessage(`Project Atlas: Synchronized ${count} GitHub repositories.`);
         });
+    const synchronizeStars = () =>
+        run(async () => {
+            if (synchronizingStars) {
+                return;
+            }
+            synchronizingStars = true;
+            await vscode.commands.executeCommand('setContext', 'projectAtlas.githubStarsRefreshing', true);
+            let count: number;
+            try {
+                count = await vscode.window.withProgress(
+                    {
+                        location: vscode.ProgressLocation.Notification,
+                        title: 'Refreshing GitHub Stars',
+                        cancellable: false,
+                    },
+                    async (progress) => {
+                        progress.report({ message: 'Loading all starred repositories from GitHub…' });
+                        return tree.synchronizeStars();
+                    },
+                );
+            } finally {
+                synchronizingStars = false;
+                await vscode.commands.executeCommand('setContext', 'projectAtlas.githubStarsRefreshing', false);
+            }
+            await vscode.window.showInformationMessage(`Project Atlas: Refreshed ${count} GitHub Stars.`);
+        });
     void vscode.commands.executeCommand('setContext', 'projectAtlas.githubRepositoriesRefreshing', false);
+    void vscode.commands.executeCommand('setContext', 'projectAtlas.githubStarsRefreshing', false);
     void run(async () => {
         await configurationStore.ensureFile();
         const configurationWatcher = watch(
@@ -122,6 +152,7 @@ export function activateGitHubRepositories(context: vscode.ExtensionContext): vo
             }
         }),
         vscode.commands.registerCommand('project-atlas.refreshGithubRepositories', synchronize),
+        vscode.commands.registerCommand('project-atlas.refreshGithubStars', synchronizeStars),
         vscode.commands.registerCommand('project-atlas.openSettings', () =>
             run(async () => {
                 syncingSettings = true;
@@ -255,6 +286,7 @@ export function activateGitHubRepositories(context: vscode.ExtensionContext): vo
                             progress.report({ increment: 80, message: 'Updating local GitHub cache…' });
                             try {
                                 await configurationStore.removeRepository(repository.id);
+                                await starsStore.removeRepository(repository.id);
                             } catch (error) {
                                 return { succeeded: false as const, error };
                             }
@@ -273,7 +305,7 @@ export function activateGitHubRepositories(context: vscode.ExtensionContext): vo
                 if (!result.succeeded) {
                     tree.refresh();
                     await vscode.window.showWarningMessage(
-                        `Project Atlas: Deleted ${repository.fullName} on GitHub, but could not update the local cache. Refresh GitHub Repositories after fixing github.json: ${result.error instanceof Error ? result.error.message : String(result.error)}`,
+                        `Project Atlas: Deleted ${repository.fullName} on GitHub, but could not update the local cache. Fix github.json or github-stars.json, then refresh GitHub Repositories: ${result.error instanceof Error ? result.error.message : String(result.error)}`,
                     );
                     return;
                 }

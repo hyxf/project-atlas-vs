@@ -1233,6 +1233,16 @@ suite('Extension', () => {
             },
         );
         assert.deepStrictEqual(
+            commands.find(({ command }) => command === 'project-atlas.refreshGithubStars'),
+            {
+                command: 'project-atlas.refreshGithubStars',
+                title: 'Refresh GitHub Stars',
+                category: 'Project Atlas',
+                icon: '$(refresh)',
+                enablement: '!projectAtlas.githubStarsRefreshing',
+            },
+        );
+        assert.deepStrictEqual(
             commands.find(({ command }) => command === 'project-atlas.searchGithubRepositories'),
             {
                 command: 'project-atlas.searchGithubRepositories',
@@ -1303,9 +1313,14 @@ suite('Extension', () => {
                     group: 'navigation@5',
                 },
                 {
-                    command: 'project-atlas.openSettings',
+                    command: 'project-atlas.refreshGithubStars',
                     when: 'view == projectAtlas.githubRepos',
                     group: 'navigation@6',
+                },
+                {
+                    command: 'project-atlas.openSettings',
+                    when: 'view == projectAtlas.githubRepos',
+                    group: 'navigation@7',
                 },
             ],
         );
@@ -1350,7 +1365,7 @@ suite('Extension', () => {
             itemMenu.find(({ command }) => command === 'project-atlas.openGithubRepository'),
             {
                 command: 'project-atlas.openGithubRepository',
-                when: 'view == projectAtlas.githubRepos && (viewItem == githubRepositoryAddable || viewItem == githubRepositorySaved)',
+                when: 'view == projectAtlas.githubRepos && (viewItem == githubRepositoryAddable || viewItem == githubRepositorySaved || viewItem == githubStarredRepository)',
                 group: 'navigationOpen@1',
             },
         );

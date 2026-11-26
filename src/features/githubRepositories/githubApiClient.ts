@@ -37,6 +37,35 @@ export class GitHubApiClient {
         return repositories;
     }
 
+    /** Retrieves every repository starred by the authenticated user. */
+    async starredRepositories(configuration: GitHubConfiguration): Promise<GitHubRepository[]> {
+        const proxyUrl = configuration.proxy.url ?? configuration.proxy.socketUrl;
+        if (configuration.proxy.enabled && proxyUrl) {
+            await verifyProxy(proxyUrl);
+        }
+        const userResponse = await this.request('https://api.github.com/user', configuration);
+        if (userResponse.status !== 200) {
+            throw apiError(userResponse.status, userResponse.body);
+        }
+        const authenticatedUser = parseAuthenticatedUser(userResponse.body);
+        if (authenticatedUser.localeCompare(configuration.user, undefined, { sensitivity: 'accent' }) !== 0) {
+            throw new Error(
+                `GitHub token belongs to ${authenticatedUser}, but github.json configures user ${configuration.user}.`,
+            );
+        }
+        const repositories: GitHubRepository[] = [];
+        let url: string | undefined = 'https://api.github.com/user/starred?per_page=100';
+        while (url) {
+            const response = await this.request(url, configuration);
+            if (response.status !== 200) {
+                throw apiError(response.status, response.body);
+            }
+            repositories.push(...parseRepositories(response.body));
+            url = nextPage(response.headers.link);
+        }
+        return repositories;
+    }
+
     /** Deletes a repository through GitHub's REST API. */
     async deleteRepository(configuration: GitHubConfiguration, repository: GitHubRepository): Promise<void> {
         const proxyUrl = configuration.proxy.url ?? configuration.proxy.socketUrl;
