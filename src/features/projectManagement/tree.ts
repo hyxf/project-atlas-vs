@@ -10,6 +10,8 @@ export class ProjectNode extends vscode.TreeItem {
         id = project.id,
     ) {
         super(project.name, vscode.TreeItemCollapsibleState.None);
+        const description = project.description?.trim();
+        this.description = description ? `· ${description}` : '';
         this.id = id;
         this.tooltip = `${project.name}\n${project.path}${project.tags.length ? `\n${project.tags.join(' · ')}` : ''}`;
         this.resourceUri = vscode.Uri.from({ scheme: 'project-atlas', path: `/${project.id}`, query: project.path });
@@ -21,7 +23,10 @@ export class ProjectNode extends vscode.TreeItem {
               ? 'currentProject'
               : 'project';
         this.command = { command: 'project-atlas.openOnDoubleClick', title: 'Open Project', arguments: [this] };
-        this.iconPath = new vscode.ThemeIcon(project.favorite ? 'star-full' : 'folder');
+        this.iconPath = new vscode.ThemeIcon(
+            project.favorite ? 'star-full' : 'folder',
+            new vscode.ThemeColor(project.favorite ? 'charts.yellow' : 'charts.blue'),
+        );
     }
 }
 

@@ -27,6 +27,10 @@
             "type": "string",
             "description": "Local project directory path. Use an absolute path."
           },
+          "description": {
+            "type": "string",
+            "description": "Optional project description."
+          },
           "tags": {
             "type": "array",
             "items": {

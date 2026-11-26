@@ -36,17 +36,63 @@ suite('Project Management', () => {
                     'existing',
                     'tools',
                 ]);
-                await options.save({ name: '  Renamed  ', tags: '["work", "tools", "work", " "]', favorite: 'false' });
+                assert.strictEqual(options.fields.find((field) => field.name === 'description')?.required, undefined);
+                await options.save({
+                    name: '  Renamed  ',
+                    description: '  Main application  ',
+                    tags: '["work", "tools", "work", " "]',
+                    favorite: 'false',
+                });
             },
             ['existing'],
         );
         const updated = (await service.projects(true))[0]!;
         assert.strictEqual(updated.name, 'Renamed');
+        assert.strictEqual(updated.description, 'Main application');
         assert.deepStrictEqual(updated.tags, ['tools', 'work']);
         assert.strictEqual(updated.favorite, false);
         assert.strictEqual(updated.path, project.path);
         assert.strictEqual(updated.id, project.id);
         assert.strictEqual(updated.lastOpenedAt, 123);
+    });
+
+    test('shows a project description beside its name only when it has text', async () => {
+        const documented = await service.save('Atlas', temporary, [], false);
+        await service.updateDetails(documented.id, {
+            name: documented.name,
+            description: ' Main app ',
+            tags: [],
+            favorite: false,
+        });
+        const undocumented = await service.save(
+            'No description',
+            path.join(temporary, '..', 'no-description'),
+            [],
+            false,
+        );
+        const tree = new ProjectsTree(service);
+        const nodes = await tree.getChildren();
+        const projectNodes = nodes.filter((node) => 'project' in node);
+        const documentedNode = projectNodes.find((node) => node.project.id === documented.id)!;
+        const undocumentedNode = projectNodes.find((node) => node.project.id === undocumented.id)!;
+        assert.strictEqual(tree.getTreeItem(documentedNode).description, '· Main app');
+        assert.strictEqual(tree.getTreeItem(undocumentedNode).description, '');
+    });
+
+    test('persists an optional project description and reloads it', async () => {
+        const project = await service.save('Atlas', temporary, [], false);
+        await service.updateDetails(project.id, {
+            name: project.name,
+            description: 'Main application',
+            tags: project.tags,
+            favorite: project.favorite,
+        });
+
+        const stored = JSON.parse(await fs.readFile(store.file, 'utf8')) as {
+            projects: Array<{ id: string; description?: string }>;
+        };
+        assert.strictEqual(stored.projects.find((item) => item.id === project.id)?.description, 'Main application');
+        assert.strictEqual((await new ProjectStore(store.file).projects())[0]?.description, 'Main application');
     });
 
     test('cancelling the add form does not save a project', async () => {

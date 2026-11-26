@@ -72,13 +72,22 @@ export class ProjectService {
         await this.mutate(() => this.updateProject(project));
     }
 
-    async updateDetails(id: string, values: Pick<ProjectItem, 'name' | 'tags' | 'favorite'>): Promise<void> {
+    async updateDetails(
+        id: string,
+        values: Pick<ProjectItem, 'name' | 'description' | 'tags' | 'favorite'>,
+    ): Promise<void> {
         await this.mutate(async () => {
             const project = (await this.projects(true)).find((item) => item.id === id);
             if (!project) {
                 throw new Error(`Unknown project: ${id}`);
             }
-            await this.updateProject({ ...project, name: values.name, tags: values.tags, favorite: values.favorite });
+            await this.updateProject({
+                ...project,
+                name: values.name,
+                description: values.description,
+                tags: values.tags,
+                favorite: values.favorite,
+            });
         });
     }
 

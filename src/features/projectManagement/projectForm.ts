@@ -30,6 +30,13 @@ export async function editProjectForm(
                 placeholder: 'My project',
             },
             {
+                name: 'description',
+                label: 'Description',
+                value: project.description ?? '',
+                multiline: true,
+                placeholder: 'Optional project description',
+            },
+            {
                 name: 'tags',
                 label: 'Tags',
                 value: JSON.stringify(project.tags),
@@ -47,6 +54,7 @@ export async function editProjectForm(
         save: async (values) => {
             await save({
                 name: values.name!.trim(),
+                description: values.description?.trim() || undefined,
                 tags: cleanTags(JSON.parse(values.tags!) as string[]),
                 favorite: values.favorite === 'true',
             });

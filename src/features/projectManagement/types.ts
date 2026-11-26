@@ -8,6 +8,7 @@ export interface ProjectItem {
     id: string;
     name: string;
     path: string;
+    description?: string | undefined;
     tags: string[];
     favorite: boolean;
     lastOpenedAt?: number | null;
@@ -41,4 +42,4 @@ export interface ProjectImportResult {
 /** Input required to create an item; the service generates identity and open time. */
 export type CreateProject = Omit<ProjectItem, 'id' | 'lastOpenedAt'>;
 /** Editable fields accepted by the project edit form. */
-export type ProjectFormValues = Pick<ProjectItem, 'name' | 'tags' | 'favorite'>;
+export type ProjectFormValues = Pick<ProjectItem, 'name' | 'description' | 'tags' | 'favorite'>;
