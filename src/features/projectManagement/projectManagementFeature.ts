@@ -76,33 +76,7 @@ export function activateProjectManagement(context: vscode.ExtensionContext): voi
     );
     context.subscriptions.push(vscode.window.registerFileDecorationProvider(new ProjectDecorationProvider()));
     context.subscriptions.push(
-        vscode.commands.registerCommand('project-atlas.editProjectViews', () =>
-            run(async () => {
-                const current = await store.viewVisibility();
-                const items: (vscode.QuickPickItem & { key: keyof ProjectViewVisibility })[] = [
-                    { label: 'GitHub Repositories', key: 'githubRepositories', picked: current.githubRepositories },
-                    { label: 'Git Repositories', key: 'gitRepositories', picked: current.gitRepositories },
-                    { label: 'npm packages', key: 'npmPackages', picked: current.npmPackages },
-                ];
-                const selected = await vscode.window.showQuickPick(items, {
-                    title: 'Edit Project Atlas view visibility',
-                    placeHolder: 'Select the views to show',
-                    canPickMany: true,
-                    ignoreFocusOut: true,
-                });
-                if (selected === undefined) {
-                    return;
-                }
-                const chosen = new Set(selected.map((item) => item.key));
-                const visibility = {
-                    githubRepositories: chosen.has('githubRepositories'),
-                    gitRepositories: chosen.has('gitRepositories'),
-                    npmPackages: chosen.has('npmPackages'),
-                };
-                await store.replaceViewVisibility(visibility);
-                await applyProjectViewVisibility(visibility);
-            }),
-        ),
+        vscode.commands.registerCommand('project-atlas.editProjectViews', () => run(() => editProjectViews(store))),
     );
     for (const [name, handler] of Object.entries(handlers)) {
         context.subscriptions.push(
@@ -118,6 +92,67 @@ export function activateProjectManagement(context: vscode.ExtensionContext): voi
         await syncXcodeMenuContext();
         await trackCurrentWorkspace();
     });
+}
+
+async function editProjectViews(store: ProjectStore): Promise<void> {
+    const current = await store.viewVisibility();
+    const panel = vscode.window.createWebviewPanel(
+        'projectAtlas.viewVisibility',
+        'Edit Project Atlas View Visibility',
+        vscode.ViewColumn.Active,
+        { enableScripts: true, localResourceRoots: [] },
+    );
+    panel.webview.html = viewVisibilityHtml(current);
+    panel.webview.onDidReceiveMessage(async (message: unknown) => {
+        if (!message || typeof message !== 'object' || (message as { type?: unknown }).type !== 'save') {
+            return;
+        }
+        const values = (message as { values?: unknown }).values;
+        if (!values || typeof values !== 'object') {
+            return;
+        }
+        const candidate = values as Record<string, unknown>;
+        if (
+            typeof candidate.githubRepositories !== 'boolean' ||
+            typeof candidate.gitRepositories !== 'boolean' ||
+            typeof candidate.npmPackages !== 'boolean'
+        ) {
+            return;
+        }
+        const visibility: ProjectViewVisibility = {
+            githubRepositories: candidate.githubRepositories,
+            gitRepositories: candidate.gitRepositories,
+            npmPackages: candidate.npmPackages,
+        };
+        try {
+            await store.replaceViewVisibility(visibility);
+            await applyProjectViewVisibility(visibility);
+            await panel.webview.postMessage({ type: 'saved' });
+        } catch (error) {
+            await vscode.window.showErrorMessage(
+                `Project Atlas: ${error instanceof Error ? error.message : String(error)}`,
+            );
+            await panel.webview.postMessage({ type: 'saveFailed' });
+        }
+    });
+}
+
+function viewVisibilityHtml(visibility: ProjectViewVisibility): string {
+    const checkbox = (key: keyof ProjectViewVisibility, label: string, detail: string) =>
+        `<label class="row"><span class="copy"><span class="label">${label}</span><span class="detail">${detail}</span></span><input type="checkbox" name="${key}" ${visibility[key] ? 'checked' : ''}></label>`;
+    return `<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project Atlas views</title><style>
+body{font-family:var(--vscode-font-family);color:var(--vscode-foreground);background:var(--vscode-editor-background);padding:32px;max-width:720px;margin:0 auto}
+header{margin-bottom:24px}h1{font-size:22px;line-height:28px;font-weight:500;margin:0 0 8px}.intro{font-size:13px;line-height:20px;color:var(--vscode-descriptionForeground);margin:0}
+.list{border-top:1px solid var(--vscode-panel-border);border-bottom:1px solid var(--vscode-panel-border)}.row{min-height:68px;box-sizing:border-box;display:flex;justify-content:space-between;align-items:center;gap:24px;padding:12px 4px;border-bottom:1px solid var(--vscode-panel-border);cursor:pointer}.row:last-child{border-bottom:0}.row:hover .label{color:var(--vscode-textLink-foreground)}
+.copy{display:grid;gap:4px}.label{font-size:14px;line-height:20px}.detail{font-size:12px;line-height:16px;color:var(--vscode-descriptionForeground)}input{accent-color:var(--vscode-focusBorder);width:16px;height:16px;margin:0;flex:none;cursor:pointer}input:focus-visible{outline:2px solid var(--vscode-focusBorder);outline-offset:3px}
+.actions{display:flex;justify-content:flex-end;margin-top:24px}button{min-height:32px;border:0;border-radius:2px;padding:0 16px;color:var(--vscode-button-foreground);background:var(--vscode-button-background);font:inherit;cursor:pointer}button:hover{background:var(--vscode-button-hoverBackground)}button:focus-visible{outline:1px solid var(--vscode-focusBorder);outline-offset:2px}button:disabled{opacity:.6;cursor:wait}
+</style></head><body><header><h1>Sidebar views</h1><p class="intro">Choose which sections appear in Project Atlas.</p></header>
+<form id="form"><div class="list">${checkbox('githubRepositories', 'GitHub Repositories', 'Repositories saved from GitHub')}${checkbox('gitRepositories', 'Git Repositories', 'Repositories in your local workspace')}${checkbox('npmPackages', 'npm packages', 'Dependencies in your local workspace')}</div><div class="actions"><button id="save" type="submit">Save</button></div></form>
+<script>
+const vscode=acquireVsCodeApi(),form=document.getElementById('form'),save=document.getElementById('save');form.addEventListener('submit',event=>{event.preventDefault();if(save.disabled)return;const values={};for(const input of document.querySelectorAll('input[type=checkbox]'))values[input.name]=input.checked;save.disabled=true;vscode.postMessage({type:'save',values})});window.addEventListener('message',event=>{if(event.data?.type==='saved'||event.data?.type==='saveFailed')save.disabled=false})
+</script></body></html>`;
 }
 
 async function applyProjectViewVisibility(visibility: ProjectViewVisibility): Promise<void> {
