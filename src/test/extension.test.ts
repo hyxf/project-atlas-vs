@@ -1365,8 +1365,19 @@ suite('Extension', () => {
             itemMenu.find(({ command }) => command === 'project-atlas.openGithubRepository'),
             {
                 command: 'project-atlas.openGithubRepository',
-                when: 'view == projectAtlas.githubRepos && (viewItem == githubRepositoryAddable || viewItem == githubRepositorySaved || viewItem == githubStarredRepository)',
+                when: 'view == projectAtlas.githubRepos && (viewItem == githubRepositoryAddable || viewItem == githubRepositorySaved)',
                 group: 'navigationOpen@1',
+            },
+        );
+        assert.deepStrictEqual(
+            itemMenu.find(
+                ({ command, when }) =>
+                    command === 'project-atlas.openGithubRepository' && when?.includes('githubStarredRepository'),
+            ),
+            {
+                command: 'project-atlas.openGithubRepository',
+                when: 'view == projectAtlas.githubRepos && viewItem == githubStarredRepository',
+                group: 'inline@1',
             },
         );
         assert.ok(
@@ -1379,6 +1390,11 @@ suite('Extension', () => {
             itemMenu.some(
                 ({ command, group }) =>
                     command === 'project-atlas.openGithubRepository' && group === 'navigationOpen@1',
+            ),
+        );
+        assert.ok(
+            itemMenu.some(
+                ({ command, group }) => command === 'project-atlas.openGithubRepository' && group === 'inline@1',
             ),
         );
         assert.ok(

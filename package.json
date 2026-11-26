@@ -2459,8 +2459,13 @@
         },
         {
           "command": "project-atlas.openGithubRepository",
-          "when": "view == projectAtlas.githubRepos && (viewItem == githubRepositoryAddable || viewItem == githubRepositorySaved || viewItem == githubStarredRepository)",
+          "when": "view == projectAtlas.githubRepos && (viewItem == githubRepositoryAddable || viewItem == githubRepositorySaved)",
           "group": "navigationOpen@1"
+        },
+        {
+          "command": "project-atlas.openGithubRepository",
+          "when": "view == projectAtlas.githubRepos && viewItem == githubStarredRepository",
+          "group": "inline@1"
         },
         {
           "command": "project-atlas.addGithubRepositoryToRepos",

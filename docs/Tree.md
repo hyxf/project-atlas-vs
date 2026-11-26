@@ -404,9 +404,10 @@ VS Code
 │           │   └── Stars
 │           │       └── Language Group
 │           │           └── GitHub Repository Tree Item
-│           │               [context menu: Open on GitHub only]
+│           │               [inline: Open on GitHub]
 │           │       │
 │           │       └── Tree Item Context Menu
+│           │           [Public / Private repositories]
 │           │           │
 │           │           ├── Add to Git Repositories
 │           │           │   [when: viewItem == githubRepositoryAddable]
