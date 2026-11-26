@@ -402,8 +402,9 @@ VS Code
 │           │   ├── Public
 │           │   ├── Private
 │           │   └── Stars
-│           │       [context menu: Open on GitHub only]
-│           │       └── GitHub Repository Tree Item
+│           │       └── Language Group
+│           │           └── GitHub Repository Tree Item
+│           │               [context menu: Open on GitHub only]
 │           │       │
 │           │       └── Tree Item Context Menu
 │           │           │

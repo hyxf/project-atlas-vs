@@ -1238,7 +1238,7 @@ suite('Extension', () => {
                 command: 'project-atlas.refreshGithubStars',
                 title: 'Refresh GitHub Stars',
                 category: 'Project Atlas',
-                icon: '$(refresh)',
+                icon: '$(star-empty)',
                 enablement: '!projectAtlas.githubStarsRefreshing',
             },
         );

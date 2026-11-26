@@ -66,6 +66,19 @@ export class GitHubStarsNode extends vscode.TreeItem {
     }
 }
 
+export class GitHubStarsLanguageNode extends vscode.TreeItem {
+    constructor(
+        readonly language: string | undefined,
+        readonly repositories: GitHubRepository[],
+    ) {
+        super(language ?? 'Unknown', vscode.TreeItemCollapsibleState.Expanded);
+        this.id = `github-stars-language:${language ?? '__unknown__'}`;
+        this.contextValue = 'githubStarsLanguage';
+        this.description = repositories.length.toString();
+        this.iconPath = new vscode.ThemeIcon('symbol-color');
+    }
+}
+
 export class GitHubLanguageNode extends vscode.TreeItem {
     constructor(
         readonly visibility: 'Public' | 'Private',
@@ -81,7 +94,8 @@ export class GitHubLanguageNode extends vscode.TreeItem {
     }
 }
 
-export type GitHubTreeNode = GitHubVisibilityNode | GitHubStarsNode | GitHubLanguageNode | GitHubRepositoryNode;
+export type GitHubTreeNode =
+    GitHubVisibilityNode | GitHubStarsNode | GitHubStarsLanguageNode | GitHubLanguageNode | GitHubRepositoryNode;
 
 export class GitHubRepositoriesTree implements vscode.TreeDataProvider<GitHubTreeNode> {
     private readonly changed = new vscode.EventEmitter<GitHubTreeNode | undefined>();
@@ -141,11 +155,23 @@ export class GitHubRepositoriesTree implements vscode.TreeDataProvider<GitHubTre
         if (element instanceof GitHubStarsNode) {
             return undefined;
         }
+        if (element instanceof GitHubStarsLanguageNode) {
+            return (await this.getChildren()).find((node): node is GitHubStarsNode => node instanceof GitHubStarsNode);
+        }
         if (element instanceof GitHubLanguageNode) {
             return this.visibilityNode(element.visibilityRepositories, element.visibility);
         }
         if (element instanceof GitHubRepositoryNode && element.isStarred) {
-            return (await this.getChildren()).find((node): node is GitHubStarsNode => node instanceof GitHubStarsNode);
+            const stars = (await this.getChildren()).find(
+                (node): node is GitHubStarsNode => node instanceof GitHubStarsNode,
+            );
+            if (!stars) {
+                return undefined;
+            }
+            return (await this.getChildren(stars)).find(
+                (node): node is GitHubStarsLanguageNode =>
+                    node instanceof GitHubStarsLanguageNode && node.language === element.repository.language,
+            );
         }
         return this.identify(
             new GitHubLanguageNode(
@@ -158,10 +184,18 @@ export class GitHubRepositoriesTree implements vscode.TreeDataProvider<GitHubTre
     }
 
     async getChildren(element?: GitHubTreeNode): Promise<GitHubTreeNode[]> {
-        if (element instanceof GitHubRepositoryNode) {
-            return [];
-        }
         if (element instanceof GitHubStarsNode) {
+            const languages = new Map<string | undefined, GitHubRepository[]>();
+            for (const repository of element.repositories) {
+                const repositories = languages.get(repository.language) ?? [];
+                repositories.push(repository);
+                languages.set(repository.language, repositories);
+            }
+            return [...languages.entries()]
+                .sort(([left], [right]) => compare(left ?? 'Unknown', right ?? 'Unknown'))
+                .map(([language, repositories]) => this.identify(new GitHubStarsLanguageNode(language, repositories)));
+        }
+        if (element instanceof GitHubStarsLanguageNode) {
             const savedRepositoryKeys = new Set(
                 (await this.repositoryStore.repositories())
                     .map((repository) => repositoryIdentityKey(repository.url))
@@ -173,11 +207,14 @@ export class GitHubRepositoriesTree implements vscode.TreeDataProvider<GitHubTre
                     repository,
                     key === undefined || !savedRepositoryKeys.has(key),
                     repository.private ? 'Private' : 'Public',
-                    [],
+                    element.repositories,
                     [],
                     true,
                 );
             });
+        }
+        if (element instanceof GitHubRepositoryNode) {
+            return [];
         }
         if (element instanceof GitHubLanguageNode) {
             const savedRepositoryKeys = new Set(
@@ -232,7 +269,7 @@ export class GitHubRepositoriesTree implements vscode.TreeDataProvider<GitHubTre
 
     private identify<T extends GitHubTreeNode>(node: T): T {
         node.id = `${node.id}:${this.expansionGeneration}`;
-        if (node instanceof GitHubLanguageNode) {
+        if (node instanceof GitHubLanguageNode || node instanceof GitHubStarsLanguageNode) {
             node.collapsibleState = this.languageExpansionState;
         }
         return node;

@@ -16,6 +16,7 @@ import {
     GitHubLanguageNode,
     GitHubRepositoriesTree,
     GitHubRepositoryNode,
+    GitHubStarsLanguageNode,
     GitHubStarsNode,
     GitHubVisibilityNode,
 } from '../features/githubRepositories/tree';
@@ -473,7 +474,7 @@ suite('GitHub Repositories', () => {
         );
     });
 
-    test('shows Stars beside Public and Private with starred repositories beneath it', async () => {
+    test('groups starred repositories by language beneath Stars', async () => {
         const starsFile = path.join(temporary, '.project-atlas', 'github-stars.json');
         const configStore = new GitHubConfigurationStore(file);
         await fs.mkdir(path.dirname(file), { recursive: true });
@@ -491,6 +492,21 @@ suite('GitHub Repositories', () => {
                 private: false,
                 archived: false,
                 fork: false,
+                language: 'TypeScript',
+                updatedAt: '2026-09-11T00:00:00Z',
+            },
+            {
+                id: 12,
+                name: 'starred-python',
+                fullName: 'octocat/starred-python',
+                owner: 'octocat',
+                htmlUrl: 'https://github.com/octocat/starred-python',
+                sshUrl: 'git@github.com:octocat/starred-python.git',
+                cloneUrl: 'https://github.com/octocat/starred-python.git',
+                private: false,
+                archived: false,
+                fork: false,
+                language: 'Python',
                 updatedAt: '2026-09-11T00:00:00Z',
             },
         ]);
@@ -508,12 +524,38 @@ suite('GitHub Repositories', () => {
         );
         const stars = roots[2];
         assert.ok(stars instanceof GitHubStarsNode);
-        const repositories = await tree.getChildren(stars);
+        const languages = await tree.getChildren(stars);
+        assert.deepStrictEqual(
+            languages.map(({ label }) => label),
+            ['Python', 'TypeScript'],
+        );
+        assert.ok(languages.every((node) => node instanceof GitHubStarsLanguageNode));
+        assert.ok(languages.every((node) => node.collapsibleState === vscode.TreeItemCollapsibleState.Expanded));
+        const python = languages[0];
+        assert.ok(python instanceof GitHubStarsLanguageNode);
+        const repositories = await tree.getChildren(python);
         assert.strictEqual(repositories.length, 1);
         assert.ok(repositories[0] instanceof GitHubRepositoryNode);
         assert.strictEqual(repositories[0].isStarred, true);
         assert.strictEqual(repositories[0].contextValue, 'githubStarredRepository');
-        assert.strictEqual(await tree.getParent(repositories[0]), stars);
+        assert.strictEqual(await tree.getParent(repositories[0]), python);
+        assert.strictEqual(await tree.getParent(python), stars);
+
+        tree.collapseAll();
+        const collapsedStars = (await tree.getChildren())[2];
+        assert.ok(collapsedStars instanceof GitHubStarsNode);
+        const collapsedLanguages = await tree.getChildren(collapsedStars);
+        assert.ok(
+            collapsedLanguages.every((node) => node.collapsibleState === vscode.TreeItemCollapsibleState.Collapsed),
+        );
+
+        tree.expandAll();
+        const expandedStars = (await tree.getChildren())[2];
+        assert.ok(expandedStars instanceof GitHubStarsNode);
+        const expandedLanguages = await tree.getChildren(expandedStars);
+        assert.ok(
+            expandedLanguages.every((node) => node.collapsibleState === vscode.TreeItemCollapsibleState.Expanded),
+        );
     });
 
     test('reports an invalid token without including it in the error', async () => {
