@@ -46,7 +46,7 @@ Project Atlas 是一款用于管理本地项目、Git 仓库和开发素材的 V
 
 ### GitHub Repositories
 
-**GitHub Repositories** 从 GitHub API 同步指定账户拥有的仓库，缓存保存在 `~/.project-atlas/github.json`。在扩展设置或配置文件中填写 GitHub 用户名和 personal access token 后刷新；支持搜索、在浏览器打开、复制 SSH URL、克隆，以及加入 Git Repositories。工具栏中的 **Refresh GitHub Stars** 会单独同步该账户收藏的全部仓库，缓存到 `~/.project-atlas/github-stars.json`，并在 Public、Private 同级的 Stars 组中按语言分组显示；Stars 仓库通过行内 **Open on GitHub** 按钮打开。右键 GitHub Repositories 中的自有仓库可从 GitHub 删除；删除前需要输入仓库完整名称确认，成功后会清除本地 GitHub 与 Stars 缓存，不修改 Git Repositories 记录或磁盘文件。
+**GitHub Repositories** 从 GitHub API 同步指定账户拥有的仓库，缓存保存在 `~/.project-atlas/github.json`。在扩展设置或配置文件中填写 GitHub 用户名和 personal access token 后刷新；视图工具栏的 **Config** 二级菜单可分别打开 `github.json` 与 `github-stars.json`。工具栏中的 **Refresh GitHub Stars** 会单独同步该账户收藏的全部仓库，缓存到 `~/.project-atlas/github-stars.json`，并在 Public、Private 同级的 Stars 组中按语言分组显示；Stars 仓库通过行内 **Open on GitHub** 按钮打开。右键 GitHub Repositories 中的自有仓库可从 GitHub 删除；删除前需要输入仓库完整名称确认，成功后会清除本地 GitHub 与 Stars 缓存，不修改 Git Repositories 记录或磁盘文件。
 
 私有仓库需要令牌具有相应权限：经典 token 通常需要 `repo` scope，fine-grained token 需获授权访问目标仓库。删除仓库还需要管理权限；经典 token 需要 `delete_repo` scope，fine-grained token 需要目标仓库的 Administration: write。网络需要代理时，可在扩展设置配置 HTTP/HTTPS 代理、SOCKS 代理和启用状态；代理同时用于 GitHub 刷新、克隆与删除。
 

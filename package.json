@@ -672,7 +672,13 @@
       },
       {
         "command": "project-atlas.openGithubConfig",
-        "title": "Open GitHub Configuration",
+        "title": "github.json",
+        "category": "Project Atlas",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "project-atlas.openGithubStarsConfig",
+        "title": "github-stars.json",
         "category": "Project Atlas",
         "icon": "$(edit)"
       },
@@ -1070,6 +1076,11 @@
       {
         "id": "projectAtlas.repositoryViewMenu",
         "label": "Group By"
+      },
+      {
+        "id": "projectAtlas.githubConfigurationMenu",
+        "label": "Config",
+        "icon": "$(edit)"
       },
       {
         "id": "projectAtlas.openWithMenu",
@@ -1485,7 +1496,7 @@
           "group": "navigation@1"
         },
         {
-          "command": "project-atlas.openGithubConfig",
+          "submenu": "projectAtlas.githubConfigurationMenu",
           "when": "view == projectAtlas.githubRepos",
           "group": "navigation@2"
         },
@@ -1607,6 +1618,16 @@
           "command": "project-atlas.repositoryViewHOSTS",
           "toggled": "projectAtlas.repositoryViewMode == HOSTS",
           "group": "mode@3"
+        }
+      ],
+      "projectAtlas.githubConfigurationMenu": [
+        {
+          "command": "project-atlas.openGithubConfig",
+          "group": "configuration@1"
+        },
+        {
+          "command": "project-atlas.openGithubStarsConfig",
+          "group": "configuration@2"
         }
       ],
       "projectAtlas.sortMenu": [
@@ -2065,6 +2086,10 @@
         },
         {
           "command": "project-atlas.openGithubConfig",
+          "when": "false"
+        },
+        {
+          "command": "project-atlas.openGithubStarsConfig",
           "when": "false"
         },
         {

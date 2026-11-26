@@ -1,4 +1,4 @@
-import { watch } from 'fs';
+import { promises as fs, watch } from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
 import { GitHubConfigurationStore } from './config';
@@ -167,6 +167,31 @@ export function activateGitHubRepositories(context: vscode.ExtensionContext): vo
         vscode.commands.registerCommand('project-atlas.openGithubConfig', () =>
             run(async () => {
                 const file = await configurationStore.ensureFile();
+                await vscode.window.showTextDocument(vscode.Uri.file(file));
+            }),
+        ),
+        vscode.commands.registerCommand('project-atlas.openGithubStarsConfig', () =>
+            run(async () => {
+                const file = starsStore.file;
+                await fs.mkdir(path.dirname(file), { recursive: true });
+                try {
+                    await fs.access(file);
+                } catch (error) {
+                    if ((error as NodeJS.ErrnoException).code !== 'ENOENT') {
+                        throw error;
+                    }
+                    try {
+                        await fs.writeFile(file, '{\n  "repositories": []\n}\n', {
+                            encoding: 'utf8',
+                            flag: 'wx',
+                            mode: 0o600,
+                        });
+                    } catch (writeError) {
+                        if ((writeError as NodeJS.ErrnoException).code !== 'EEXIST') {
+                            throw writeError;
+                        }
+                    }
+                }
                 await vscode.window.showTextDocument(vscode.Uri.file(file));
             }),
         ),

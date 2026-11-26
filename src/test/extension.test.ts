@@ -968,6 +968,7 @@ suite('Extension', () => {
         assert.ok(extension);
         const titleMenu = extension.packageJSON.contributes.menus['view/title'] as Array<{
             command?: string;
+            submenu?: string;
             when?: string;
             group?: string;
         }>;
@@ -1293,7 +1294,7 @@ suite('Extension', () => {
                     group: 'navigation@1',
                 },
                 {
-                    command: 'project-atlas.openGithubConfig',
+                    submenu: 'projectAtlas.githubConfigurationMenu',
                     when: 'view == projectAtlas.githubRepos',
                     group: 'navigation@2',
                 },
