@@ -1,0 +1,36 @@
+{
+    "schemaVersion": 1,
+    "projects": {
+        "defaultOpenMode": "CURRENT_WINDOW",
+        "sortBy": "NAME",
+        "selectedFilter": "ALL",
+        "selectedView": "TAGS",
+        "selectedListFilter": "ALL",
+        "showProjectPath": true,
+        "tagProjectSpacing": 10,
+        "listProjectSpacing": 0,
+        "showDescriptions": false
+    },
+    "nodejs": {
+        "packageManager": "yarn"
+    },
+    "views": {
+        "githubRepositories": true,
+        "gitRepositories": false,
+        "npmPackages": false,
+        "templates": false
+    },
+    "proxies": [
+        {
+            "name": "Local",
+            "url": "http://127.0.0.1:1087"
+        }
+    ],
+    "github": {
+        "token": "",
+        "user": "hyxf",
+        "proxyEnabled": false,
+        "httpProxy": "http://127.0.0.1:1087",
+        "socketProxy": "socks5://127.0.0.1:1086"
+    }
+}
