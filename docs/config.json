@@ -32,5 +32,18 @@
         "proxyEnabled": false,
         "httpProxy": "http://127.0.0.1:1087",
         "socketProxy": "socks5://127.0.0.1:1086"
+    },
+    "update": {
+        "enabled": true,
+        "autoCheck": true
+    },
+    "templateBackup": {
+        "files": [
+            "~/.project-atlas/npmfav.json",
+            "~/.project-atlas/repos.json",
+            "~/.project-atlas/aiprompts.json",
+            "~/.project-atlas/commoncmd.json",
+            "~/.project-atlas/gitmessage.json"
+        ]
     }
 }
